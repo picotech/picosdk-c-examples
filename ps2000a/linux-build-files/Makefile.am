@@ -1,0 +1,4 @@
+ACLOCAL_AMFLAGS = -I m4
+
+bin_PROGRAMS = ps2000acon
+ps2000acon_SOURCES = PS2000Acon.c
