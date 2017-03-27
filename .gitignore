@@ -1,0 +1,13 @@
+# .gitignore file for picosdk-c-examples repository
+# Untracked files/folders to ignore.
+
+**/.vs
+**/Debug
+**/Release
+**/*.sdf
+**/*.txt
+**/*.vcxproj.user
+**/x64
+**/*.opensdf
+
+
