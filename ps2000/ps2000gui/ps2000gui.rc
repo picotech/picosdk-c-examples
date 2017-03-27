@@ -1,0 +1,129 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MAIN DIALOGEX 9, 22, 456, 230
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "PS2000 Example"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    PUSHBUTTON      "Start",IDC_OK,15,83,28,14
+    LTEXT           "Channel A",IDC_LABEL1,14,30,45,8
+    LTEXT           "",IDC_INFO1,4,197,111,8
+    LTEXT           "",IDC_INFO2,3,205,113,8
+    LTEXT           "",IDC_INFO3,3,213,111,8
+    LTEXT           "",IDC_INFO4,3,221,113,8
+    LTEXT           "",IDC_INFO5,5,189,114,8
+    CONTROL         "A",IDC_CHA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,43,58,20,10
+    CONTROL         "",IDC_FRAME2,"Static",SS_ETCHEDFRAME,5,106,112,81
+    CONTROL         "",IDC_TRIGGER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,91,111,12,14
+    LTEXT           "Activate Trigger",IDC_LABEL9,13,114,56,8,NOT WS_GROUP
+    LTEXT           "Channel",IDC_LABEL10,13,129,29,9,NOT WS_GROUP
+    LTEXT           "Voltage",IDC_LABEL11,13,145,28,8,NOT WS_GROUP
+    LTEXT           "Direction",IDC_LABEL12,13,159,32,9,NOT WS_GROUP
+    LTEXT           "Delay",IDC_LABEL13,13,171,28,8,NOT WS_GROUP
+    COMBOBOX        IDC_COMBOBOX,49,129,52,40,CBS_DROPDOWNLIST | WS_TABSTOP
+    EDITTEXT        IDC_TRG6,49,144,52,12,ES_RIGHT | ES_NUMBER
+    COMBOBOX        IDC_TRG7,49,156,52,56,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_TRG8,49,170,52,12,ES_RIGHT | ES_NUMBER
+    LTEXT           "Voltage Range",IDC_LABEL14,35,18,48,9,NOT WS_GROUP
+    COMBOBOX        IDC_COUPLING,10,57,31,37,CBS_DROPDOWNLIST | CBS_SORT | WS_TABSTOP
+    COMBOBOX        IDC_TIMEBASE,63,90,40,50,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CTEXT           "Timebase",IDC_LABEL_TIMEBASE,63,81,39,8,NOT WS_GROUP
+    GROUPBOX        "Channel Settings",IDC_STATIC,6,4,111,69
+    CONTROL         "",IDC_FRAME3,"Static",SS_ETCHEDFRAME,55,80,62,26
+    GROUPBOX        "",IDC_STATIC1,5,76,48,26
+    COMBOBOX        IDC_VOLTAGE,10,40,52,59,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Channel B",IDC_LABEL2,66,29,45,8
+    CONTROL         "B",IDC_CHB,"Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,97,60,18,10
+    COMBOBOX        IDC_COUPLING_B,63,59,31,37,CBS_DROPDOWNLIST | CBS_SORT | WS_DISABLED | WS_TABSTOP
+    COMBOBOX        IDC_VOLTAGE_B,63,40,52,59,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+2 TEXTINCLUDE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_MAIN, DIALOG
+    BEGIN
+        RIGHTMARGIN, 454
+        BOTTOMMARGIN, 229
+        HORZGUIDE, 7
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
