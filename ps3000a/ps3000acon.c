@@ -2107,11 +2107,11 @@ void setSignalGenerator(UNIT unit)
 			}
 		}
 
-		if(waveform < 8 || (ch == 'A' && unit.sigGen == SIGGEN_AWG))				// Find out frequency if required
+		if(waveform < 8 || (ch == 'A' && unit.sigGen == SIGGEN_AWG))	// Find out frequency if required
 		{
 			do 
 			{
-				printf("\nEnter frequency in Hz: (1 to 1000000)\n"); // Ask user to enter signal frequency;
+				printf("\nEnter frequency in Hz: (1 to 1000000)\n");	// Ask user to enter signal frequency;
 				scanf_s("%lf", &frequency);
 			} while (frequency <= 0 || frequency > 1000000);
 		}
@@ -2122,7 +2122,7 @@ void setSignalGenerator(UNIT unit)
 
 			status = ps3000aSetSigGenArbitrary(	unit.handle, 
 				0,				// offset voltage
-				pkpk,			// PkToPk in microvolts. Max = 4000000 uV  (-2 V to +2 V)
+				pkpk,			// PkToPk in microvolts. Max = 4000000 uV  (±2 V)
 				delta,			// start delta
 				delta,			// stop delta
 				0, 
