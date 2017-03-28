@@ -5,7 +5,7 @@
  * Description:
  *   This is a console mode program that demonstrates how to perform 
  *	 operations using a PicoScope 2200 Series device using the 
- *	 PicoScope 2000 Series A API functions.
+ *	 PicoScope 2000 Series A API driver functions.
  *   
  *
  * Examples:
@@ -2512,7 +2512,7 @@ int32_t main(void)
 	PICO_STATUS status;
 	UNIT unit;
 
-	printf("ps2000a Driver Example Program\n");
+	printf("PicoScope 2000 Series (A API) Driver Example Program\n");
 	printf("Version 2.3\n\n");
 	printf("\n\nOpening the device...\n");
 
