@@ -7,6 +7,13 @@
  *	 operations using a PicoScope 2200 Series device using the 
  *	 PicoScope 2000 Series A API driver functions.
  *   
+ *	Supported PicoScope models:
+ *
+ *		PicoScope 2205 MSO & 2205A MSO
+ *		PicoScope 2405A
+ *		PicoScope 2206, 2206A, 2206B, 2206B MSO & 2406B
+ *		PicoScope 2207, 2207A, 2207B, 2207B MSO & 2407B
+ *		PicoScope 2208, 2208A, 2208B, 2208B MSO & 2408B
  *
  * Examples:
  *    Collect a block of samples immediately
@@ -24,14 +31,6 @@
  *    Collect a block of analogue & digital samples when analogue OR digital trigger events occurs
  *    Collect a stream of digital data immediately
  *	  Collect a stream of digital data and show aggregated values
- *
- *	Supported PicoScope models:
- *
- *		PicoScope 2205 MSO & 2205A MSO
- *		PicoScope 2405A
- *		PicoScope 2206, 2206A, 2206B, 2206B MSO & 2406B
- *		PicoScope 2207, 2207A, 2207B, 2207B MSO & 2407B
- *		PicoScope 2208, 2208A, 2208B, 2208B MSO & 2408B
  *    
  *	To build this application:-
  *
