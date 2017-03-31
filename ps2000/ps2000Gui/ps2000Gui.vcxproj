@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B5E9FE69-4A81-404D-8995-CA52CF1DFFEA}</ProjectGuid>
-    <RootNamespace>ps2000gui</RootNamespace>
+    <RootNamespace>ps2000Gui</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>

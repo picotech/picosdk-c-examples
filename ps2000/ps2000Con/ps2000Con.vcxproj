@@ -24,9 +24,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8C7D92D3-9E5B-42E5-AB3A-6B9C1181E793}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ps2000con</RootNamespace>
+    <RootNamespace>ps2000Con</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-    <ProjectName>ps2000con</ProjectName>
+    <ProjectName>ps2000Con</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
