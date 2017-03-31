@@ -6,6 +6,19 @@
  *   This is a console mode program that demonstrates how to use the
  *   PicoScope 3000 Series A API driver functions.
  *
+ *	Supported PicoScope models:
+ *
+ *		PicoScope 3204A/B/D
+ *		PicoScope 3205A/B/D
+ *		PicoScope 3206A/B/D
+ *		PicoScope 3207A/B
+ *		PicoScope 3204 MSO & D MSO
+ *		PicoScope 3205 MSO & D MSO
+ *		PicoScope 3206 MSO & D MSO
+ *		PicoScope 3404A/B/D/D MSO
+ *		PicoScope 3405A/B/D/D MSO
+ *		PicoScope 3406A/B/D/D MSO
+ *
  * Examples:
  *    Collect a block of samples immediately
  *    Collect a block of samples when a trigger event occurs
@@ -27,18 +40,6 @@
  *    Collect a stream of digital data immediately
  *    Collect a stream of digital data and show aggregated values
  *
- *	Supported PicoScope models:
- *
- *		PicoScope 3204A/B/D
- *		PicoScope 3205A/B/D
- *		PicoScope 3206A/B/D
- *		PicoScope 3207A/B
- *		PicoScope 3204 MSO & D MSO
- *		PicoScope 3205 MSO & D MSO
- *		PicoScope 3206 MSO & D MSO
- *		PicoScope 3404A/B/D/D MSO
- *		PicoScope 3405A/B/D/D MSO
- *		PicoScope 3406A/B/D/D MSO
  *
  *	To build this application:
  *
@@ -1455,7 +1456,6 @@ void collectRapidBlock(UNIT * unit)
 	int16_t i;
 	int16_t retry;
 	int16_t channel;
-	int16_t isTriggerTimestampingSupported = FALSE;
 	int16_t *overflow;
 	int16_t ***rapidBuffers;
 
@@ -1470,12 +1470,8 @@ void collectRapidBlock(UNIT * unit)
 	uint32_t nSamples = 1000;
 	uint32_t nCompletedCaptures;
 	uint32_t maxSegments;
-	
-	uint64_t timeStampCounterDiff = 0;
 
 	PICO_STATUS status;
-
-	PS3000A_TRIGGER_INFO * triggerInfo; // Struct to store trigger timestamping information
 	
 	// Set level trigger on Channel A
 
@@ -1647,30 +1643,8 @@ void collectRapidBlock(UNIT * unit)
 		}
 	}
 
-	// Allocate memory for the trigger timestamping
-	triggerInfo = (PS3000A_TRIGGER_INFO *) malloc(nCaptures * sizeof(PS3000A_TRIGGER_INFO));
-	memset (triggerInfo, 0, nCaptures * sizeof(PS3000A_TRIGGER_INFO));
-
-	// Get data
+	// Retrieve data
 	status = ps3000aGetValuesBulk(unit->handle, &nSamples, 0, nCaptures - 1, 1, PS3000A_RATIO_MODE_NONE, overflow);
-
-	// Retrieve trigger timestamping information
-	status = ps3000aGetTriggerInfoBulk(unit->handle, triggerInfo, 0, nCaptures - 1);
-
-	if (status == PICO_OK)
-	{
-		isTriggerTimestampingSupported = TRUE;
-	}
-	else if (status == PICO_NOT_SUPPORTED_BY_THIS_DEVICE)
-	{
-		printf("Trigger timestamping not supported by this device.");
-		isTriggerTimestampingSupported = FALSE;
-	}
-	else
-	{
-		printf("RapidDataHandler:ps3000aGetTriggerInfoBulk ------ 0x%08lx \n", status);
-		isTriggerTimestampingSupported = FALSE;
-	}
 
 	if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
 	{
@@ -1683,31 +1657,6 @@ void collectRapidBlock(UNIT * unit)
 		for (capture = 0; capture < nCaptures; capture++)
 		{
 			printf("\nCapture %d:-\n\n", capture + 1);
-			
-			if (isTriggerTimestampingSupported == TRUE)
-			{
-				// Trigger Info status & Timestamp 
-				printf("Trigger Info:- Status: %d  Timestamp Counter: %u\n", triggerInfo[capture].status, triggerInfo[capture].timeStampCounter);
-
-				// Calculate time between trigger events - the first timestamp is arbitrary so is only used to calculate offsets
-
-				// The structure containing the status code with bit flag PICO_DEVICE_TIME_STAMP_RESET will have an arbitrary timeStampCounter value. 
-				// This should be the first segment in each run, so in this case segment 0 will be ignored.
-
-				if (capture == 0)
-				{
-					// Nothing to display
-				}
-				else if (capture > 0 && triggerInfo[capture].status == PICO_OK)
-				{
-					timeStampCounterDiff = triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter;
-					printf("Time since trigger for last segment: %u ns\n\n", (timeStampCounterDiff * (uint64_t) timeIntervalNs));
-				}
-				else
-				{
-					// Do nothing
-				}
-			}
 			
 			for (channel = 0; channel < unit->channelCount; channel++) 
 			{
@@ -1761,8 +1710,6 @@ void collectRapidBlock(UNIT * unit)
 	}
 
 	free(rapidBuffers);
-
-	free(triggerInfo);
 
 	// Set nunmber of segments and captures back to 1
 	status = ps3000aMemorySegments(unit->handle, (uint32_t) 1, &nMaxSamples); 
