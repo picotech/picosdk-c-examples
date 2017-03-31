@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 14 for Windows Desktop
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps4000con", "ps4000con.vcxproj", "{7326BD28-8F71-4B0B-9FFD-4E11ED17E72C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps4000Con", "ps4000con.vcxproj", "{7326BD28-8F71-4B0B-9FFD-4E11ED17E72C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
