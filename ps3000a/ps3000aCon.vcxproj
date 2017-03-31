@@ -24,8 +24,8 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8B1E05A9-285C-4323-83C7-267C88DA1986}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ps3000acon</RootNamespace>
-    <ProjectName>ps3000acon</ProjectName>
+    <RootNamespace>ps3000aCon</RootNamespace>
+    <ProjectName>ps3000aCon</ProjectName>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
