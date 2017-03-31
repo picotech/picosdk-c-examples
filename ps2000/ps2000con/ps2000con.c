@@ -4,8 +4,14 @@
  *
  * Description:
  *   This is a console-mode program that demonstrates how to use the
- *   ps2000 driver API functions, available for the PicoScope 2104, 2105, 
- *   2202, 2203, 2204, 2204A , 2205 & 2205A models.
+ *   ps2000 driver API functions.
+ *   
+ *	Supported PicoScope models:
+ *
+ *		PicoScope 2104 & 2105 
+ *		PicoScope 2202 & 2203 
+ *		PicoScope 2204 & 2204A 
+ *		PicoScope 2205 & 2205A
  *
  * Examples:
  *    Collect a block of samples immediately
@@ -30,7 +36,7 @@
  *
  *	Windows platforms:
  *
- *		If Microsoft Visual Studio (including Express) is being used:
+ *		If Microsoft Visual Studio (including Express editions) is being used:
  *
  *			Select the solution configuration (Debug/Release) and platform (Win32/x64)
  *			Ensure that the 32-/64-bit ps2000.lib can be located

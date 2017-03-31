@@ -4,22 +4,37 @@
  *
  * Description:
  *   This is a GUI program that demonstrates how to use the
- *   ps2000 driver API functions, available for the PicoScope 2104, 2105, 
- *	 2202, 2203, 2204, 2204A , 2205 & 2205A models.
+ *   ps2000 driver API functions. 
+ *
+ *	Supported PicoScope models:
+ *
+ *		PicoScope 2104 & 2105 
+ *		PicoScope 2202 & 2203 
+ *		PicoScope 2204 & 2204A 
+ *		PicoScope 2205 & 2205A
  *
  * Examples:
  *    Collect a block of samples immediately
  *    Collect a block of samples when a trigger event occurs
  *
- * To build this application
- *	Open the solution using Microsoft Visual C++ 2015 Express or later, 
- *	or:
- *		Set up a project for a 32-bit/64-bit Windows application
- *		Add this file to the project
- *		Add resource.h to the project
- *		Add ps2000gui.rc to the project
- *		Add ps2000.lib to the project (Microsoft C only)
- *		Build the project
+ * To build this application:-
+ *
+ *	Windows platforms:
+ *
+ *		If Microsoft Visual Studio (including Express editions) is being used:
+ *
+ *			Select the solution configuration (Debug/Release) and platform (Win32/x64)
+ *			Ensure that the 32-/64-bit ps2000.lib can be located
+ *			Ensure that the ps2000.h file can be located
+ *
+ *		Otherwise:
+ *
+ *			Set up a project for a 32-bit/64-bit Windows application
+ *			Add this file to the project
+ *			Add resource.h to the project
+ *			Add ps2000gui.rc to the project
+ *			Add ps2000.lib to the project (Microsoft C only)
+ *			Build the project
  *
  * Copyright (C) 2017 Pico Technology Ltd. See LICENSE file for terms.
  *
