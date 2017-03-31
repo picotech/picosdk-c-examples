@@ -7,6 +7,13 @@
  *	 operations using a PicoScope 4000 Series device using the 
  *	 PicoScope 4000 Series API driver functions.
  *
+ *  Supported PicoScope models:
+ *
+ *		PicoScope 4223, 4224 & 4224 IEPE
+ *		PicoScope 4423 & 4424
+ *		PicoScope 4226 & 4227
+ *		PicoScope 4262
+ *
  * Examples:
  *    Collect a block of samples immediately
  *    Collect a block of samples when a trigger event occurs
@@ -16,13 +23,6 @@
  *    Collect a stream of data immediately
  *    Collect a stream of data when a trigger event occurs
  *    Set Signal Generator (where available), using built in or custom signals
- *
- *  Supported PicoScope models:
- *
- *		PicoScope 4223, 4224 & 4224 IEPE
- *		PicoScope 4423 & 4424
- *		PicoScope 4226 & 4227
- *		PicoScope 4262
  *
  *	To build this application:-
  *
