@@ -54,13 +54,14 @@
  *
  **************************************************************************/
 
-
 #include <stdio.h>
 #include "windows.h"
 #include <conio.h>
 #include "ps4000aApi.h"
 
-#define ChannelCount 8
+#define OCTO_SCOPE		8
+#define QUAD_SCOPE		4
+#define DUAL_SCOPE		2
 
 const uint32_t	bufferLength = 100000;
 PICO_STATUS		status = PICO_OK;
@@ -72,9 +73,16 @@ int16_t			g_autoStop;
 int16_t			g_trig = 0;
 uint32_t		g_trigAt = 0;
 
-int16_t *		buffers[ChannelCount * 2];
-int16_t *		appBuffers[ChannelCount * 2];
 uint32_t		timebase = 8;
+
+typedef enum
+{
+	MODEL_NONE = 0,
+	MODEL_PS4824 = 0x12d8,
+	MODEL_PS4225 = 0x1081,
+	MODEL_PS4425 = 0x1149,
+	MODEL_PS4444 = 0x115C
+} MODEL_TYPE;
 
 typedef struct
 {
@@ -84,14 +92,30 @@ typedef struct
 	float analogueOffset;
 }CHANNEL_SETTINGS;
 
+typedef enum
+{
+	SIGGEN_NONE = 0,
+	SIGGEN_FUNCTGEN = 1,
+	SIGGEN_AWG = 2
+} SIGGEN_TYPE;
+
 typedef struct
 {
-	int16_t						handle;
+	int16_t handle;
+	MODEL_TYPE					model;
+	int8_t						modelString[8];
+	int8_t						serial[11];
+	int16_t						complete;
+	int16_t						openStatus;
+	int16_t						openProgress;
 	PS4000A_RANGE				firstRange;
 	PS4000A_RANGE				lastRange;
+	int16_t						channelCount;
 	int16_t						maxADCValue;
-	int16_t						ETS;
-	CHANNEL_SETTINGS			channelSettings[ChannelCount];
+	SIGGEN_TYPE					sigGen;
+	int16_t						hasETS;
+	uint16_t					AWGFileSize;
+	CHANNEL_SETTINGS			channelSettings[PS4000A_MAX_CHANNELS];
 }UNIT;
 
 typedef struct tBufferInfo
@@ -178,23 +202,23 @@ void PREF4 CallBackStreaming
 
 	if (bufferInfo != NULL && noOfSamples)
 	{
-		for (int channel = 0; channel < ChannelCount; channel++)
+		for (int channel = 0; channel < bufferInfo->unit->channelCount; channel++)
 		{
 			if (bufferInfo->unit->channelSettings[channel].enabled)
 			{
-				if (appBuffers && buffers)
+				if (bufferInfo->appBuffers && bufferInfo->driverBuffers)
 				{
-					if (appBuffers[channel * 2] && buffers[channel * 2])
+					if (bufferInfo->appBuffers[channel * 2] && bufferInfo->driverBuffers[channel * 2])
 					{
-						memcpy_s(&appBuffers[channel * 2][0], noOfSamples * sizeof(int16_t),
-							&buffers[channel * 2][startIndex], noOfSamples * sizeof(int16_t));
+						memcpy_s(&bufferInfo->appBuffers[channel * 2][0], noOfSamples * sizeof(int16_t),
+							&bufferInfo->driverBuffers[channel * 2][startIndex], noOfSamples * sizeof(int16_t));
 					}
 
 					// Min buffers
 					if (bufferInfo->appBuffers[channel * 2 + 1] && bufferInfo->driverBuffers[1])
 					{
-						memcpy_s(&appBuffers[channel * 2 + 1][0], noOfSamples * sizeof(int16_t),
-							&buffers[channel * 2 + 1][startIndex], noOfSamples * sizeof(int16_t));
+						memcpy_s(&bufferInfo->appBuffers[channel * 2 + 1][0], noOfSamples * sizeof(int16_t),
+							&bufferInfo->driverBuffers[channel * 2 + 1][startIndex], noOfSamples * sizeof(int16_t));
 					}
 
 				}
@@ -209,7 +233,7 @@ void PREF4 CallBackStreaming
 void SetDefaults(UNIT *unit)
 {
 
-	for (int32_t ch = 0; ch < ChannelCount; ch++)
+	for (int32_t ch = 0; ch < unit->channelCount; ch++)
 	{
 		status = ps4000aSetChannel(unit->handle,													// handle to select the correct device
 			(PS4000A_CHANNEL)(PS4000A_CHANNEL_A + ch),												// channel
@@ -218,7 +242,7 @@ void SetDefaults(UNIT *unit)
 			(PICO_CONNECT_PROBE_RANGE) unit->channelSettings[PS4000A_CHANNEL_A + ch].range,			// the voltage scale of the channel
 			unit->channelSettings[PS4000A_CHANNEL_A + ch].analogueOffset);							// analogue offset
 
-		printf(status ? "SetDefaults:ps5000aSetChannel------ 0x%08lx for channel %i\n" : "", status, ch);
+		printf(status ? "SetDefaults:ps4000aSetChannel------ 0x%08lx for channel %i\n" : "", status, ch);
 	}
 }
 
@@ -232,11 +256,21 @@ void SetDefaults(UNIT *unit)
 ***************************************************************************/
 PICO_STATUS OpenDevice(UNIT *unit)
 {
-	int8_t line[100];
-	int16_t r;
 	int8_t ch = 'Y';
+	char line[80] = { 0 };
+	
+	int16_t requiredSize;
+	int16_t minArbitraryWaveformValue = 0;
+	int16_t maxArbitraryWaveformValue = 0;
 
-	status = ps4000aOpenUnit(&unit->handle, nullptr);// can call this function mutliple times to open multiple devices, also the unit.handle is sepcific to each device make sure you don't over write them
+	int32_t variant;
+
+	uint32_t minArbitraryWaveformBufferSize = 0;
+	uint32_t maxArbitraryWaveformBufferSize = 0;
+
+	// Can call this function multiple times to open multiple devices 
+	// Note tha the unit.handle is specific to each device make sure you don't overwrite them
+	status = ps4000aOpenUnit(&unit->handle, nullptr);
 	
 	if (unit->handle == 0)
 	{
@@ -258,7 +292,7 @@ PICO_STATUS OpenDevice(UNIT *unit)
 
 			if (ch == 'Y')
 			{
-				printf("\nPower OK\n");
+				printf("\nPower OK\n\n");
 				status = ps4000aChangePowerSource(unit->handle, PICO_POWER_SUPPLY_NOT_CONNECTED);		// Tell the driver that's ok
 			}
 
@@ -304,11 +338,75 @@ PICO_STATUS OpenDevice(UNIT *unit)
 
 	for (int i = 0; i <= 10; i++)
 	{
-		status = ps4000aGetUnitInfo(unit->handle, line, 100, &r, i);
+		status = ps4000aGetUnitInfo(unit->handle, (int8_t *) line, sizeof(line), &requiredSize, i);
+
+		// info = 3 - PICO_VARIANT_INFO
+		if (i == PICO_VARIANT_INFO)
+		{
+			variant = atoi(line);
+			memcpy(&(unit->modelString), line, sizeof(unit->modelString) == 5 ? 5 : sizeof(unit->modelString));
+		}
+		else if (i == PICO_BATCH_AND_SERIAL)	// info = 4 - PICO_BATCH_AND_SERIAL
+		{
+			memcpy(&(unit->serial), line, requiredSize);
+		}
+
 		printf("%s:%s\n", description[i], line);
 	}
 
-	for (int ch = 0; ch < ChannelCount; ch++)
+	printf("\n");
+
+	// Find the maxiumum AWG buffer size
+	status = ps4000aSigGenArbitraryMinMaxValues(unit->handle, &minArbitraryWaveformValue, &maxArbitraryWaveformValue, &minArbitraryWaveformBufferSize, &maxArbitraryWaveformBufferSize);
+
+	switch (variant)
+	{
+	case MODEL_PS4824:
+		unit->model = MODEL_PS4824;
+		unit->sigGen = SIGGEN_AWG;
+		unit->firstRange = PS4000A_10MV;
+		unit->lastRange = PS4000A_50V;
+		unit->channelCount = OCTO_SCOPE;
+		unit->hasETS = FALSE;
+		unit->AWGFileSize = maxArbitraryWaveformBufferSize;
+		break;
+
+	case MODEL_PS4225:
+		unit->model = MODEL_PS4225;
+		unit->sigGen = SIGGEN_NONE;
+		unit->firstRange = PS4000A_50MV;
+		unit->lastRange = PS4000A_200V;
+		unit->channelCount = DUAL_SCOPE;
+		unit->hasETS = FALSE;
+		unit->AWGFileSize = 0;
+		break;
+
+	case MODEL_PS4425:
+		unit->model = MODEL_PS4425;
+		unit->sigGen = SIGGEN_NONE;
+		unit->firstRange = PS4000A_50MV;
+		unit->lastRange = PS4000A_200V;
+		unit->channelCount = QUAD_SCOPE;
+		unit->hasETS = FALSE;
+		unit->AWGFileSize = 0;
+		break;
+
+	case MODEL_PS4444:
+		unit->model = MODEL_PS4444;
+		unit->sigGen = SIGGEN_NONE;
+		unit->firstRange = PS4000A_10MV;
+		unit->lastRange = PS4000A_50V;
+		unit->channelCount = QUAD_SCOPE;
+		unit->hasETS = FALSE;
+		unit->AWGFileSize = 0;
+		break;
+
+	default:
+		unit->model = MODEL_NONE;
+		break;
+	}
+
+	for (int ch = 0; ch < unit->channelCount; ch++)
 	{
 		unit->channelSettings[ch].enabled = (ch == 0);
 		unit->channelSettings[ch].DCcoupled = TRUE;
@@ -337,7 +435,7 @@ void SetVoltages(UNIT *unit)
 		/* Ask the user to select a range */
 		printf("Specify voltage range (%d..%d)\n", unit->firstRange, unit->lastRange);
 		printf("99 - switches channel off\n");
-		for (ch = 0; ch < ChannelCount; ch++)
+		for (ch = 0; ch < unit->channelCount; ch++)
 		{
 			printf("\n");
 			do
@@ -362,7 +460,7 @@ void SetVoltages(UNIT *unit)
 			}
 		}
 		printf(count == 0 ? "\n** At least 1 channel must be enabled **\n\n" : "");
-	} while (count == 0);	// must have at least one channel enabled
+	} while (count == 0);	// Must have at least one channel enabled
 
 	SetDefaults(unit);	// Put these changes into effect
 }
@@ -375,23 +473,32 @@ void SetVoltages(UNIT *unit)
 ***************************************************************************/
 void StreamDataHandler(UNIT * unit)
 {
-	FILE * fp = NULL;
-	BUFFER_INFO bufferInfo;
-	int32_t i, j;
-	PICO_STATUS status;
-	uint32_t sampleInterval;
-	int32_t index = 0;
-	int32_t totalSamples = 0;
-	uint32_t postTrigger;
 	int16_t autostop;
-	uint32_t downsampleRatio;
-	uint32_t triggeredAt = 0;
-	PS4000A_TIME_UNITS timeUnits;
-	PS4000A_RATIO_MODE ratioMode;
-	uint32_t preTrigger;
 	int16_t powerChange = 0;
 
-	for (i = 0; i < ChannelCount; i++)
+	int16_t * buffers[PS4000A_MAX_CHANNEL_BUFFERS];
+	int16_t * appBuffers[PS4000A_MAX_CHANNEL_BUFFERS];
+
+	int32_t i, j;
+	int32_t index = 0;
+	int32_t totalSamples = 0;
+
+	uint32_t downsampleRatio;
+	uint32_t preTrigger;
+	uint32_t postTrigger;
+	uint32_t sampleInterval;
+	uint32_t triggeredAt = 0;
+
+	FILE * fp = NULL;
+	BUFFER_INFO bufferInfo;
+
+	PICO_STATUS status;
+	PS4000A_TIME_UNITS timeUnits;
+	PS4000A_RATIO_MODE ratioMode;
+
+	
+	// Setup data and temporary application buffers to copy data into
+	for (i = 0; i < unit->channelCount; i++)
 	{
 
 		if (unit->channelSettings[PS4000A_CHANNEL_A + i].enabled)
@@ -404,7 +511,7 @@ void StreamDataHandler(UNIT * unit)
 			appBuffers[i * 2] = (int16_t*)calloc(bufferLength, sizeof(int16_t));
 			appBuffers[i * 2 + 1] = (int16_t*)calloc(bufferLength, sizeof(int16_t));
 
-			printf(status ? "StreamDataHandler:ps5000aSetDataBuffers(channel %ld) ------ 0x%08lx \n" : "", i, status);
+			printf(status ? "StreamDataHandler:ps4000aSetDataBuffers(channel %ld) ------ 0x%08lx \n" : "", i, status);
 		}
 	}
 
@@ -424,7 +531,7 @@ void StreamDataHandler(UNIT * unit)
 	{
 		printf("\nStreaming Data for %lu samples", postTrigger / downsampleRatio);
 		
-		if (preTrigger)							// we pass 0 for preTrigger if we're not setting up a trigger
+		if (preTrigger) // We pass 0 for preTrigger if we're not setting up a trigger
 		{
 			printf(" after the trigger occurs\nNote: %lu Pre Trigger samples before Trigger arms\n\n", preTrigger / downsampleRatio);
 		}
@@ -457,7 +564,7 @@ void StreamDataHandler(UNIT * unit)
 			}
 			else
 			{
-				printf("StreamDataHandler:ps5000aRunStreaming ------ 0x%08lx \n", status);
+				printf("StreamDataHandler:ps4000aRunStreaming ------ 0x%08lx \n", status);
 				return;
 			}
 		}
@@ -468,10 +575,10 @@ void StreamDataHandler(UNIT * unit)
 
 	if (fp != NULL)
 	{
-		fprintf(fp, "For each of the %d Channels, results shown are....\n", ChannelCount);
+		fprintf(fp, "For each of the %d Channels, results shown are....\n", unit->channelCount);
 		fprintf(fp, "Maximum Aggregated value ADC Count & mV, Minimum Aggregated value ADC Count & mV\n\n");
 
-		for (i = 0; i < ChannelCount; i++)
+		for (i = 0; i < unit->channelCount; i++)
 		{
 			if (unit->channelSettings[i].enabled)
 			{
@@ -483,7 +590,7 @@ void StreamDataHandler(UNIT * unit)
 
 	while (!_kbhit() && !g_autoStop)
 	{
-		/* Poll until data is received. Until then, GetStreamingLatestValues wont call the callback */
+		/* Poll until data is received. Until then, ps4000aGetStreamingLatestValues wont call the callback */
 		Sleep(0);
 		g_ready = FALSE;
 
@@ -503,7 +610,7 @@ void StreamDataHandler(UNIT * unit)
 
 			if (g_trig)
 			{
-				printf("Trig. at index %lu total %lu", g_trigAt, triggeredAt);	// show where trigger occurred
+				printf("Trig. at index %lu total %lu", g_trigAt, triggeredAt);	// Show where trigger occurred
 
 			}
 
@@ -512,7 +619,7 @@ void StreamDataHandler(UNIT * unit)
 
 				if (fp != NULL)
 				{
-					for (j = 0; j < ChannelCount; j++)
+					for (j = 0; j < unit->channelCount; j++)
 					{
 						if (unit->channelSettings[j].enabled)
 						{
@@ -556,7 +663,7 @@ void StreamDataHandler(UNIT * unit)
 		printf("\nData collection complete.\n\n");
 	}
 
-	for (i = 0; i < ChannelCount; i++)
+	for (i = 0; i < unit->channelCount; i++)
 	{
 		if (unit->channelSettings[i].enabled)
 		{
@@ -568,7 +675,7 @@ void StreamDataHandler(UNIT * unit)
 
 			if ((status = ps4000aSetDataBuffers(unit->handle, (PS4000A_CHANNEL)i, NULL, NULL, 0, 0, PS4000A_RATIO_MODE_NONE)) != PICO_OK)
 			{
-				printf("ClearDataBuffers:ps5000aSetDataBuffers(channel %d) ------ 0x%08lx \n", i, status);
+				printf("ClearDataBuffers:ps4000aSetDataBuffers(channel %d) ------ 0x%08lx \n", i, status);
 			}
 		}
 	}
@@ -609,8 +716,9 @@ void CollectStreamingTriggered(UNIT * unit)
 	PS4000A_THRESHOLD_DIRECTION _direction = PS4000A_RISING;
 	int16_t threshold = mv_to_adc(1000, unit->channelSettings[PS4000A_CHANNEL_A].range, unit); 
 
-	//if this array contation more than one channel for example was initlised as _condition[2] the channels could be AND please remebert to increase nConditions accordingly
-	//Channels are DONT_CARE if not stated
+	// If this array contains more than one channel for example was initialised as _condition[2] the 
+	// channels could be combined as an AND logic; please remember to increase nConditions accordingly.
+	// Channels are DONT_CARE if not stated
 	_condition->condition = PS4000A_CONDITION_TRUE;
 	_condition->source = ch;
 
@@ -640,7 +748,7 @@ void CollectStreamingTriggered(UNIT * unit)
 		return;
 	}
 
-	//only ever need to call this once all channel can be set up if we make the properties into an array
+	// Only ever need to call this once all channel can be set up if we make the properties into an array
 	if (status = ps4000aSetTriggerChannelProperties(unit->handle, properties, 1, 0, 0) != PICO_OK)
 	{
 		printf("Error setting Trigger Channel Properties, Error Code: 0x%08lx\n", status);
@@ -652,14 +760,14 @@ void CollectStreamingTriggered(UNIT * unit)
 
 int main(void)
 {
-
-
 	int8_t ch = '.';
 	UNIT unit;
 
+	printf("PicoScope 4000 Series (A API) Driver Streaming Data Collection Example Program\n\n");
 
 	status = OpenDevice(&unit);
-	if (status != PICO_OK)//if unit not found or open no need to continue
+	
+	if (status != PICO_OK) // If unit not found or open no need to continue
 	{
 		printf("Picoscope devices failed to open or select power source\n error code: 0x%08lx\n", status);
 		_getch();
