@@ -1,13 +1,43 @@
 # .gitignore file for picosdk-c-examples repository
 # Untracked files/folders to ignore.
 
+# Windows platforms
+
 **/.vs
 **/Debug
 **/Release
-**/*.sdf
-**/*.txt
-**/*.vcxproj.user
 **/x64
+
+**/*.sdf
+**/*.vcxproj.user
 **/*.opensdf
+**/*.dll
+**/*.lib
 
+# Linux/Mac OS X platforms
 
+**/aclocal.m4
+**/autom4te.cache
+**/compile
+**/config.guess
+**/*.in
+**/*.log
+**/*.status
+**/*.sub
+**/configure
+**/depcomp
+**/install-sh
+**/libtool
+**/ltmain.sh
+**/m4
+**/Makefile
+**/missing
+**/*.o
+**/stamp-h1
+**/*.so
+**/*.dylib
+
+# All platforms
+
+**/*.txt
+**/*.h
