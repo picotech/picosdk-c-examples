@@ -1,4 +1,4 @@
-/**************************************************************************
+/*******************************************************************************
  *
  * Filename: ps2000gui.c
  *
@@ -36,9 +36,9 @@
  *			Add ps2000.lib to the project (Microsoft C only)
  *			Build the project
  *
- * Copyright (C) 2017 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2006 - 2017 Pico Technology Ltd. See LICENSE file for terms.
  *
- **************************************************************************/
+ ******************************************************************************/
 
 #define FALSE   0
 
