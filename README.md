@@ -8,7 +8,7 @@ Examples are provided as Microsoft Visual Studio Express 2015 for Windows Deskto
 
 ### Prerequisites
 
-#### Windows
+#### Microsoft Windows
 
 * Microsoft Visual Studio 2015 (including Express and Community editions) or later. 
 
@@ -21,7 +21,7 @@ Examples are provided as Microsoft Visual Studio Express 2015 for Windows Deskto
 
 * A suitable IDE such as [XCode](https://developer.apple.com/xcode/)
 
-### Installing Drivers
+### Installing drivers
 
 Drivers are available for the following platforms. Refer to the subsections below for further information.
 
@@ -39,15 +39,23 @@ Drivers are available for the following platforms. Refer to the subsections belo
 
 ### Programmer's Guides
 
-Programmer's Guides providing a description of the API functions for the relevant PicoScope or PicoLog driver can be downloaded from our [Documentation page](https://www.picotech.com/library/documentation).
+You can download Programmer's Guides providing a description of the API functions for the relevant PicoScope or PicoLog driver from our [Documentation page](https://www.picotech.com/library/documentation).
 
-## Obtaining Support
+## Obtaining support
 
 Please visit our [Support page](https://www.picotech.com/tech-support) to contact us directly or visit our [Test and Measurement Forum](https://www.picotech.com/support/forum19.html) to post questions.
 
-## Copyright and licensing Information
+## Copyright and licensing
 
-picosdk-c-examples is Copyright (C) 2017 Pico Technology Ltd. All rights reserved. See LICENSE.md for license terms. *PicoScope* and *PicoLog* are registered trademarks of Pico Technology Ltd. *Windows* and *Visual Studio* are registered trademarks of Microsoft Corporation. *Mac* and *OS X* are registered trademarks of Apple, Inc. *Linux* is the registered trademark of Linus Torvalds in the U.S. and other countries.
+picosdk-c-examples is Copyright (C) 2017 Pico Technology Ltd. All rights reserved. See LICENSE.md for license terms. 
+
+*PicoScope* and *PicoLog* are registered trademarks of Pico Technology Ltd. 
+
+*Windows* and *Visual Studio* are registered trademarks of Microsoft Corporation. 
+
+*Mac* and *OS X* are registered trademarks of Apple, Inc. 
+
+*Linux* is the registered trademark of Linus Torvalds in the U.S. and other countries.
 
 ## Contributing
 
