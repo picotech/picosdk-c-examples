@@ -184,7 +184,7 @@ typedef struct
 	int16_t handle;
 	MODEL_TYPE					model;
 	int8_t						modelString[8];
-	int8_t						serial[10];
+	int8_t						serial[11];
 	int16_t						complete;
 	int16_t						openStatus;
 	int16_t						openProgress;
