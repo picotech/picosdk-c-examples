@@ -1,0 +1,117 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+USB_TC08 DIALOG DISCARDABLE  19, 25, 134, 117
+STYLE DS_MODALFRAME | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "TC08 Demo"
+CLASS "usb_tc08"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "CJC (channel 0)",-1,5,26,56,8
+    LTEXT           "Channel 1",-1,5,34,40,8
+    LTEXT           "Channel 2",-1,5,42,56,8
+    LTEXT           "Channel 3",-1,5,50,56,8
+    LTEXT           "Channel 4",-1,5,58,56,8
+    LTEXT           "Channel 5",-1,5,66,56,8
+    LTEXT           "Channel 6",-1,5,74,56,8
+    LTEXT           "Channel 7",-1,6,82,56,8
+    LTEXT           "****",100,76,27,58,8
+    LTEXT           "****",101,76,35,58,8
+    LTEXT           "****",102,76,43,58,8
+    LTEXT           "****",103,76,51,58,8
+    LTEXT           "****",104,76,59,58,8
+    LTEXT           "****",105,76,66,58,8
+    LTEXT           "****",106,76,73,58,8
+    LTEXT           "****",107,76,81,58,8
+    LTEXT           "Temperature (°C)",-1,75,5,44,19
+    LTEXT           "Channel",-1,18,9,28,8
+    LTEXT           "Channel 8",-1,6,89,56,8
+    LTEXT           "****",108,75,89,57,8
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    "USB_TC08", DIALOG
+    BEGIN
+        BOTTOMMARGIN, 116
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
