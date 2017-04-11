@@ -11,7 +11,7 @@
 *
 *		If Microsoft Visual Studio (including Express) is being used:
 *
-*			Select the solution configuration (Debug/Release) and platform (Win32/x64)
+*			Select the solution configuration (Debug/Release) and platform (x86/x64)
 *			Ensure that the 32-/64-bit usbtc08.lib can be located
 *			Ensure that the usbtc08.h file can be located
 *
