@@ -53,9 +53,9 @@
  *******************************************************************************/
 
 #include <stdio.h>
-#include <conio.h>
 #ifdef WIN32
 /* Headers for Windows */
+#include <conio.h>
 #include "pl1000Api.h"
 #include <windows.h>
 #include <stdlib.h>
