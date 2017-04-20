@@ -81,7 +81,7 @@
 #include <sys/select.h>
 #include <sys/ioctl.h>
 
-/* Definition of PS3000 driver routines on Linux */
+/* Definition of ps4000 driver routines on Linux */
 #include <libps4000-1.2/ps4000Api.h>
 #ifndef PICO_STATUS
 #include <libps4000-1.2/PicoStatus.h>
