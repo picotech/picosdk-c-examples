@@ -141,6 +141,11 @@ int32_t fopen_s(FILE ** a, const char * b, const char * c)
 	return (fp > 0) ? 0 : -1;
 }
 
+int32_t strcmpi(const char * a, const char * b)
+{
+	return strcmp(a, b);
+}
+
 /* A function to get a single character on Linux */
 #define max(a,b) ((a) > (b) ? a : b)
 #define min(a,b) ((a) < (b) ? a : b)
