@@ -203,6 +203,7 @@ int16_t mv_to_adc (int16_t mv)
 void channel_select()
 {
 	int32_t value;
+	PICO_STATUS status = PICO_OK;
 
 	printf("\n");
 	printf("1:  External Sensor 1\n");
@@ -224,6 +225,17 @@ void channel_select()
 	}while(value < USB_DRDAQ_CHANNEL_EXT1 || value > USB_DRDAQ_MAX_CHANNELS);
 
 	channel = (USB_DRDAQ_INPUTS)value;
+
+	// Set temperature compensation if PH channel is enabled
+	if (channel == USB_DRDAQ_CHANNEL_PH)
+	{
+		status = UsbDrDaqPhTemperatureCompensation(g_handle, TRUE);
+
+		if (status != PICO_OK)
+		{
+			printf("channel_select:- UsbDrDaqPhTemperatureCompensation: %d\n", status);
+		}
+	}
 }
 
 /****************************************************************************
