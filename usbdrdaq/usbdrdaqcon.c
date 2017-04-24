@@ -4,7 +4,7 @@
  *
  *	Description:
  *    This is a console-mode program that demonstrates how to use the
- *    USB DrDAQ driver.
+ *    USB DrDAQ driver API functions.
  *
  *	There are the following examples:
  *    Collect a block of samples immediately

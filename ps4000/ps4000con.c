@@ -5,7 +5,7 @@
  * Description:
  *   This is a console mode program that demonstrates how to perform 
  *	 operations using a PicoScope 4000 Series device using the 
- *	 PicoScope 4000 Series API driver functions.
+ *	 PicoScope 4000 Series (ps4000) driver API functions.
  *
  *  Supported PicoScope models:
  *
@@ -30,7 +30,7 @@
  *
  *			Select the solution configuration (Debug/Release) and platform (Win32/x64)
  *			Ensure that the 32-/64-bit ps2000a.lib can be located
- *			Ensure that the ps2000aApi.h file can be located
+ *			Ensure that the ps4000Api.h and PicoStatus.h files can be located
  *
  *		Otherwise:
  *

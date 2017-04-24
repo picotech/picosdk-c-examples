@@ -4,8 +4,8 @@
  *
  * Description:
  *   This is a console mode program that demonstrates how to use the
- *   PicoScope 6000 Series API functions to perform operations using 
- *	 a PicoScope 6000 Series Oscilloscope.
+ *   PicoScope 6000 Series (ps6000) driver API functions to perform 
+ *	 operations using a PicoScope 6000 Series Oscilloscope.
  * 
  *	Supported PicoScope models:
  *
@@ -26,9 +26,9 @@
  *
  *		If Microsoft Visual Studio (including Express) is being used:
  *
- *			Select the solution configuration (Debug/Release) and platform (Win32/x64)
+ *			Select the solution configuration (Debug/Release) and platform (x86/x64)
  *			Ensure that the 32-/64-bit ps6000.lib can be located
- *			Ensure that the ps6000Api.h file can be located
+ *			Ensure that the ps6000Api.h and PicoStatus.h files can be located
  *
  *		Otherwise:
  *

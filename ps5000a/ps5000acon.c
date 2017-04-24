@@ -4,8 +4,8 @@
  *
  * Description:
  *   This is a console mode program that demonstrates how to use some of 
- *	 the PicoScope 5000 Series A API functions to perform operations using 
- *	 a PicoScope 5000 Series Flexible Resolution Oscilloscope.
+ *	 the PicoScope 5000 Series (ps5000a) driver API functions to perform operations
+ *	 using a PicoScope 5000 Series Flexible Resolution Oscilloscope.
  *
  *	Supported PicoScope models:
  *
@@ -29,9 +29,9 @@
  *
  *		If Microsoft Visual Studio (including Express) is being used:
  *
- *			Select the solution configuration (Debug/Release) and platform (Win32/x64)
+ *			Select the solution configuration (Debug/Release) and platform (x86/x64)
  *			Ensure that the 32-/64-bit ps5000a.lib can be located
- *			Ensure that the ps5000aApi.h file can be located
+ *			Ensure that the ps5000aApi.h and PicoStatus.h files can be located
  *
  *		Otherwise:
  *

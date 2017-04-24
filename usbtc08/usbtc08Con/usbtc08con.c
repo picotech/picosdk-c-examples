@@ -5,7 +5,7 @@
  * Description:
  *   This is a console mode program that demonstrates how to setup and 
  *	 collect data from a USB TC-08 Thermocouple Data Logger using the 
- *	 usbtc08 driver functions.
+ *	 usbtc08 driver API functions.
  *
  * Examples:
  *    Collect a single reading from each channel

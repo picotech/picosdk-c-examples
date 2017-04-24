@@ -4,7 +4,7 @@
  *
  * Description:
  *   This is a console mode program that demonstrates how to use the
- *   PicoScope 4000 Series A API driver functions to stream data immediately 
+ *   PicoScope 4000 Series (ps4000a) driver functions to stream data immediately 
  *	 or with a trigger.
  *
  *	Supported PicoScope models:
@@ -25,9 +25,10 @@
  *
  *		If Microsoft Visual Studio (including Express) is being used:
  *
- *			Select the solution configuration (Debug/Release) and platform (Win32/x64)
+ *			Select the solution configuration (Debug/Release) and platform (x86/x64)
  *			Ensure that the 32-/64-bit ps4000a.lib can be located
- *			Ensure that the ps4000aApi.h file can be located
+ *			Ensure that the ps4000aApi.h, PicoConnectProbes.h and PicoStatus.h 
+ *			files can be located
  *
  *		Otherwise:
  *

@@ -4,7 +4,7 @@
  *
  * Description:
  *   This is a console mode program that demonstrates how to use the
- *   PicoScope 3000 Series A API driver functions.
+ *   PicoScope 3000 Series (ps3000a) driver functions.
  *
  *	Supported PicoScope models:
  *
@@ -45,7 +45,7 @@
  *
  *		If Microsoft Visual Studio (including Express) is being used:
  *
- *			Select the solution configuration (Debug/Release) and platform (Win32/x64)
+ *			Select the solution configuration (Debug/Release) and platform (x86/x64)
  *			Ensure that the 32-/64-bit ps3000a.lib can be located
  *			Ensure that the ps3000aApi.h and PicoStatus.h files can be located
  *		
@@ -54,7 +54,7 @@
  *			 Set up a project for a 32-/64-bit console mode application
  *			 Add this file to the project
  *			 Add 32-/64-bit ps3000a.lib to the project
- *			 Add ps3000aApi.h and picoStatus.h to the project
+ *			 Add ps3000aApi.h and PicoStatus.h to the project
  *			 Build the project
  *
  *  Linux platforms:
