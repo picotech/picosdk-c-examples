@@ -29,6 +29,18 @@
  *			Add the appropriate 32-/64-bit picohrdl.lib to the project (Microsoft C only)
  *			Build the project
  *
+ *  Linux platforms:
+ *
+ *		Ensure that the libpicohrdl driver package has been installed using the
+ *		instructions from https://www.picotech.com/downloads/linux
+ *
+ *		Place this file in the same folder as the files from the linux-build-files
+ *		folder. In a terminal window, use the following commands to build
+ *		the libpicohrdl application:
+ *
+ *			./autogen.sh <ENTER>
+ *			make <ENTER>
+ *
  *  Copyright (C) 2004 - 2017 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
