@@ -1,10 +1,11 @@
-/**************************************************************************
+/*******************************************************************************
  * 
  * Filename: usbpt104con.c
  *
  * Description:
  *   This is a console-mode program that demonstrates how to use the
- *   usbpt104 driver API functions.
+ *   usbpt104 driver API functions for the USB PT-104 Platinum Resistance
+ *	 Data Logger.
  *
  * Examples:
  *    How to set up the channels
@@ -41,7 +42,7 @@
  *
  *	Copyright (C) 2010 - 2017 Pico Technology Ltd. See LICENSE file for terms.
  *
- **************************************************************************/
+ ******************************************************************************/
 
 #include <stdio.h>
 #ifdef WIN32
