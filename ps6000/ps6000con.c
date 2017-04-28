@@ -12,6 +12,7 @@
  *		PicoScope 6402 & 6402A/B/C/D
  *		PicoScope 6403 & 6403A/B/C/D
  *		PicoScope 6404 & 6404A/B/C/D
+ *      PicoScope 6407
  *
  * Examples:
  *    Collect a block of samples immediately
