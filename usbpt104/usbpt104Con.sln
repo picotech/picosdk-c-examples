@@ -1,7 +1,9 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
-Project("{EE23F4F5-0700-4EDA-968B-405980300991}") = "usbpt104con", "usbpt104con.vcxproj", "{4B209A09-057D-4010-B3EA-CE410BBAFE36}"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 14 for Windows Desktop
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usbpt104Con", "usbpt104con.vcxproj", "{4B209A09-057D-4010-B3EA-CE410BBAFE36}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
