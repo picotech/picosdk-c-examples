@@ -197,6 +197,8 @@ typedef struct
 	int16_t						hasETS;
 	uint16_t					AWGFileSize;
 	CHANNEL_SETTINGS			channelSettings [PS4000A_MAX_CHANNELS];
+	uint16_t					hasFlexibleResolution;
+	PS4000A_DEVICE_RESOLUTION	resolution;
 }UNIT;
 
 uint32_t timebase = 8;
@@ -1251,6 +1253,7 @@ void set_info(UNIT * unit)
 	uint32_t maxArbitraryWaveformBufferSize = 0;
 
 	PICO_STATUS status = PICO_OK;
+	PS4000A_DEVICE_RESOLUTION deviceResolution = PS4000A_DR_12BIT; // For the PicoScope 4444
 
 	if (unit->handle) 
 	{
@@ -1280,48 +1283,66 @@ void set_info(UNIT * unit)
 		switch (variant)
 		{
 			case MODEL_PS4824:
-				unit->model			= MODEL_PS4824;
-				unit->sigGen		= SIGGEN_AWG;
-				unit->firstRange	= PS4000A_10MV;
-				unit->lastRange		= PS4000A_50V;
-				unit->channelCount	= OCTO_SCOPE;
-				unit->hasETS			= FALSE;
-				unit->AWGFileSize	= maxArbitraryWaveformBufferSize;
+				unit->model					= MODEL_PS4824;
+				unit->sigGen				= SIGGEN_AWG;
+				unit->firstRange			= PS4000A_10MV;
+				unit->lastRange				= PS4000A_50V;
+				unit->channelCount			= OCTO_SCOPE;
+				unit->hasETS				= FALSE;
+				unit->AWGFileSize			= maxArbitraryWaveformBufferSize;
+				unit->hasFlexibleResolution = FALSE;
 				break;
 
 			case MODEL_PS4225:
-				unit->model			= MODEL_PS4225;
-				unit->sigGen		= SIGGEN_NONE;
-				unit->firstRange	= PS4000A_50MV;
-				unit->lastRange		= PS4000A_200V;
-				unit->channelCount	= DUAL_SCOPE;
-				unit->hasETS			= FALSE;
-				unit->AWGFileSize	= 0;
+				unit->model					= MODEL_PS4225;
+				unit->sigGen				= SIGGEN_NONE;
+				unit->firstRange			= PS4000A_50MV;
+				unit->lastRange				= PS4000A_200V;
+				unit->channelCount			= DUAL_SCOPE;
+				unit->hasETS				= FALSE;
+				unit->AWGFileSize			= 0;
+				unit->hasFlexibleResolution = FALSE;
 				break;
 
 			case MODEL_PS4425:
-				unit->model			= MODEL_PS4425;
-				unit->sigGen		= SIGGEN_NONE;
-				unit->firstRange	= PS4000A_50MV;
-				unit->lastRange		= PS4000A_200V;
-				unit->channelCount	= QUAD_SCOPE;
-				unit->hasETS			= FALSE;
-				unit->AWGFileSize	= 0;
+				unit->model					= MODEL_PS4425;
+				unit->sigGen				= SIGGEN_NONE;
+				unit->firstRange			= PS4000A_50MV;
+				unit->lastRange				= PS4000A_200V;
+				unit->channelCount			= QUAD_SCOPE;
+				unit->hasETS				= FALSE;
+				unit->AWGFileSize			= 0;
+				unit->hasFlexibleResolution = FALSE;
 				break;
 
 			case MODEL_PS4444:
-				unit->model = MODEL_PS4444;
-				unit->sigGen = SIGGEN_NONE;
-				unit->firstRange = PS4000A_10MV;
-				unit->lastRange = PS4000A_50V;
-				unit->channelCount = QUAD_SCOPE;
-				unit->hasETS = FALSE;
-				unit->AWGFileSize = 0;
+				unit->model					= MODEL_PS4444;
+				unit->sigGen				= SIGGEN_NONE;
+				unit->firstRange			= PS4000A_10MV;
+				unit->lastRange				= PS4000A_50V;
+				unit->channelCount			= QUAD_SCOPE;
+				unit->hasETS				= FALSE;
+				unit->AWGFileSize			= 0;
+				unit->hasFlexibleResolution = TRUE;
 				break;
 
 			default:
-				unit->model			= MODEL_NONE;
+				unit->model					= MODEL_NONE;
 				break;
+		}
+
+		if (unit->hasFlexibleResolution)
+		{
+			status = ps4000aGetDeviceResolution(unit->handle, &unit->resolution);
+			
+			if (status != PICO_OK)
+			{
+				printf("set_info:ps4000aGetDeviceResolution ------ 0x%08lx \n", status);
+			}
+		}
+		else
+		{
+			unit->resolution = PS4000A_DR_12BIT;
 		}
 	}
 }
@@ -1370,7 +1391,7 @@ void SetVoltages(UNIT * unit)
 		}
 		printf(count == 0? "\n** At least 1 channel must be enabled **\n\n":"");
 	}
-	while(count == 0);	// must have at least one channel enabled
+	while(count == 0);	// Must have at least one channel enabled
 
 	SetDefaults(unit);	// Put these changes into effect
 }
@@ -1395,6 +1416,124 @@ void SetTimebase(UNIT * unit)
 	}
 
 	printf("Timebase used %u = %.1f ns sample interval\n", timebase, timeInterval);
+}
+
+/****************************************************************************
+* printResolution
+*
+* Outputs the resolution in text format to the console window
+****************************************************************************/
+void printResolution(PS4000A_DEVICE_RESOLUTION * resolution)
+{
+	switch (*resolution)
+	{
+		case PS4000A_DR_12BIT:
+
+			printf("12 bits");
+			break;
+
+		case PS4000A_DR_14BIT:
+
+			printf("14 bits");
+			break;
+
+		default:
+
+			printf("Invalid resolution for this device.");
+			break;
+	}
+
+	printf("\n");
+}
+
+/****************************************************************************
+* setResolution
+* Set resolution for the device
+*
+****************************************************************************/
+void setResolution(UNIT * unit)
+{
+	int16_t value;
+	int16_t i;
+	int16_t numEnabledChannels = 0;
+	int16_t retry;
+
+	PICO_STATUS status;
+	PS4000A_DEVICE_RESOLUTION resolution;
+	PS4000A_DEVICE_RESOLUTION newResolution = PS4000A_DR_12BIT;
+
+	// Determine number of channels enabled
+	for (i = 0; i < unit->channelCount; i++)
+	{
+		if (unit->channelSettings[i].enabled == TRUE)
+		{
+			numEnabledChannels++;
+		}
+	}
+
+	if (numEnabledChannels == 0)
+	{
+		printf("setResolution: Please enable channels.\n");
+		return;
+	}
+
+	status = ps4000aGetDeviceResolution(unit->handle, &resolution);
+
+	if (status == PICO_OK)
+	{
+		printf("Current resolution: ");
+		printResolution(&resolution);
+	}
+	else
+	{
+		printf("setResolution:ps4000aGetDeviceResolution ------ 0x%08lx \n", status);
+		return;
+	}
+
+	printf("\n");
+
+	printf("Select device resolution:\n");
+	printf("1: 12 bits\n");
+	printf("2: 14 bits\n");
+
+
+	retry = TRUE;
+
+	do
+	{
+		printf("Resolution [1...2]: ");
+		
+		fflush(stdin);
+		scanf_s("%lud", &newResolution);
+
+		// Verify if resolution can be selected for number of channels enabled
+
+		if (newResolution < PS4000A_DR_12BIT && newResolution > PS4000A_DR_14BIT)
+		{
+			printf("setResolution: Resolution index selected out of bounds.\n");
+		}
+		else
+		{
+			retry = FALSE;
+		}
+	} while (retry);
+
+	printf("\n");
+
+	status = ps4000aSetDeviceResolution(unit->handle, (PS4000A_DEVICE_RESOLUTION)newResolution);
+
+	if (status == PICO_OK)
+	{
+		unit->resolution = newResolution;
+
+		printf("Resolution selected: ");
+		printResolution(&newResolution);
+	}
+	else
+	{
+		printf("setResolution:ps4000aSetDeviceResolution ------ 0x%08lx \n", status);
+	}
+
 }
 
 /****************************************************************************************************
@@ -1668,6 +1807,8 @@ void DisplaySettings(UNIT *unit)
 {
 	int32_t ch;
 	int32_t voltage;
+	PS4000A_DEVICE_RESOLUTION resolution = PS4000A_DR_12BIT;
+	PICO_STATUS status = PICO_OK;
 
 	printf("\nChannel Voltage Settings:\n\n");
 
@@ -1695,6 +1836,13 @@ void DisplaySettings(UNIT *unit)
 	printf("\n");
 
 	printf("\nReadings will be scaled in (%s)\n\n", (scaleVoltages)? ("mV") : ("ADC counts"));
+
+	if (unit->hasFlexibleResolution)
+	{
+		status = ps4000aGetDeviceResolution(unit->handle, &resolution);
+		printf("Device Resolution: ");
+		printResolution(&resolution);
+	}
 }
 
 /****************************************************************************
@@ -1854,6 +2002,11 @@ void MainMenu(UNIT *unit)
 			printf("G - Signal generator\n");
 		}
 
+		if (unit->hasFlexibleResolution)
+		{
+			printf("D - Set device resolution\n");
+		}
+
 		printf("                                              X - Exit\n");
 		printf("Operation:");
 
@@ -1894,6 +2047,7 @@ void MainMenu(UNIT *unit)
 				break;
 
 			case 'G':
+				
 				if (unit->sigGen == SIGGEN_NONE)
 				{
 					printf("This model does not have a signal generator.\n\n");
@@ -1901,6 +2055,17 @@ void MainMenu(UNIT *unit)
 				}
 
 				SetSignalGenerator(unit);
+				break;
+
+			case 'D':
+
+				if (unit->hasFlexibleResolution == FALSE)
+				{
+					printf("This device does not have flexible resolution.\n\n");
+					break;
+				}
+				
+				setResolution(unit);
 				break;
 
 			case 'V':
@@ -1945,7 +2110,7 @@ int32_t main(void)
 	int16_t serialsLength = 100;
 
 
-	printf("PS4000A driver example program\n");
+	printf("PicoScope 4000 Series (ps4000a) Driver Example Program\n");
 	printf("\nEnumerating Units...\n");
 
 	status = ps4000aEnumerateUnits(&count, serials, &serialsLength);
