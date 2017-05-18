@@ -2315,6 +2315,8 @@ void closeDevice(UNIT *unit)
 ***************************************************************************/
 void andAnalogueDigitalTriggered(UNIT * unit)
 {
+	int32_t channel = 0;
+
 	int16_t	triggerVoltage = mv_to_adc(1000, unit->channelSettings[PS3000A_CHANNEL_A].range, unit);
 
 	PS3000A_TRIGGER_CHANNEL_PROPERTIES sourceDetails = {	triggerVoltage,			// thresholdUpper
@@ -2373,6 +2375,11 @@ void andAnalogueDigitalTriggered(UNIT * unit)
 		printf("Press a key to start...\n");
 		_getch();
 
+		for (channel = 0; channel < unit->channelCount; channel++)
+		{
+			unit->channelSettings[channel].enabled = TRUE;
+		}
+
 		setDefaults(unit);					// Enable Analogue channels.
 
 		/* Trigger enabled
@@ -2384,7 +2391,7 @@ void andAnalogueDigitalTriggered(UNIT * unit)
 			blockDataHandler(unit, "\nFirst 10 readings:\n", 0, MIXED);
 		}
 
-		disableAnalogue(unit);			// Disable Analogue ports when finished;
+		disableAnalogue(unit);			// Disable Analogue ports when finished
 }
 
 
@@ -2398,6 +2405,8 @@ void andAnalogueDigitalTriggered(UNIT * unit)
 ***************************************************************************/
 void orAnalogueDigitalTriggered(UNIT * unit)
 {
+	int32_t channel = 0;
+
 	int16_t	triggerVoltage = mv_to_adc(1000, unit->channelSettings[PS3000A_CHANNEL_A].range, unit);
 
 	PS3000A_TRIGGER_CHANNEL_PROPERTIES sourceDetails = {	triggerVoltage,			// thresholdUpper
@@ -2464,6 +2473,11 @@ void orAnalogueDigitalTriggered(UNIT * unit)
 
 	printf("Press a key to start...\n");
 	_getch();
+
+	for (channel = 0; channel < unit->channelCount; channel++)
+	{
+		unit->channelSettings[channel].enabled = TRUE;
+	}
 
 	setDefaults(unit); // Enable analogue channels
 
@@ -2747,7 +2761,7 @@ int32_t main(void)
 
 			case 'E':
 				
-				if(unit.ETS == FALSE)
+				if (unit.ETS == FALSE)
 				{
 					printf("This model does not support ETS\n\n");
 					break;
@@ -2758,7 +2772,7 @@ int32_t main(void)
 
 			case 'G':
 				
-				if(unit.sigGen == SIGGEN_NONE)
+				if (unit.sigGen == SIGGEN_NONE)
 				{
 					printf("This model does not have a signal generator.\n\n");
 					break;
