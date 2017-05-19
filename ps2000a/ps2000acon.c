@@ -2139,31 +2139,34 @@ void DisplaySettings(UNIT *unit)
 ***************************************************************************/
 void ANDAnalogueDigitalTriggered(UNIT * unit)
 {
+	int32_t channel = 0;
+	PICO_STATUS status = PICO_OK;
+
 	int16_t	triggerVoltage = mv_to_adc(1000, unit->channelSettings[PS2000A_CHANNEL_A].range, unit);
 
 
-	PS2000A_TRIGGER_CHANNEL_PROPERTIES sourceDetails = { triggerVoltage,			// thresholdUpper
-		256 * 10,				// thresholdUpper Hysteresis
-		triggerVoltage,			// thresholdLower
-		256 * 10,				// thresholdLower Hysteresis
-		PS2000A_CHANNEL_A,		// channel
-		PS2000A_LEVEL};			// mode
+	PS2000A_TRIGGER_CHANNEL_PROPERTIES sourceDetails = {	triggerVoltage,			// thresholdUpper
+															256 * 10,				// thresholdUpper Hysteresis
+															triggerVoltage,			// thresholdLower
+															256 * 10,				// thresholdLower Hysteresis
+															PS2000A_CHANNEL_A,		// channel
+															PS2000A_LEVEL};			// mode
 
 	PS2000A_TRIGGER_CONDITIONS conditions = {	PS2000A_CONDITION_TRUE,					// Channel A
-		PS2000A_CONDITION_DONT_CARE,			// Channel B
-		PS2000A_CONDITION_DONT_CARE,			// Channel C
-		PS2000A_CONDITION_DONT_CARE,			// Channel D
-		PS2000A_CONDITION_DONT_CARE,			// external
-		PS2000A_CONDITION_DONT_CARE,			// aux 
-		PS2000A_CONDITION_DONT_CARE,			// pwq
-		PS2000A_CONDITION_TRUE};				// digital
+												PS2000A_CONDITION_DONT_CARE,			// Channel B
+												PS2000A_CONDITION_DONT_CARE,			// Channel C
+												PS2000A_CONDITION_DONT_CARE,			// Channel D
+												PS2000A_CONDITION_DONT_CARE,			// external
+												PS2000A_CONDITION_DONT_CARE,			// aux 
+												PS2000A_CONDITION_DONT_CARE,			// pwq
+												PS2000A_CONDITION_TRUE};				// digital
 
 	TRIGGER_DIRECTIONS directions = {	PS2000A_ABOVE,				// Channel A
-		PS2000A_NONE,				// Channel B
-		PS2000A_NONE,				// Channel C
-		PS2000A_NONE,				// Channel D
-		PS2000A_NONE,				// external
-		PS2000A_NONE };				// aux
+										PS2000A_NONE,				// Channel B
+										PS2000A_NONE,				// Channel C
+										PS2000A_NONE,				// Channel D
+										PS2000A_NONE,				// external
+										PS2000A_NONE };				// aux
 
 	PS2000A_DIGITAL_CHANNEL_DIRECTIONS digDirections[2];		// Array size can be up to 16, an entry for each digital bit
 
@@ -2195,13 +2198,20 @@ void ANDAnalogueDigitalTriggered(UNIT * unit)
 	printf("Press a key to start...\n");
 	_getch();
 
-	SetDefaults(unit);					// Enable Analogue channels.
+	for (channel = 0; channel < unit->channelCount; channel++)
+	{
+		unit->channelSettings[channel].enabled = TRUE;
+	}
+
+	SetDefaults(unit);	// Enable Analogue channels.
 
 	/* Trigger enabled
 	* Rising edge
 	* Threshold = 100mV */
 
-	if (SetTrigger(unit, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0, digDirections, 2) == PICO_OK)
+	status = SetTrigger(unit, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0, digDirections, 2);
+
+	if (status == PICO_OK)
 	{
 		BlockDataHandler(unit, "\nFirst 10 readings:\n", 0, MIXED, FALSE);
 	}
@@ -2220,25 +2230,29 @@ void ANDAnalogueDigitalTriggered(UNIT * unit)
 ***************************************************************************/
 void ORAnalogueDigitalTriggered(UNIT * unit)
 {
+	int32_t channel = 0;
+
+	PICO_STATUS status = PICO_OK;
+
 	int16_t	triggerVoltage = mv_to_adc(1000, unit->channelSettings[PS2000A_CHANNEL_A].range, unit);
 
-	PS2000A_TRIGGER_CHANNEL_PROPERTIES sourceDetails = {	triggerVoltage,									// thresholdUpper
-		256 * 10,										// thresholdUpper Hysteresis
-		triggerVoltage,									// thresholdLower
-		256 * 10,										// thresholdLower Hysteresis
-		PS2000A_CHANNEL_A,								// channel
-		PS2000A_LEVEL};									// mode
+	PS2000A_TRIGGER_CHANNEL_PROPERTIES sourceDetails = {	triggerVoltage,		// thresholdUpper
+															256 * 10,			// thresholdUpper Hysteresis
+															triggerVoltage,		// thresholdLower
+															256 * 10,			// thresholdLower Hysteresis
+															PS2000A_CHANNEL_A,	// channel
+															PS2000A_LEVEL};		// mode
 
 
 	PS2000A_TRIGGER_CONDITIONS conditions[2];
 
 
 	TRIGGER_DIRECTIONS directions = {	PS2000A_RISING,			// Channel A
-		PS2000A_NONE,			// Channel B
-		PS2000A_NONE,			// Channel C
-		PS2000A_NONE,			// Channel D
-		PS2000A_NONE,			// external
-		PS2000A_NONE };			// aux
+										PS2000A_NONE,			// Channel B
+										PS2000A_NONE,			// Channel C
+										PS2000A_NONE,			// Channel D
+										PS2000A_NONE,			// external
+										PS2000A_NONE };			// aux
 
 	PS2000A_DIGITAL_CHANNEL_DIRECTIONS digDirections[2];		// Array size can be up to 16, an entry for each digital bit
 
@@ -2264,13 +2278,10 @@ void ORAnalogueDigitalTriggered(UNIT * unit)
 	conditions[1].pulseWidthQualifier	= PS2000A_CONDITION_DONT_CARE;				// pwq
 	conditions[1].digital				= PS2000A_CONDITION_TRUE;					// digital
 
-
-
 	memset(&pulseWidth, 0, sizeof(PWQ));
 
 	// Set the Digital trigger so it will trigger when bit 0 is Rising and bit 4 is HIGH
 	// All non-declared bits are taken as PS2000A_DIGITAL_DONT_CARE
-	//
 
 	digDirections[0].channel = PS2000A_DIGITAL_CHANNEL_0;
 	digDirections[0].direction = PS2000A_DIGITAL_DIRECTION_RISING;
@@ -2282,6 +2293,7 @@ void ORAnalogueDigitalTriggered(UNIT * unit)
 	printf("Collects when value rises past %d", scaleVoltages?
 		adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[PS2000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
 		: sourceDetails.thresholdUpper);																// else print ADC Count
+	
 	printf(scaleVoltages?"mV\n" : "ADC Counts\n");
 
 	printf("OR \n");
@@ -2292,13 +2304,20 @@ void ORAnalogueDigitalTriggered(UNIT * unit)
 	printf("Press a key to start...\n");
 	_getch();
 
+	for (channel = 0; channel < unit->channelCount; channel++)
+	{
+		unit->channelSettings[channel].enabled = TRUE;
+	}
+
 	SetDefaults(unit);	// Enable analogue ports
 
 	/* Trigger enabled
 	* Rising edge
 	* Threshold = 1000mV */
 
-	if (SetTrigger(unit, &sourceDetails, 1, conditions, 2, &directions, &pulseWidth, 0, 0, 0, digDirections, 2) == PICO_OK)
+	status = SetTrigger(unit, &sourceDetails, 1, conditions, 2, &directions, &pulseWidth, 0, 0, 0, digDirections, 2);
+
+	if (status == PICO_OK)
 	{
 
 		BlockDataHandler(unit, "\nFirst 10 readings:\n", 0, MIXED, FALSE);
