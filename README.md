@@ -15,7 +15,7 @@ Examples are provided as Microsoft Visual Studio Express 2015 for Windows Deskto
 #### Linux
 
 * A suitable IDE such as [Eclipse](https://www.eclipse.org/downloads/?)
-* Alternatively, ensure that the autoconf and libtools packages are installed for your operating system if building applications from the terminal.
+* Alternatively, ensure that the `autoconf` and `libtools` packages are installed for your operating system if building applications from the terminal.
 
 #### Mac OS X
 
