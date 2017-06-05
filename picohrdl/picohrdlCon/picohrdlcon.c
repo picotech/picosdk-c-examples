@@ -36,12 +36,12 @@
  *
  *		Place this file in the same folder as the files from the linux-build-files
  *		folder. In a terminal window, use the following commands to build
- *		the libpicohrdl application:
+ *		the picohrdl application:
  *
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- *  Copyright (C) 2004 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ *  Copyright © 2004-2017 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 #include <stdio.h>
@@ -305,9 +305,16 @@ void CollectBlockImmediate (void)
 	// get the times (in milli secondss)
 	// and the analog values (in ADC counts)
 	//
-	HRDLGetNumberOfEnabledChannels(g_device, &noOfActiveChannels);
+	status = HRDLGetNumberOfEnabledChannels(g_device, &noOfActiveChannels);
 	noOfActiveChannels = noOfActiveChannels + (int16_t)(g_channelSettings[HRDL_DIGITAL_CHANNELS].enabled);
-	HRDLGetTimesAndValues(g_device, g_times, g_values, &overflow, (int32_t) (BUFFER_SIZE / noOfActiveChannels));
+	status = HRDLGetTimesAndValues(g_device, g_times, g_values, &overflow, (int32_t) (BUFFER_SIZE / noOfActiveChannels));
+
+	if (status == 0)
+	{
+		HRDLGetUnitInfo(g_device, strError, (int16_t)80, HRDL_SETTINGS);
+		printf("Error occurred: %s\n\n", strError);
+		return;
+	}
 
 	//
 	// Print out the first 10 readings,
@@ -868,7 +875,7 @@ void SetAnalogChannels(void)
 
 		if (status == 1)
 		{
-			printf("%d - %dmV\n", range, (int32_t)(2500/inputRangeV[range]));    
+			printf("%d - %d mV\n", range, (int32_t)(2500/inputRangeV[range]));    
 			available = 1;
 		}
 	}
@@ -924,7 +931,7 @@ void SetAnalogChannels(void)
 	HRDLSetAnalogInChannel(g_device, (int16_t) channel, (int16_t) 1, (int16_t) g_channelSettings[channel].range, g_channelSettings[channel].singleEnded);
 
 	// Let the user know what they have set
-	printf("\nChannel %d, %dmV range, %s\n\n", channel, (int32_t)(2500 / inputRangeV[g_channelSettings[channel].range]), g_channelSettings[channel].singleEnded ? "single ended" : "differential");
+	printf("\nChannel %d, %d mV range, %s\n\n", channel, (int32_t)(2500 / inputRangeV[g_channelSettings[channel].range]), g_channelSettings[channel].singleEnded ? "single ended" : "differential");
 
 }
 /****************************************************************************
@@ -939,12 +946,13 @@ void SetDigitalChannels(void)
 	int16_t directionOut = 0;
 	int16_t pinState = 0;
 	int16_t status = 1;
+	int16_t enabledDigitalIn = 0; // Set as 0 to ensure inputs not active
 
 	printf("\n");
 
 	// Check to see if the digital channels are available on this variant
 
-	status = HRDLSetDigitalIOChannel(g_device, directionOut, pinState, 1);
+	status = HRDLSetDigitalIOChannel(g_device, directionOut, pinState, enabledDigitalIn);
 
 	if (status == 0)
 	{
@@ -967,9 +975,16 @@ void SetDigitalChannels(void)
 				pinState += 0x01 << channel;
 			}
 		}
+		else
+		{
+			// enabledDigitalIn should be set to 1 regardless of how many
+			// digital I/O pins are set to be inputs
+			enabledDigitalIn = enabledDigitalIn | 1;
+					
+		}
 	}
 	
-	HRDLSetDigitalIOChannel(g_device, directionOut, pinState, 1);
+	status = HRDLSetDigitalIOChannel(g_device, directionOut, pinState, enabledDigitalIn);
 	g_channelSettings[HRDL_DIGITAL_CHANNELS].enabled = TRUE;
 	printf("Digital channels set.\n");
 }
@@ -1133,9 +1148,9 @@ void main (void)
 									"Kernel Driver Ver.:"};
 
 	g_doSet = FALSE;
-	printf("HRDL driver example program for ADC-20/24 data loggers\n");
+	printf("PicoLog High Resolution Data Logger (picohrdl) driver example program for ADC-20/24 data loggers\n");
 	printf("Version 1.2\n");
-	printf("Copyright 2004 - 2017 Pico Technology Ltd.\n");
+	printf("Copyright (c) 2004-2017 Pico Technology Ltd.\n");
   
 	memset(g_channelSettings, 0, sizeof(g_channelSettings));
 
