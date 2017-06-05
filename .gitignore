@@ -36,6 +36,7 @@
 **/stamp-h1
 **/*.so
 **/*.dylib
+**/.deps
 
 # All platforms
 
