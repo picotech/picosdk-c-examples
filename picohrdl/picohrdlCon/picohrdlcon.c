@@ -223,7 +223,7 @@ float AdcToMv (HRDL_INPUTS channel, int32_t raw)
 /****************************************************************************
 *
 * CollectBlockImmediate
-*  this function demonstrates how to collect a single block of data
+*  This function demonstrates how to collect a single block of data
 *  from the device (start collecting immediately)
 *
 ****************************************************************************/   
@@ -370,7 +370,7 @@ void CollectBlockImmediate (void)
 
 	timeCount = 0;
 	
-	// display the first 10 readings for each active channel
+	// Display the first 10 readings for each active channel
 	for (i = 0; i < 10 * noOfActiveChannels;)
 	{	
 		printf ("%ld\t", g_times [timeCount * noOfActiveChannels]); 
@@ -399,7 +399,7 @@ void CollectBlockImmediate (void)
 /****************************************************************************
 *
 * CollectWindowedBlocks
-*  this function demonstrates how to use windowed blocks.
+*	This function demonstrates how to use windowed blocks.
 *
 * Windowing is useful If you are collecting data slowly (say 10 seconds
 * per block), but you want to analyse the data every second.
@@ -537,7 +537,7 @@ void CollectWindowedBlocks(void)
 /****************************************************************************
 *
 * CollectStreaming
-*  this function demonstrates how to use streaming.
+*	This function demonstrates how to use streaming.
 *
 * In this mode, you can collect data continuously.
 *
@@ -689,11 +689,11 @@ void CollectStreaming (void)
 /****************************************************************************
 *
 * CollectSingle using blocking Api Calls
-*  This function demonstrates how to collect analogue values one at a time.
-*  This function also demonstrates how to set and discover what digital IO 
+*	This function demonstrates how to collect analogue values one at a time.
+*	This function also demonstrates how to set and discover what digital IO 
 *	values.
 *
-* In this mode, you can collect data and manage your own timing
+*	In this mode, you can collect data and manage your own timing
 *
 *  
 *
@@ -705,7 +705,7 @@ void CollectSingleBlocked (void)
 
 	printf("\n");
 
-	// Get the analogue input mesarements
+	// Get the analogue input measurements
 	for (channel = HRDL_ANALOG_IN_CHANNEL_1; channel <= HRDL_MAX_ANALOG_CHANNELS; channel++)
 	{              
 		if (!g_channelSettings[channel].enabled)
@@ -739,8 +739,8 @@ void CollectSingleBlocked (void)
 
 /****************************************************************************
 *
-* CollectSingle using blocking Api Calls
-*  this function demonstrates how to collect analogue values one at a time.
+* CollectSingle using blocking API Calls
+*  This function demonstrates how to collect analogue values one at a time.
 *  This function also demonstrates how to set and discover what digital IO values.
 *
 * In this mode, you can collect data and manage your own timing
@@ -803,7 +803,7 @@ void CollectSingleUnblocked (void)
 /****************************************************************************
 *
 * SetAnalogChannels
-*  this function demonstrates how to detect available input range and set it.
+*  This function demonstrates how to detect available input range and set it.
 *  We will first check to see if a channel is available, then check what ranges
 *  are available and then check to see if differential mode is supported for thet
 *  channel.
@@ -1037,8 +1037,8 @@ int16_t OpenDevice(int16_t async)
 /****************************************************************************
 *
 * SelectUnit
-*  this function demonstrates how to open all available units and
-*  select the required one
+*	This function demonstrates how to open all available units and
+*	select the required one.
 *
 ****************************************************************************/
 int16_t SelectUnit(void)
@@ -1062,7 +1062,7 @@ int16_t SelectUnit(void)
 		devices[i] = OpenDevice(async);
 
 		//
-		// if the device is available give the user the option of using it
+		// If the device is available give the user the option of using it
 		//
 		if (devices[i] > 0)
 		{
@@ -1153,7 +1153,7 @@ void main (void)
 
 	g_doSet = FALSE;
 	printf("PicoLog High Resolution Data Logger (picohrdl) driver example program for ADC-20/24 data loggers\n");
-	printf("Version 1.2\n");
+	printf("Version 1.3\n");
 	printf("Copyright (c) 2004-2017 Pico Technology Ltd.\n");
   
 	memset(g_channelSettings, 0, sizeof(g_channelSettings));
