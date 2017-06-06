@@ -293,7 +293,7 @@ void CollectBlockImmediate (void)
 
 	printf("Waiting for device to complete collection.");
 
-	while(!HRDLReady(g_device))
+	while (!HRDLReady(g_device))
 	{
 		Sleep(1000);
 		printf(".");
@@ -322,7 +322,7 @@ void CollectBlockImmediate (void)
 	//  converting the readings to mV if required
 	//
 	printf("First 5 readings\n");
-	printf("Time shown is for first reading in set.\n\n");
+	printf("Time shown in each row is for first reading in set.\n\n");
 	printf("Time\t");
 	
 	for (channel = HRDL_DIGITAL_CHANNELS; channel <= HRDL_MAX_ANALOG_CHANNELS; channel++)
@@ -371,6 +371,7 @@ void CollectBlockImmediate (void)
 	timeCount = 0;
 	
 	// Display the first 10 readings for each active channel
+	// The time displayed will be for the first reading in each row
 	for (i = 0; i < 10 * noOfActiveChannels;)
 	{	
 		printf ("%ld\t", g_times [timeCount * noOfActiveChannels]); 
