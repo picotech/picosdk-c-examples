@@ -230,13 +230,14 @@ float AdcToMv (HRDL_INPUTS channel, int32_t raw)
 void CollectBlockImmediate (void)
 {
 	int32_t		i;
-	int16_t		overflow;
+	int16_t		overflow = 0;
 	int16_t		channel;
 	static		int16_t ok;
 	int8_t		strError[80];
-	int16_t		timeCount;
-	int16_t		noOfActiveChannels;
+	int16_t		timeCount = 0;
+	int16_t		noOfActiveChannels = 0;
 	int16_t		status = 1;
+	int32_t		numValuesCollectedPerChannel = 0;
 
 	printf("\nCollect block immediate...\n");
 	printf("Press a key to start\n");
@@ -307,9 +308,9 @@ void CollectBlockImmediate (void)
 	//
 	status = HRDLGetNumberOfEnabledChannels(g_device, &noOfActiveChannels);
 	noOfActiveChannels = noOfActiveChannels + (int16_t)(g_channelSettings[HRDL_DIGITAL_CHANNELS].enabled);
-	status = HRDLGetTimesAndValues(g_device, g_times, g_values, &overflow, (int32_t) (BUFFER_SIZE / noOfActiveChannels));
+	numValuesCollectedPerChannel = HRDLGetTimesAndValues(g_device, g_times, g_values, &overflow, (int32_t) (BUFFER_SIZE / noOfActiveChannels));
 
-	if (status == 0)
+	if (numValuesCollectedPerChannel == 0)
 	{
 		HRDLGetUnitInfo(g_device, strError, (int16_t)80, HRDL_SETTINGS);
 		printf("Error occurred: %s\n\n", strError);
@@ -321,6 +322,7 @@ void CollectBlockImmediate (void)
 	//  converting the readings to mV if required
 	//
 	printf("First 5 readings\n");
+	printf("Time shown is for first reading in set.\n\n");
 	printf("Time\t");
 	
 	for (channel = HRDL_DIGITAL_CHANNELS; channel <= HRDL_MAX_ANALOG_CHANNELS; channel++)
@@ -371,7 +373,7 @@ void CollectBlockImmediate (void)
 	// display the first 10 readings for each active channel
 	for (i = 0; i < 10 * noOfActiveChannels;)
 	{	
-		printf ("%ld\t", g_times [timeCount]); 
+		printf ("%ld\t", g_times [timeCount * noOfActiveChannels]); 
 		
 		for (channel = HRDL_DIGITAL_CHANNELS; channel <= HRDL_MAX_ANALOG_CHANNELS; channel++)
 		{
@@ -390,7 +392,9 @@ void CollectBlockImmediate (void)
 		}
 		printf("\n");   
 		timeCount++;
-	}                                                                           
+	}  
+
+	HRDLStop(g_device);
 }
 /****************************************************************************
 *
@@ -400,7 +404,7 @@ void CollectBlockImmediate (void)
 * Windowing is useful If you are collecting data slowly (say 10 seconds
 * per block), but you want to analyse the data every second.
 *
-* Each call to HRDLGetTimesAndValues returns the most recent 10 seconds
+* Each call to HRDLGetValues returns the most recent 10 seconds
 * of data.
 *
 ****************************************************************************/
@@ -724,10 +728,10 @@ void CollectSingleBlocked (void)
 		// If digital IO is available on this unit, check the status of the inputs    
 		if (HRDLGetSingleValue(g_device, HRDL_DIGITAL_CHANNELS, 0, 0, 0, NULL, &value))
 		{
-			printf("Digital Channel %d %d\n", 1, (value & HRDL_DIGITAL_IO_CHANNEL_1) == HRDL_DIGITAL_IO_CHANNEL_1);
-			printf("Digital Channel %d %d\n", 2, (value & HRDL_DIGITAL_IO_CHANNEL_2) == HRDL_DIGITAL_IO_CHANNEL_2);
-			printf("Digital Channel %d %d\n", 3, (value & HRDL_DIGITAL_IO_CHANNEL_3) == HRDL_DIGITAL_IO_CHANNEL_3);
-			printf("Digital Channel %d %d\n", 4, (value & HRDL_DIGITAL_IO_CHANNEL_4) == HRDL_DIGITAL_IO_CHANNEL_4);
+			printf("Digital Channel %d: %d\n", 1, (value & HRDL_DIGITAL_IO_CHANNEL_1) == HRDL_DIGITAL_IO_CHANNEL_1);
+			printf("Digital Channel %d: %d\n", 2, (value & HRDL_DIGITAL_IO_CHANNEL_2) == HRDL_DIGITAL_IO_CHANNEL_2);
+			printf("Digital Channel %d: %d\n", 3, (value & HRDL_DIGITAL_IO_CHANNEL_3) == HRDL_DIGITAL_IO_CHANNEL_3);
+			printf("Digital Channel %d: %d\n", 4, (value & HRDL_DIGITAL_IO_CHANNEL_4) == HRDL_DIGITAL_IO_CHANNEL_4);
 		}
 	}
     
@@ -787,10 +791,10 @@ void CollectSingleUnblocked (void)
 		// If digital IO is available on this unit, check the status of the inputs    
 		if (HRDLGetSingleValue(g_device, HRDL_DIGITAL_CHANNELS, 0, 0, 0, NULL, &value))
 		{
-			printf("Digital Channel %d %d\n", 1, (value & HRDL_DIGITAL_IO_CHANNEL_1) == HRDL_DIGITAL_IO_CHANNEL_1);
-			printf("Digital Channel %d %d\n", 2, (value & HRDL_DIGITAL_IO_CHANNEL_2) == HRDL_DIGITAL_IO_CHANNEL_2);
-			printf("Digital Channel %d %d\n", 3, (value & HRDL_DIGITAL_IO_CHANNEL_3) == HRDL_DIGITAL_IO_CHANNEL_3);
-			printf("Digital Channel %d %d\n", 4, (value & HRDL_DIGITAL_IO_CHANNEL_4) == HRDL_DIGITAL_IO_CHANNEL_4);
+			printf("Digital Channel %d: %d\n", 1, (value & HRDL_DIGITAL_IO_CHANNEL_1) == HRDL_DIGITAL_IO_CHANNEL_1);
+			printf("Digital Channel %d: %d\n", 2, (value & HRDL_DIGITAL_IO_CHANNEL_2) == HRDL_DIGITAL_IO_CHANNEL_2);
+			printf("Digital Channel %d: %d\n", 3, (value & HRDL_DIGITAL_IO_CHANNEL_3) == HRDL_DIGITAL_IO_CHANNEL_3);
+			printf("Digital Channel %d: %d\n", 4, (value & HRDL_DIGITAL_IO_CHANNEL_4) == HRDL_DIGITAL_IO_CHANNEL_4);
 		}
 	}
     
