@@ -1658,7 +1658,7 @@ void get_info (void)
 				unitOpened.model = MODEL_PS2203;
 				unitOpened.firstRange = PS2000_50MV;
 				unitOpened.lastRange = PS2000_20V;
-				unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
+				unitOpened.maxTimebase = PS2200_MAX_TIMEBASE;
 				unitOpened.timebases = unitOpened.maxTimebase;
 				unitOpened.noOfChannels = 2; 
 				unitOpened.hasAdvancedTriggering = FALSE;
@@ -1671,7 +1671,7 @@ void get_info (void)
 				unitOpened.model = MODEL_PS2204;
 				unitOpened.firstRange = PS2000_50MV;
 				unitOpened.lastRange = PS2000_20V;
-				unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
+				unitOpened.maxTimebase = PS2200_MAX_TIMEBASE;
 				unitOpened.timebases = unitOpened.maxTimebase;
 				unitOpened.noOfChannels = 2;
 				unitOpened.hasAdvancedTriggering = TRUE;
@@ -1684,7 +1684,7 @@ void get_info (void)
 					unitOpened.model = MODEL_PS2204A;
 					unitOpened.firstRange = PS2000_50MV;
 					unitOpened.lastRange = PS2000_20V;
-					unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
+					unitOpened.maxTimebase = PS2200_MAX_TIMEBASE;
 					unitOpened.timebases = unitOpened.maxTimebase;
 					unitOpened.noOfChannels = DUAL_SCOPE;
 					unitOpened.hasAdvancedTriggering = TRUE;
@@ -1698,7 +1698,7 @@ void get_info (void)
 				unitOpened.model = MODEL_PS2205;
 				unitOpened.firstRange = PS2000_50MV;
 				unitOpened.lastRange = PS2000_20V;
-				unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
+				unitOpened.maxTimebase = PS2200_MAX_TIMEBASE;
 				unitOpened.timebases = unitOpened.maxTimebase;
 				unitOpened.noOfChannels = 2; 
 				unitOpened.hasAdvancedTriggering = TRUE;
@@ -1711,7 +1711,7 @@ void get_info (void)
 				unitOpened.model = MODEL_PS2205A;
 				unitOpened.firstRange = PS2000_50MV;
 				unitOpened.lastRange = PS2000_20V;
-				unitOpened.maxTimebase = PS2000_MAX_TIMEBASE;
+				unitOpened.maxTimebase = PS2200_MAX_TIMEBASE;
 				unitOpened.timebases = unitOpened.maxTimebase;
 				unitOpened.noOfChannels = DUAL_SCOPE; 
 				unitOpened.hasAdvancedTriggering = TRUE;
@@ -1851,23 +1851,24 @@ void set_sig_gen_arb (void)
  ****************************************************************************/
 void set_timebase (void)
 {
-	int16_t	i;
-	int32_t   time_interval;
-	int16_t  time_units;
-	int16_t 	oversample;
-	int32_t   max_samples;
+	int16_t		i;
+	int32_t		time_interval = 0;
+	int16_t		time_units;
+	int16_t		oversample;
+	int32_t		max_samples;
+	int16_t		status;
 
 	printf ( "Specify timebase\n" );
 
 	/* See what ranges are available...
 	*/
 	oversample = 1;
-	for (i = 0; i < unitOpened.timebases; i++)
+	for (i = 0; i <= unitOpened.timebases; i++)
 	{
-		ps2000_get_timebase ( unitOpened.handle, i, BUFFER_SIZE, &time_interval, &time_units, oversample, &max_samples );
+		status = ps2000_get_timebase ( unitOpened.handle, i, BUFFER_SIZE, &time_interval, &time_units, oversample, &max_samples );
 		
 		// Time units returned are to be used with the ps2000_get_times_and_values function if required
-		if ( time_interval > 0 )
+		if ( status == 1 && time_interval > 0 )
 		{
 			printf ( "%d -> %d %s Time units: %hd (%s)\n", i, time_interval, "ns", time_units, adc_units(time_units) );
 		}
@@ -1880,9 +1881,12 @@ void set_timebase (void)
 	{
 		fflush( stdin );
 		scanf_s ( "%d", &timebase );
-	} while ( (timebase < 0) || (timebase >= unitOpened.timebases) );
-	ps2000_get_timebase ( unitOpened.handle, timebase, BUFFER_SIZE, &time_interval, &time_units, oversample, &max_samples );
-	printf ( "Timebase %d - %ld ns\n", timebase, time_interval );
+	} while ( (timebase < 0) || (timebase > unitOpened.timebases) );
+	
+	status = ps2000_get_timebase ( unitOpened.handle, timebase, BUFFER_SIZE, &time_interval, &time_units, oversample, &max_samples );
+
+	printf("Timebase %d - %ld ns\n", timebase, time_interval);
+	
 }
 
 /****************************************************************************
@@ -1934,8 +1938,8 @@ void main (void)
 {
 	int8_t	ch;
 
-	printf ( "PS2000 driver example program\n" );
-	printf ( "Version 1.2\n\n" );
+	printf ( "PicoScope 2000 Series (ps2000) Driver Example Program\n" );
+	printf ( "Version 1.3\n\n" );
 
 	printf ( "\n\nOpening the device...\n");
 
