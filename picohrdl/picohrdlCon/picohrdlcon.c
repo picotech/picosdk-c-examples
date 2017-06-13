@@ -260,8 +260,8 @@ void CollectBlockImmediate (void)
 	}
 
 	//
-	// Collect data at one hundred milli second intervals. The enabled channels will be
-	// converted at 60ms intervals. This means that the channels will be 
+	// Collect data at one hundred millisecond intervals. The enabled channels will be
+	// converted at 60 ms intervals. This means that the channels will be 
 	// converted at closer intervals to each other but a penalty will be 
 	// paid in terms of noise free resolution.
 	//
@@ -303,7 +303,7 @@ void CollectBlockImmediate (void)
 
 	//
 	// Should be done now...
-	// get the times (in milli secondss)
+	// get the times (in milliseconds)
 	// and the analog values (in ADC counts)
 	//
 	status = HRDLGetNumberOfEnabledChannels(g_device, &noOfActiveChannels);
