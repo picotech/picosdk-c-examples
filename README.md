@@ -1,6 +1,6 @@
 # picosdk-c-examples
 
-picosdk-c-examples is a set of C/C++ examples for PicoScope oscilloscopes and PicoLog data loggers.
+*picosdk-c-examples* is a set of C/C++ examples for PicoScope oscilloscopes and PicoLog data loggers.
 
 Examples are provided as Microsoft Visual Studio Express 2015 for Windows Desktop solutions and are grouped by driver name. Each driver folder has a `linux-build-files` sub-folder for building applications on Linux and Mac OS X platforms from a terminal window.
 
@@ -51,7 +51,7 @@ You can download Programmer's Guides providing a description of the API function
 
 #### Linux and Mac OS X
 
-* Copy the required source code C file (e.g. ps3000a) into the corresponding linux-build-files sub-folder for the driver or copy the files to another folder 
+* Copy the required source code C file (e.g. ps3000acon.c) into the corresponding `linux-build-files` sub-folder for the driver or copy the files to another folder 
 * Open a terminal window
 * Run the following commands:
   * `./autogen.sh`
