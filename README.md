@@ -25,7 +25,7 @@ Examples are provided as Microsoft Visual Studio Express 2015 for Windows Deskto
 
 Drivers are available for the following platforms. Refer to the subsections below for further information.
 
-#### Windows
+#### Microsoft Windows
 
 * Download the PicoSDK (32-bit or 64-bit) driver package installer from our [Downloads page](https://www.picotech.com/downloads).
 
@@ -40,6 +40,22 @@ Drivers are available for the following platforms. Refer to the subsections belo
 ### Programmer's Guides
 
 You can download Programmer's Guides providing a description of the API functions for the relevant PicoScope or PicoLog driver from our [Documentation page](https://www.picotech.com/library/documentation).
+
+### Building example applications
+
+#### Microsoft Windows
+
+* Open the solution .sln file for the required driver in Visual Studio
+* Select the required configuration and solution platform
+* Build the solution
+
+#### Linux and Mac OS X
+
+* Copy the required source code C file (e.g. ps3000a) into the corresponding linux-build-files sub-folder for the driver or copy the files to another folder 
+* Open a terminal window
+* Run the following commands:
+  * `./autogen.sh`
+  * `make`
 
 ## Obtaining support
 
