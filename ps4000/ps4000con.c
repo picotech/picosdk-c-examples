@@ -280,18 +280,6 @@ void PREF4 CallBackStreaming
 		bufferInfo = (BUFFER_INFO *) pParameter;
 	}
 
-	// Used for streaming
-	g_sampleCount = noOfSamples;
-	g_startIndex = startIndex;
-	g_autoStop = autoStop;
-
-	// Flag to say done reading data
-	g_ready = TRUE;
-
-	// Flags to show if & where a trigger has occurred
-	g_trig = triggered;
-	g_trigAt = triggerAt;
-
 	// Copy data in callback
 	if (bufferInfo != NULL && noOfSamples)
 	{
@@ -319,6 +307,18 @@ void PREF4 CallBackStreaming
 			}
 		}
 	}
+
+	// Used for streaming
+	g_sampleCount = noOfSamples;
+	g_startIndex = startIndex;
+	g_autoStop = autoStop;
+
+	// Flags to show if & where a trigger has occurred
+	g_trig = triggered;
+	g_trigAt = triggerAt;
+
+	// Flag to say done reading data
+	g_ready = TRUE;
 
 }
 
@@ -1822,7 +1822,7 @@ int32_t main(void)
 	struct tPwq pulseWidth;
 	struct tTriggerDirections directions;
 
-	printf("PicoScope 4000 Series Driver Example Program\n");
+	printf("PicoScope 4000 Series (ps4000) Driver Example Program\n");
 	printf("\n\nOpening the device...\n");
 
 	status = ps4000OpenUnit(&(unit.handle));
