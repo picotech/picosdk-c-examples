@@ -1546,7 +1546,7 @@ void set_info(UNIT * unit)
 
 	int16_t i = 0;
 	int16_t requiredSize = 0;
-	int8_t line [10];
+	int8_t line [80];
 	int32_t variant;
 	PICO_STATUS status = PICO_OK;
 
