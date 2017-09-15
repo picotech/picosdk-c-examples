@@ -198,11 +198,21 @@ typedef struct
 	uint16_t					AWGFileSize;
 	CHANNEL_SETTINGS			channelSettings [PS4000A_MAX_CHANNELS];
 	uint16_t					hasFlexibleResolution;
+	uint16_t					hasIntelligentProbes;
 	PS4000A_DEVICE_RESOLUTION	resolution;
 }UNIT;
 
-uint32_t timebase = 8;
-BOOL      scaleVoltages = TRUE;
+// Struct to store intelligent probe information
+typedef struct tUserProbeInfo
+{
+	PICO_STATUS status;
+	PS4000A_USER_PROBE_INTERACTIONS userProbeInteractions[PS4000A_MAX_4_CHANNELS];
+	uint32_t numberOfProbes;
+
+}USER_PROBE_INFO;
+
+uint32_t	timebase = 8;
+BOOL		scaleVoltages = TRUE;
 
 uint16_t inputRanges [PS4000A_MAX_RANGES] = {
 	10,
@@ -226,6 +236,9 @@ int32_t      	g_sampleCount;
 uint32_t		g_startIndex;
 int16_t			g_trig = 0;
 uint32_t		g_trigAt = 0;
+int16_t			g_probeStateChanged = 0;
+
+USER_PROBE_INFO userProbeInfo;
 
 int8_t BlockFile[20]  = "block.txt";
 int8_t StreamFile[20] = "stream.txt";
@@ -314,7 +327,51 @@ void PREF4 CallBackBlock( int16_t handle, PICO_STATUS status, void * pParameter)
 	}
 }
 
+/****************************************************************************
+* Probe Interaction Callback
+*
+* See ps4000aProbeInteractions (callback)
+*
+****************************************************************************/
+void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status, PS4000A_USER_PROBE_INTERACTIONS * probes, uint32_t	nProbes)
+{
+	uint32_t i = 0;
 
+	userProbeInfo.status = status;
+	userProbeInfo.numberOfProbes = nProbes;
+
+	for (i = 0; i < nProbes; ++i)
+	{
+		userProbeInfo.userProbeInteractions[i].connected = probes[i].connected;
+
+		userProbeInfo.userProbeInteractions[i].channel = probes[i].channel;
+		userProbeInfo.userProbeInteractions[i].enabled = probes[i].enabled;
+
+		userProbeInfo.userProbeInteractions[i].probeName = probes[i].probeName;
+
+		userProbeInfo.userProbeInteractions[i].requiresPower_ = probes[i].requiresPower_;
+		userProbeInfo.userProbeInteractions[i].isPowered_ = probes[i].isPowered_;
+
+		userProbeInfo.userProbeInteractions[i].status_ = probes[i].status_;
+
+		userProbeInfo.userProbeInteractions[i].probeOff = probes[i].probeOff;
+
+		userProbeInfo.userProbeInteractions[i].rangeFirst_ = probes[i].rangeFirst_;
+		userProbeInfo.userProbeInteractions[i].rangeLast_ = probes[i].rangeLast_;
+		userProbeInfo.userProbeInteractions[i].rangeCurrent_ = probes[i].rangeLast_;
+
+		userProbeInfo.userProbeInteractions[i].couplingFirst_ = probes[i].couplingFirst_;
+		userProbeInfo.userProbeInteractions[i].couplingLast_ = probes[i].couplingLast_;
+		userProbeInfo.userProbeInteractions[i].couplingCurrent_ = probes[i].couplingCurrent_;
+
+		userProbeInfo.userProbeInteractions[i].filterFlags_ = probes[i].filterFlags_;
+		userProbeInfo.userProbeInteractions[i].filterCurrent_ = probes[i].filterCurrent_;
+		userProbeInfo.userProbeInteractions[i].defaultFilter_ = probes[i].defaultFilter_;
+	}
+
+	g_probeStateChanged = 1;
+
+}
 
 
 /****************************************************************************
@@ -1291,6 +1348,7 @@ void set_info(UNIT * unit)
 				unit->hasETS				= FALSE;
 				unit->AWGFileSize			= maxArbitraryWaveformBufferSize;
 				unit->hasFlexibleResolution = FALSE;
+				unit->hasIntelligentProbes	= FALSE;				
 				break;
 
 			case MODEL_PS4225:
@@ -1302,6 +1360,7 @@ void set_info(UNIT * unit)
 				unit->hasETS				= FALSE;
 				unit->AWGFileSize			= 0;
 				unit->hasFlexibleResolution = FALSE;
+				unit->hasIntelligentProbes	= FALSE;
 				break;
 
 			case MODEL_PS4425:
@@ -1313,6 +1372,7 @@ void set_info(UNIT * unit)
 				unit->hasETS				= FALSE;
 				unit->AWGFileSize			= 0;
 				unit->hasFlexibleResolution = FALSE;
+				unit->hasIntelligentProbes  = FALSE;
 				break;
 
 			case MODEL_PS4444:
@@ -1324,6 +1384,7 @@ void set_info(UNIT * unit)
 				unit->hasETS				= FALSE;
 				unit->AWGFileSize			= 0;
 				unit->hasFlexibleResolution = TRUE;
+				unit->hasIntelligentProbes  = TRUE;
 				break;
 
 			default:
@@ -1892,6 +1953,7 @@ PICO_STATUS HandleDevice(UNIT * unit)
 	struct tPwq pulseWidth;
 	struct tPS4000ADirection directions;
 	PICO_STATUS currentPowerStatus;
+	PICO_STATUS status;
 
 	if (unit->openStatus == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || unit->openStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
 	{
@@ -1926,6 +1988,16 @@ PICO_STATUS HandleDevice(UNIT * unit)
 	if (unit->model == MODEL_NONE)
 	{
 		set_info(unit);
+	}
+
+	// Register probe interaction callback 
+	if (unit->hasIntelligentProbes)
+	{
+		status = ps4000aSetProbeInteractionCallback(unit->handle, CallBackProbeInteractions);
+
+		// Wait for information to populate (callback will be called twice initially)
+		Sleep(2000);
+
 	}
 
 	timebase = 1;
