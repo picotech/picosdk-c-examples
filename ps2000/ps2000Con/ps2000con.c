@@ -646,34 +646,34 @@ void collect_block_immediate (void)
  ****************************************************************************/
 
 void collect_block_triggered (void)
-  {
-  int32_t	i;
-  int32_t	trigger_sample;
-  int32_t 	time_interval;
-  int16_t 	time_units;
-  int16_t 	oversample;
-  int32_t 	no_of_samples = BUFFER_SIZE;
-  FILE *	fp;
-  int16_t 	auto_trigger_ms = 0;
-  int32_t 	time_indisposed_ms;
-  int16_t 	overflow;
-  int32_t 	threshold_mv = 1500;
-  int32_t 	max_samples;
-	int16_t ch;
+{
+	int32_t		i;
+	int32_t		trigger_sample;
+	int32_t 	time_interval;
+	int16_t 	time_units;
+	int16_t 	oversample;
+	int32_t 	no_of_samples = BUFFER_SIZE;
+	FILE *		fp;
+	int16_t 	auto_trigger_ms = 0;
+	int32_t 	time_indisposed_ms;
+	int16_t 	overflow;
+	int32_t 	threshold_mv = 1500;
+	int32_t 	max_samples;
+	int16_t		ch;
 
-  printf ( "Collect block triggered...\n" );
-  printf ( "Collects when value rises past %dmV\n", threshold_mv );
-  printf ( "Press a key to start...\n" );
-  _getch ();
+	printf ( "Collect block triggered...\n" );
+	printf ( "Collects when value rises past %dmV\n", threshold_mv );
+	printf ( "Press a key to start...\n" );
+	_getch ();
 
-  set_defaults ();
+	set_defaults ();
 
-  /* Trigger enabled
+	/* Trigger enabled
 	 * ChannelA - to trigger unsing this channel it needs to be enabled using ps2000_set_channel()
-   * Rising edge
-   * Threshold = 100mV
-   * 10% pre-trigger  (negative is pre-, positive is post-)
-   */
+	* Rising edge
+	* Threshold = 100mV
+	* 10% pre-trigger  (negative is pre-, positive is post-)
+	*/
 	unitOpened.trigger.simple.channel = PS2000_CHANNEL_A;
 	unitOpened.trigger.simple.direction = (int16_t) PS2000_RISING;
 	unitOpened.trigger.simple.threshold = 100.f;
@@ -687,7 +687,7 @@ void collect_block_triggered (void)
 							auto_trigger_ms );
 
 
-	/*  find the maximum number of samples, the time interval (in time_units),
+	/*  Find the maximum number of samples, the time interval (in time_units),
 	*		 the most suitable time units, and the maximum oversample at the current timebase
 	*/
 	oversample = 1;
@@ -724,56 +724,59 @@ void collect_block_triggered (void)
 	{
 		ps2000_stop ( unitOpened.handle );
 
-	/* Get the times (in units specified by time_units)
+		/* Get the times (in units specified by time_units)
 		*  and the values (in ADC counts)
 		*/
-	ps2000_get_times_and_values ( unitOpened.handle,
-										times,
-										unitOpened.channelSettings[PS2000_CHANNEL_A].values,
-										unitOpened.channelSettings[PS2000_CHANNEL_B].values,
-										NULL,
-										NULL,
-										&overflow, time_units, BUFFER_SIZE );
+		ps2000_get_times_and_values ( unitOpened.handle,
+											times,
+											unitOpened.channelSettings[PS2000_CHANNEL_A].values,
+											unitOpened.channelSettings[PS2000_CHANNEL_B].values,
+											NULL,
+											NULL,
+											&overflow, time_units, BUFFER_SIZE );
 
-	/* Print out the first 10 readings,
-		*  converting the readings to mV if required
-		*/
-	printf ("Ten readings around trigger\n");
-	printf ("Time\tValue\n");
-	printf ("(ns)\t(%s)\n", adc_units (time_units));
+		/* Print out the first 10 readings,
+			*  converting the readings to mV if required
+			*/
+		printf ("Ten readings around trigger\n");
+		printf ("Time\tValue\n");
+		printf ("(ns)\t(%s)\n", adc_units (time_units));
 
-	/* This calculation is correct for 10% pre-trigger
-		*/
-	trigger_sample = BUFFER_SIZE / 10;
+		/* This calculation is correct for 10% pre-trigger*/
+		trigger_sample = BUFFER_SIZE / 10;
 
-    for (i = trigger_sample - 5; i < trigger_sample + 5; i++)
-    {
+		for (i = trigger_sample - 5; i < trigger_sample + 5; i++)
+		{
 			for (ch = 0; ch < unitOpened.noOfChannels; ch++)
 			{
-				if(unitOpened.channelSettings[ch].enabled)
+				if (unitOpened.channelSettings[ch].enabled)
 				{
 					printf ( "%d\t", adc_to_mv ( unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
 				}
 			}
 			printf("\n");
-    }
+		}
  
-    fopen_s (&fp, "data.txt","w" );
+		fopen_s (&fp, "data.txt","w" );
     
-	for ( i = 0; i < BUFFER_SIZE; i++ )
-    {
-		  fprintf ( fp,"%ld ", times[i]);
+		for ( i = 0; i < BUFFER_SIZE; i++ )
+		{
+			fprintf ( fp,"%ld ", times[i]);
+
 			for (ch = 0; ch < unitOpened.noOfChannels; ch++)
 			{
 				if(unitOpened.channelSettings[ch].enabled)
 				{
 					fprintf ( fp, ", %d, %d", unitOpened.channelSettings[ch].values[i],
-								adc_to_mv ( unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
+									adc_to_mv ( unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
 				}
 			}
-		  fprintf(fp, "\n");
-	  }
-    fclose(fp);
+		
+			fprintf(fp, "\n");
+		}
+
+		fclose(fp);
+
 	}
 }
 
