@@ -806,7 +806,7 @@ void collect_block_advanced_triggered ()
 	set_trigger_advanced ();
 
 
-	/*  find the maximum number of samples, the time interval (in time_units),
+	/*  Find the maximum number of samples, the time interval (in time_units),
 	*		 the most suitable time units, and the maximum oversample at the current timebase
 	*/
 
@@ -844,56 +844,60 @@ void collect_block_advanced_triggered ()
 	{
 		ps2000_stop ( unitOpened.handle );
 
-    /* Get the times (in units specified by time_units)
-     *  and the values (in ADC counts)
-     */
-    ps2000_get_times_and_values ( unitOpened.handle,
-			                            times,
-										unitOpened.channelSettings[PS2000_CHANNEL_A].values,
-										unitOpened.channelSettings[PS2000_CHANNEL_B].values,
-										NULL,
-										NULL,
-										&overflow, time_units, BUFFER_SIZE );
+		/* Get the times (in units specified by time_units)
+		 *  and the values (in ADC counts)
+		 */
+		ps2000_get_times_and_values ( unitOpened.handle,
+											times,
+											unitOpened.channelSettings[PS2000_CHANNEL_A].values,
+											unitOpened.channelSettings[PS2000_CHANNEL_B].values,
+											NULL,
+											NULL,
+											&overflow, time_units, BUFFER_SIZE );
 
-    /* Print out the first 10 readings,
-     *  converting the readings to mV if required
-     */
-    printf ("Ten readings around trigger\n");
-    printf ("Time\tValue\n");
-    printf ("(ns)\t(%s)\n", adc_units (time_units));
+		/* Print out the first 10 readings,
+		 *  converting the readings to mV if required
+		 */
+		printf ("Ten readings around trigger\n");
+		printf ("Time\tValue\n");
+		printf ("(ns)\t(%s)\n", adc_units (time_units));
 
-    /* This calculation is correct for 10% pre-trigger
-     */
-    trigger_sample = BUFFER_SIZE / 10;
+		/* This calculation is correct for 10% pre-trigger
+		 */
+		trigger_sample = BUFFER_SIZE / 10;
 
-    for (i = trigger_sample - 5; i < trigger_sample + 5; i++)
-    {
-			for (ch = 0; ch < unitOpened.noOfChannels; ch++)
-			{
-				if(unitOpened.channelSettings[ch].enabled)
+		for (i = trigger_sample - 5; i < trigger_sample + 5; i++)
+		{
+				for (ch = 0; ch < unitOpened.noOfChannels; ch++)
 				{
-					printf ( "%d\t", adc_to_mv ( unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
+					if(unitOpened.channelSettings[ch].enabled)
+					{
+						printf ( "%d\t", adc_to_mv ( unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
+					}
 				}
-			}
-			printf("\n");
-    }
+				printf("\n");
+		}
  
-    fopen_s (&fp, "data.txt","w" );
+		fopen_s (&fp, "data.txt","w" );
 
-    for ( i = 0; i < BUFFER_SIZE; i++ )
-    {
-		  fprintf ( fp,"%ld ", times[i]);
+		for ( i = 0; i < BUFFER_SIZE; i++ )
+		{
+			fprintf ( fp,"%ld ", times[i]);
+				
 			for (ch = 0; ch < unitOpened.noOfChannels; ch++)
 			{
-				if(unitOpened.channelSettings[ch].enabled)
+				if (unitOpened.channelSettings[ch].enabled)
 				{
 					fprintf ( fp, ", %d, %d", unitOpened.channelSettings[ch].values[i],
-																		adc_to_mv ( unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
+								adc_to_mv ( unitOpened.channelSettings[ch].values[i], 
+									unitOpened.channelSettings[ch].range) );
 				}
 			}
-		  fprintf(fp, "\n");
-	  }
-    fclose(fp);
+			
+			fprintf(fp, "\n");
+		}
+
+		fclose(fp);
 	}
 }
 
@@ -1016,9 +1020,11 @@ void collect_block_ets (void)
 			{
 				if (unitOpened.channelSettings[ch].enabled)
 				{
-					fprintf ( fp, "%d, %d", times[i], unitOpened.channelSettings[ch].values[i], adc_to_mv (unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
+					fprintf ( fp, "%d, %d", times[i], unitOpened.channelSettings[ch].values[i], 
+						adc_to_mv (unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
 				}
 			}
+
 			fprintf (fp, "\n");
 		}
 		fclose( fp );
