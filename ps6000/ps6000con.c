@@ -46,12 +46,12 @@
  *
  *		Place this file in the same folder as the files from the linux-build-files
  *		folder. In a terminal window, use the following commands to build
- *		the ps5000acon application:
+ *		the ps6000con application:
  *
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- * Copyright (C) 2009 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2009-2017 Pico Technology Ltd. See LICENSE file for terms.
  *
  **************************************************************************/
 
