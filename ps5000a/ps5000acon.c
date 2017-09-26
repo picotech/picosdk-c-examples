@@ -1266,6 +1266,7 @@ void collectRapidBlock(UNIT * unit)
 {
 	uint32_t	nCaptures;
 	uint32_t	nSegments;
+	uint32_t	maxSegments;
 	int32_t		nMaxSamples;
 	uint32_t	nSamples = 1000;
 	int32_t		timeIndisposed;
@@ -1350,8 +1351,16 @@ void collectRapidBlock(UNIT * unit)
 	// Trigger enabled
 	setTrigger(unit, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0);
 
+	// Find the maximum number of segments
+	status = ps5000aGetMaxSegments(unit->handle, &maxSegments);
+
 	// Set the number of segments - this can be more than the number of waveforms to collect
 	nSegments = 64;
+
+	if (nSegments > maxSegments)
+	{
+		nSegments = maxSegments;
+	}
 
 	// Set the number of captures
 	nCaptures = 10;
