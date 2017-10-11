@@ -2642,7 +2642,7 @@ int32_t main(void)
 	PICO_STATUS status = PICO_OK;
 	UNIT allUnits[MAX_PICO_DEVICES];
 
-	printf("PicoScope 5000 Series (A API) Driver Example Program\n");
+	printf("PicoScope 5000 Series (ps5000a) Driver Example Program\n");
 	printf("\nEnumerating Units...\n");
 
 	do
