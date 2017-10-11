@@ -2587,12 +2587,6 @@ void mainMenu(UNIT *unit)
 				break;
 
 			case 'E':
-			
-				if(unit->hasHardwareETS == FALSE)
-				{
-					printf("This model does not support hasHardwareETS\n\n");
-					break;
-				}
 
 				collectBlockEts(unit);
 				break;
