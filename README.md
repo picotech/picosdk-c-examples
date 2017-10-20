@@ -1,6 +1,6 @@
 # picosdk-c-examples
 
-*picosdk-c-examples* is a set of C/C++ examples for PicoScope oscilloscopes and PicoLog data loggers.
+*picosdk-c-examples* is a set of C/C++ examples for PicoScope<sup>®</sup> oscilloscopes and PicoLog<sup>®</sup> data loggers.
 
 Examples are provided as Microsoft Visual Studio Express 2015 for Windows Desktop solutions and are grouped by driver name. Each driver folder has a `linux-build-files` sub-folder for building applications on Linux and Mac OS X platforms from a terminal window.
 
