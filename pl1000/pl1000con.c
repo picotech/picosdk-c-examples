@@ -306,7 +306,7 @@ void collect_block_triggered (void)
 	int16_t		channels [] = {1};
 	uint32_t	nSamples = MAX_BLOCK_SIZE; // Should be equal to nChannels * nSamplesPerChannel
 	int16_t		nChannels = 1;
-	uint32_t	nSamplesPerChannel = MAX_BLOCK_SIZE;
+	uint32_t	nSamplesPerChannel = nSamples / nChannels;
 	uint32_t	nSamplesCollected;
 	uint16_t *  samples = (uint16_t *) calloc(nSamples, sizeof(uint16_t));
 	uint32_t	usForBlock = 81920;
@@ -529,7 +529,7 @@ void collect_streaming (void)
 		totalSamplesCollected = totalSamplesCollected + nSamplesCollected;
 		printf("Collected %d values per channel, total: %d\n", nSamplesCollected, totalSamplesCollected);
 
-		if(nLines == 20)
+		if (nLines == 20)
 		{
 			printf("Press any key to stop\n");
 			nLines = 0;
