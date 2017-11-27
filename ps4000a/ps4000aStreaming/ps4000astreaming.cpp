@@ -278,9 +278,12 @@ PICO_STATUS OpenDevice(UNIT *unit)
 		return status;
 	}
 
-	// Check status code returned for 
+	// Check status code returned for power status codes
 	switch (status)
 	{
+		case PICO_OK: // No need to change power source
+
+			break;
 
 		case PICO_POWER_SUPPLY_NOT_CONNECTED:
 
@@ -764,7 +767,7 @@ int main(void)
 	int8_t ch = '.';
 	UNIT unit;
 
-	printf("PicoScope 4000 Series (A API) Driver Streaming Data Collection Example Program\n\n");
+	printf("PicoScope 4000 Series (ps4000a) Driver Streaming Data Collection Example Program\n\n");
 
 	status = OpenDevice(&unit);
 	
