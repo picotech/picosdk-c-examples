@@ -139,12 +139,15 @@ return (fp>0)?0:-1;
 #define FALSE		0
 
 #define MAX_BLOCK_SIZE 8192
+#define PL1000_12_CHANNEL 12
+#define PL1000_16_CHANNEL 16
 
 int32_t		scale_to_mv = TRUE;
 uint16_t	max_adc_value;
 int16_t		g_handle;
 int16_t		isReady;
 int16_t		d0State, d1State, d2State, d3State = 0;
+uint16_t  numDeviceChannels;
 PICO_STATUS status;
 
 /****************************************************************************
@@ -210,9 +213,9 @@ void printChannelsHeader(FILE * fp, int16_t * channels, int16_t numChannels)
  ****************************************************************************/
 void collect_block_immediate (void)
 {
-	uint32_t	i;
-	uint16_t	j;
-	int16_t		channels [] = {1, 2};
+	uint32_t	i = 0;
+	uint16_t	j = 0;
+	int16_t		channels [] = {(int16_t) PL1000_CHANNEL_1, (int16_t) PL1000_CHANNEL_2 };
 	uint32_t	nSamples = 1000; // Should be equal to nChannels * nSamplesPerChannel
 	int16_t		nChannels = 2;
 	uint32_t	nSamplesPerChannel = 500;
@@ -251,7 +254,7 @@ void collect_block_immediate (void)
 	}
 	
 	// Run
-	status = pl1000Run(g_handle, nSamples, BM_SINGLE);
+	status = pl1000Run(g_handle, nSamplesPerChannel, BM_SINGLE);
 
 	// Wait until unit is ready
 	isReady = 0; 
@@ -273,19 +276,17 @@ void collect_block_immediate (void)
 		printf ("%d\n", adc_to_mv(samples[i]));
 	}
 		
-	for (i = 0; i < nSamplesCollected * nChannels; i = i + nChannels)
+	for (i = 0; i < nSamplesCollected; i++)
 	{
-		for(j = 0; j < nChannels; j = j + 1)
+		for (j = 0; j < nChannels; j++)
 		{
-			fprintf (fp, "%5d\t", adc_to_mv(samples[i + j]));
+			fprintf (fp, "%d\t", adc_to_mv(samples[(i * nChannels) + j]));
 		}
 
 		fprintf(fp, "\n");
 	}
 		
-
 	printf("\n");
-
 
 	fclose(fp);
 	status = pl1000Stop(g_handle);
@@ -302,14 +303,15 @@ void collect_block_immediate (void)
  ****************************************************************************/
 void collect_block_triggered (void)
 {
-	uint32_t	i;
-	int16_t		channels [] = {1};
-	uint32_t	nSamples = MAX_BLOCK_SIZE; // Should be equal to nChannels * nSamplesPerChannel
+  uint32_t	i = 0;
+  uint32_t  j = 0;
+	int16_t		channels [] = {(int16_t) PL1000_CHANNEL_1};
+	uint32_t	nSamples = 10000; // Should be equal to nChannels * nSamplesPerChannel
 	int16_t		nChannels = 1;
 	uint32_t	nSamplesPerChannel = nSamples / nChannels;
 	uint32_t	nSamplesCollected;
 	uint16_t *  samples = (uint16_t *) calloc(nSamples, sizeof(uint16_t));
-	uint32_t	usForBlock = 81920;
+	uint32_t	usForBlock = 1000000;
 	uint16_t 	overflow = 0;
 	uint32_t	triggerIndex = 0;
 	uint32_t	samplingIntervalUs = 0;
@@ -345,7 +347,7 @@ void collect_block_triggered (void)
 	}
 
 	// Run
-	status = pl1000Run(g_handle, nSamples, BM_SINGLE);
+	status = pl1000Run(g_handle, nSamplesPerChannel, BM_SINGLE);
 
 	// Wait until unit is ready
 	isReady = 0;
@@ -369,7 +371,12 @@ void collect_block_triggered (void)
 	
 	for (i = 0; i < nSamplesCollected; i++)
 	{
-		fprintf (fp, "%d\n", adc_to_mv(samples[i]));
+    for (j = 0; j < (uint32_t) nChannels; j++)
+    {
+      fprintf(fp, "%d\t", adc_to_mv(samples[(i * nChannels) + j]));
+    }
+
+    fprintf(fp, "\n");
 	}
 
 	printf("\n");
@@ -388,15 +395,16 @@ void collect_block_triggered (void)
  ****************************************************************************/
 void collect_windowed_blocks (void)
 {
-	uint32_t	i;
-	int16_t		channels [] = {1};
+  uint32_t	i = 0;;
+  uint32_t j = 0;
+	int16_t		channels [] = {(int16_t) PL1000_CHANNEL_1};
 	uint32_t	nSamples = 1000; // Should be equal to nChannels * nSamplesPerChannel
 	int16_t		nChannels = 1;
-	uint32_t	nSamplesPerChannel = 1000;
+	uint32_t	nSamplesPerChannel = nSamples / nChannels;
 	uint32_t	nSamplesCollected;
-	uint16_t *  samples = (uint16_t *) calloc(nSamples, sizeof(uint16_t)); // Size of array should be equal to nChannels * nSamplesPerChannel
+	uint16_t * samples = (uint16_t *) calloc(nSamples, sizeof(uint16_t)); // Size of array should be equal to nChannels * nSamplesPerChannel
 	uint32_t	usForBlock = 10000000;	// 10 seconds
-	uint16_t *	overflow = 0;
+	uint16_t * overflow = 0;
 	uint32_t	triggerIndex = 0;
 	int16_t		nLines = 0;
 	uint32_t	samplingIntervalUs = 0;
@@ -421,13 +429,13 @@ void collect_windowed_blocks (void)
 	printf("\n");
 
 	// Start streaming
-	status = pl1000Run(g_handle, nSamples, BM_WINDOW);
+	status = pl1000Run(g_handle, nSamplesPerChannel, BM_WINDOW);
 
 	// Wait until unit is ready
 	printf ("Waiting for first block...\n");
 	isReady = 0;
 	
-	while(isReady == 0)
+	while (isReady == 0)
 	{
 		status = pl1000Ready(g_handle, &isReady);
 	}
@@ -435,29 +443,37 @@ void collect_windowed_blocks (void)
 	printf("Press any key to stop\n");
 	fopen_s(&fp, "pl1000_windowed_blocks.txt", "w");
   
-	while(!_kbhit())
+	while (!_kbhit())
 	{
-		nSamplesCollected = nSamplesPerChannel;
+    nSamplesCollected = nSamplesPerChannel;
 
 		status = pl1000GetValues(g_handle, samples, &nSamplesCollected, overflow, &triggerIndex);
 
 		printf("%d values\n", nSamplesCollected);
 		
-		if(nLines == 20)
+		if (nLines == 20)
 		{
 				printf("Press any key to stop\n");
 				nLines = 0;
 		}
-		else
-				nLines++;
+    else
+    {
+      nLines++;
+    }
 
 		for (i = 0; i < nSamplesCollected; i++)
 		{
-			fprintf (fp, "%d\n", adc_to_mv(samples[i]));
+      for (j = 0; j < (uint32_t) nChannels; j++)
+      {
+        fprintf(fp, "%d\t", adc_to_mv(samples[(i * nChannels) + j]));
+      }
+
+      fprintf(fp, "\n");
 		}
 
 		Sleep(1000);		// Wait 1 second before collecting next 10 second block.
 	}
+
 	fclose(fp);
 	status = pl1000Stop(g_handle);
 
@@ -474,12 +490,13 @@ void collect_windowed_blocks (void)
 
 void collect_streaming (void)
 {
-	uint32_t	i;
+  uint32_t	i = 0;
+  uint32_t j = 0;
 	int16_t		channels [] = {1};
-	uint32_t	nSamples = MAX_BLOCK_SIZE; // Should be equal to nChannels * nSamplesPerChannel
+	uint32_t	nSamples = 1000; // Should be equal to nChannels * nSamplesPerChannel
 	int16_t		nChannels = 1;
-	uint32_t	nSamplesPerChannel = MAX_BLOCK_SIZE / nChannels;
-	uint32_t	nSamplesCollected;
+	uint32_t	nSamplesPerChannel = nSamples / nChannels;
+	uint32_t	nSamplesCollected = 0;
 	uint16_t *  samples = (uint16_t *) calloc(nSamples, sizeof(uint16_t)); // Size of array should be equal to nChannels * nSamplesPerChannel
 	uint32_t	usForBlock = 1000000;
 	uint16_t *	overflow = 0;
@@ -507,7 +524,7 @@ void collect_streaming (void)
 	printf("\n");
 
 	// Start streaming
-	status = pl1000Run(g_handle, nSamples, BM_STREAM);
+	status = pl1000Run(g_handle, nSamplesPerChannel, BM_STREAM);
 
 	// Wait until unit is ready
 	isReady = 0;
@@ -527,7 +544,7 @@ void collect_streaming (void)
 		status = pl1000GetValues(g_handle, samples, &nSamplesCollected, overflow, &triggerIndex);
 
 		totalSamplesCollected = totalSamplesCollected + nSamplesCollected;
-		printf("Collected %d values per channel, total: %d\n", nSamplesCollected, totalSamplesCollected);
+		printf("Collected %d values per channel, total per channel: %d\n", nSamplesCollected, totalSamplesCollected);
 
 		if (nLines == 20)
 		{
@@ -541,7 +558,12 @@ void collect_streaming (void)
 
 		for (i = 0; i < nSamplesCollected; i++)
 		{
-			fprintf (fp, "%d\n", adc_to_mv(samples[i]));
+      for (j = 0; j < (uint32_t) nChannels; j++)
+      {
+        fprintf(fp, "%d\t", adc_to_mv(samples[(i * nChannels) + j]));
+      }
+
+      fprintf(fp, "\n");
 		}
 
 		Sleep(100);
@@ -581,20 +603,20 @@ void collect_individual (void)
 		if (++sample_no > 20)
 		{
 			sample_no = 0;
-			printf ("Press any key to stop\n");
+			printf ("Press any key to stop\n\n");
 			
-			for (c = 1; c <= 16; c++)
+			for (c = (int32_t) PL1000_CHANNEL_1; c <= numDeviceChannels; c++)
 			{
-				printf ("ch%02d ", c);
+				printf ("ch%02d  ", c);
 			}
 			printf ("\n");
 		}
 		
-		for (c = 1; c <= 16; c++)
+		for (c = (int32_t) PL1000_CHANNEL_1; c <= numDeviceChannels; c++)
 		{
 			value = 0;
 			pl1000GetSingle(g_handle, c, &value);
-			printf ("%5d", adc_to_mv (value));
+			printf ("%5d ", adc_to_mv (value));
 		}
 		
 		printf ("\n");
@@ -616,7 +638,7 @@ void outputToggle(PL1000_DO_CH doChannel)
 	{
 		case PL1000_DO_CHANNEL_0:
 		{
-			if(d0State == 0)
+			if (d0State == 0)
 			{
 				d0State = 1;
 			}
@@ -630,7 +652,7 @@ void outputToggle(PL1000_DO_CH doChannel)
 		}
 		case PL1000_DO_CHANNEL_1:
 		{
-			if(d1State == 0)
+			if (d1State == 0)
 			{
 				d1State = 1;
 			}
@@ -644,7 +666,7 @@ void outputToggle(PL1000_DO_CH doChannel)
 		}
 		case PL1000_DO_CHANNEL_2:
 		{
-			if(d2State == 0)
+			if (d2State == 0)
 			{
 				d2State = 1;
 			}
@@ -658,7 +680,7 @@ void outputToggle(PL1000_DO_CH doChannel)
 		}
 		case PL1000_DO_CHANNEL_3:
 		{
-			if(d3State == 0)
+			if (d3State == 0)
 			{
 				d3State = 1;
 			}
@@ -728,7 +750,10 @@ void main (void)
 {
 	int8_t	ch;
 	int8_t	info[80];
-	int16_t	requiredSize=0;
+	int16_t	requiredSize = 0;
+  uint16_t variant = 0;
+  const int8_t * PICOLOG_1012 = "PicoLog1012";
+  const int8_t * PICOLOG_1216 = "PicoLog1216";
 
 	printf ("PicoLog 1000 Series Driver Example Program\n");
 	printf ("Version 1.2\n\n");
@@ -736,7 +761,7 @@ void main (void)
 	printf ("\nOpening the device...\n");
 	status = pl1000OpenUnit(&g_handle);
 	
-	if (status != 0)
+	if (status != PICO_OK)
 	{
 		printf ("Unable to open device\nPress any key\n");
 		_getch();
@@ -753,6 +778,21 @@ void main (void)
 		printf ("Device opened successfully\n\n");
 		status = pl1000GetUnitInfo(g_handle, info, 80, &requiredSize, PICO_VARIANT_INFO);
 		printf("Model:\t\t\t %s\n", info);
+
+    // Find the number of channels on the device
+    if (_stricmp(info, PICOLOG_1012) == 0)
+    {
+      numDeviceChannels = PL1000_12_CHANNEL;
+    }
+    else if (_stricmp(info, PICOLOG_1216) == 0)
+    {
+      numDeviceChannels = PL1000_16_CHANNEL;
+    }
+    else
+    {
+      printf("Invalid variant. Exiting application.\n");
+      exit(99);
+    }
 
 		status = pl1000GetUnitInfo(g_handle, info, 80, &requiredSize, PICO_BATCH_AND_SERIAL);
 		printf("Serial Number:\t\t %s\n", info);
