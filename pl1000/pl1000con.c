@@ -756,7 +756,7 @@ void main (void)
   const int8_t * PICOLOG_1012 = "PicoLog1012";
   const int8_t * PICOLOG_1216 = "PicoLog1216";
 
-	printf ("PicoLog 1000 Series Driver Example Program\n");
+	printf ("PicoLog 1000 Series (pl1000) Driver Example Program\n");
 	printf ("Version 1.3\n\n");
 
 	printf ("\nOpening the device...\n");
