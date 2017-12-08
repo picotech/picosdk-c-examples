@@ -79,6 +79,7 @@
 #define scanf_s scanf
 #define fscanf_s fscanf
 #define memcpy_s(a,b,c,d) memcpy(a,c,d)
+#define _stricmp(a,b) strcasecmp(a,b)
 
 typedef enum enBOOL
 {
@@ -756,7 +757,7 @@ void main (void)
   const int8_t * PICOLOG_1216 = "PicoLog1216";
 
 	printf ("PicoLog 1000 Series Driver Example Program\n");
-	printf ("Version 1.2\n\n");
+	printf ("Version 1.3\n\n");
 
 	printf ("\nOpening the device...\n");
 	status = pl1000OpenUnit(&g_handle);
