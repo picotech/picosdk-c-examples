@@ -202,7 +202,7 @@ int32_t main(void)
 	/* Set up all channels */
 	retVal = usb_tc08_set_channel(handle, 0,'C');
 
-	for (channel = 1; channel < 9; channel++)
+	for (channel = 1; channel < (USBTC08_MAX_CHANNELS + 1); channel++)
 	{
 		retVal &= usb_tc08_set_channel(handle, channel,'K');
 	}
@@ -229,7 +229,7 @@ int32_t main(void)
 		printf("C - Continuous reading on all channels\n");
 		printf("X - Close the USB TC08 and exit \n");
 		
-		while (0 == scanf_s(" %c", &selection))
+		while (0 == scanf_s(" %c", &selection, 1))
 		{
 			; /* Do nothing until a character is entered */ 
 		}
@@ -251,6 +251,7 @@ int32_t main(void)
 				{
 					printf("Channel %d: %3.2f C\n", channel, temp[channel]);
 				}
+
 				break;
 			
 		
@@ -258,7 +259,7 @@ int32_t main(void)
 			case 'c': /* Continuous (Streaming) mode */
 
 				// Setup data buffers 
-				for(channel = 0; channel < USBTC08_MAX_CHANNELS + 1; channel++)
+				for(channel = 0; channel < (USBTC08_MAX_CHANNELS + 1); channel++)
 				{
 					temp_buffer[channel] = (float *) calloc(BUFFER_SIZE, sizeof(float));
 					totalReadings[channel] = 0;
@@ -267,10 +268,10 @@ int32_t main(void)
 				printf("Entering streaming mode.\n");
 
 				do 
-					{
-						printf("Enter number of readings to collect per channel:\n"); // Ask user to enter number of readings
-						scanf_s("%lu", &numberOfReadings);
-					} while (numberOfReadings < 0 && numberOfReadings <= ULONG_MAX);
+				{
+				  printf("Enter number of readings to collect per channel:\n"); // Ask user to enter number of readings
+				  scanf_s("%u", &numberOfReadings);
+				} while (numberOfReadings < 0 && numberOfReadings <= ULONG_MAX);
 
 				printf("Press any key to stop data colletion.\n\n");
 				printf("Time    CJC    Ch1    Ch2    Ch3    Ch4    Ch5    Ch6    Ch7    Ch8\n");
@@ -280,13 +281,12 @@ int32_t main(void)
 
 				while(totalReadings[USBTC08_CHANNEL_1] <= numberOfReadings && !_kbhit())
 				{
-					for (channel = 0; channel < USBTC08_MAX_CHANNELS + 1; channel++) 
+					for (channel = 0; channel < (USBTC08_MAX_CHANNELS + 1); channel++) 
 					{
 						do
 						{
 							// Request temperature data, a negative value indicates an error
 							readingsCollected = usb_tc08_get_temp(handle, temp_buffer[channel], times_buffer, BUFFER_SIZE, &overflows[channel], channel, USBTC08_UNITS_CENTIGRADE, 1);
-
 						}
 						while(readingsCollected == 0);
 
