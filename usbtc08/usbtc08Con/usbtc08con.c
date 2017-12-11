@@ -239,15 +239,15 @@ int32_t main(void)
 		
 			case 'S':
 			case 's': /* Single reading mode */
-				printf("Getting single reading...");
+				printf("Getting single reading for each channel...");
 				fflush(stdout);
 
 				/* Request the reading */
 				usb_tc08_get_single(handle, temp, NULL, USBTC08_UNITS_CENTIGRADE);
 				
-				printf(" done!\nCJC      : %3.2f C\n", temp[0]);
+				printf(" done!\n\nCJC      : %3.2f C\n", temp[0]);
 				
-				for (channel = 1; channel < USBTC08_MAX_CHANNELS + 1; channel++)
+				for (channel = (int32_t) USBTC08_CHANNEL_1; channel < USBTC08_MAX_CHANNELS + 1; channel++)
 				{
 					printf("Channel %d: %3.2f C\n", channel, temp[channel]);
 				}
@@ -259,7 +259,7 @@ int32_t main(void)
 			case 'c': /* Continuous (Streaming) mode */
 
 				// Setup data buffers 
-				for(channel = 0; channel < (USBTC08_MAX_CHANNELS + 1); channel++)
+				for(channel = (int32_t) USBTC08_CHANNEL_CJC; channel < (USBTC08_MAX_CHANNELS + 1); channel++)
 				{
 					temp_buffer[channel] = (float *) calloc(BUFFER_SIZE, sizeof(float));
 					totalReadings[channel] = 0;
@@ -273,7 +273,7 @@ int32_t main(void)
 				  scanf_s("%u", &numberOfReadings);
 				} while (numberOfReadings < 0 && numberOfReadings <= ULONG_MAX);
 
-				printf("Press any key to stop data colletion.\n\n");
+				printf("Press any key to stop data collection.\n\n");
 				printf("Time    CJC    Ch1    Ch2    Ch3    Ch4    Ch5    Ch6    Ch7    Ch8\n");
 				
 				/* Set the unit running */
