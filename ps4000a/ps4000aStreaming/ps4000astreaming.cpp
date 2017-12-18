@@ -355,7 +355,7 @@ PICO_STATUS OpenDevice(UNIT *unit)
 			memcpy(&(unit->serial), line, requiredSize);
 		}
 
-		printf("%s:%s\n", description[i], line);
+		printf("%s: %s\n", description[i], line);
 	}
 
 	printf("\n");
