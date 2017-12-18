@@ -149,9 +149,9 @@ uint32_t inputRanges[] = {
 *
 * Convert an 16-bit ADC count into millivolts
 ****************************************************************************/
-int adc_to_mv(long raw, int rangeIndex, UNIT * unit)
+int32_t adc_to_mv(int32_t raw, int32_t rangeIndex, UNIT * unit)
 {
-	return (raw * inputRanges[rangeIndex]) / unit->maxADCValue;
+	return (raw * (int32_t) inputRanges[rangeIndex]) / unit->maxADCValue;
 }
 
 /****************************************************************************
@@ -161,14 +161,14 @@ int adc_to_mv(long raw, int rangeIndex, UNIT * unit)
 *
 *  (useful for setting trigger thresholds)
 ****************************************************************************/
-short mv_to_adc(short mv, short rangeIndex, UNIT * unit)
+int16_t mv_to_adc(int16_t mv, int16_t rangeIndex, UNIT * unit)
 {
-	return (mv * unit->maxADCValue) / inputRanges[rangeIndex];
+	return (mv * unit->maxADCValue) / (int16_t) inputRanges[rangeIndex];
 }
 
 /****************************************************************************
 * Callback
-* used by ps4000a data streaimng collection calls, on receipt of data.
+* used by ps4000a data streaming collection calls, on receipt of data.
 * used to set global flags etc checked by user routines
 ****************************************************************************/
 void PREF4 CallBackStreaming
@@ -558,9 +558,11 @@ void StreamDataHandler(UNIT * unit)
 
 	do
 	{
-		// For streaming we use sample interval rather than timebase used in ps4000aRunBlock
-		if ((status = ps4000aRunStreaming(unit->handle, &sampleInterval, timeUnits, preTrigger, postTrigger, autostop, downsampleRatio, ratioMode,
-			bufferLength)) != PICO_OK)
+    // For streaming we use sample interval rather than timebase used in ps4000aRunBlock
+    status = ps4000aRunStreaming(unit->handle, &sampleInterval, timeUnits, preTrigger, postTrigger, autostop, downsampleRatio, ratioMode,
+      bufferLength);
+
+		if (status != PICO_OK)
 		{
 			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 			{
@@ -718,7 +720,7 @@ void CollectStreamingTriggered(UNIT * unit)
 
 	PS4000A_CHANNEL ch = PS4000A_CHANNEL_A;
 	PS4000A_THRESHOLD_DIRECTION _direction = PS4000A_RISING;
-	int16_t threshold = mv_to_adc(1000, unit->channelSettings[PS4000A_CHANNEL_A].range, unit); 
+	int16_t threshold = mv_to_adc(-1000, unit->channelSettings[PS4000A_CHANNEL_A].range, unit); 
 
 	// If this array contains more than one channel for example was initialised as _condition[2] the 
 	// channels could be combined as an AND logic; please remember to increase nConditions accordingly.
