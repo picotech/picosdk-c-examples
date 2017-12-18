@@ -222,7 +222,7 @@ void channel_select()
 	{
 		printf("Enter channel number: ");
 		scanf_s("%d", &value);
-	}while(value < USB_DRDAQ_CHANNEL_EXT1 || value > USB_DRDAQ_MAX_CHANNELS);
+	}while (value < USB_DRDAQ_CHANNEL_EXT1 || value > USB_DRDAQ_MAX_CHANNELS);
 
 	channel = (USB_DRDAQ_INPUTS)value;
 
@@ -249,9 +249,10 @@ void channel_select()
 void collect_block_immediate (void)
 {
 	uint32_t	i;
+  uint32_t  j;
 	uint32_t	nSamples = 1000;
 	int16_t		nChannels = 1;
-	uint32_t	nSamplesPerChannel = 1000;
+	uint32_t	nSamplesPerChannel = nSamples / nChannels;
 	uint32_t	nSamplesCollected;
 	float		samples[1000] = {0.0}; 
 	uint32_t	usForBlock = 1000000;
@@ -267,20 +268,20 @@ void collect_block_immediate (void)
 	status = UsbDrDaqSetTrigger(g_handle, FALSE, 0, 0, 0, 0, 0, 0, 0);
 
 	// Set sampling rate and channels
-	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamples, &channel, nChannels);
+	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamplesPerChannel, &channel, nChannels);
 
 	printf("Press any key to stop\n");
 	fopen_s(&fp, "usb_dr_daq_block_immediate.txt", "w");
 	
-	while(!_kbhit())
+	while (!_kbhit())
 	{
 		// Run
-		status = UsbDrDaqRun(g_handle, nSamples, BM_SINGLE);
+		status = UsbDrDaqRun(g_handle, nSamplesPerChannel, BM_SINGLE);
 
 		// Wait until unit is ready
 		isReady = 0;
 		
-		while(isReady == 0)
+		while (isReady == 0)
 		{
 			status = UsbDrDaqReady(g_handle, &isReady);
 		}
@@ -289,16 +290,26 @@ void collect_block_immediate (void)
 		status = UsbDrDaqGetValuesF(g_handle, samples, &nSamplesCollected, &overflow, &triggerIndex);
 
 		// Print out the first 10 readings, converting the readings to mV if required
-		printf ("First 10 readings of %i (press any key to stop)\n\n", nSamplesCollected);
+		printf ("First 10 readings of each channel (press any key to stop)\n\n");
 		
 		for (i = 0; i < 10; i++)
 		{
-			printf ("%.3f\n", adc_to_mv(samples[i]));
+      for (j = 0; j < (uint32_t) nChannels; j++)
+      {
+        printf("%.3f\n", adc_to_mv(samples[(i * nChannels) + j]));
+      }
+
+      printf("\n");
 		}
 		
 		for (i = 0; i < nSamplesCollected; i++)
 		{
-			fprintf (fp, "%.3f\n", adc_to_mv(samples[i]));
+      for (j = 0; j < (uint32_t) nChannels; j++)
+      {
+        fprintf(fp, "%.3f\t", adc_to_mv(samples[(i * nChannels) + j]));
+      }
+
+      fprintf(fp, "\n");
 		}
 		Sleep(100);
 
@@ -320,11 +331,12 @@ void collect_block_immediate (void)
 void collect_block_triggered (void)
 {
 	uint32_t	i;
+  uint32_t  j;
 	uint32_t	nSamples = 1000;
 	int16_t		nChannels = 1;
-	uint32_t	nSamplesPerChannel = 1000;
+	uint32_t	nSamplesPerChannel = nSamples / nChannels;
 	uint32_t	nSamplesCollected;
-	float		samples[1000];
+  float		samples[1000] = {0.0};
 	uint32_t	usForBlock = 1000000;
 	uint16_t	overflow;
 	uint32_t	triggerIndex = 0;
@@ -341,7 +353,7 @@ void collect_block_triggered (void)
 	status = UsbDrDaqSetTrigger(g_handle, TRUE, 0, 0, channel, (uint16_t) threshold, 16000, 0, -50);
 
 	// Set sampling rate and channels
-	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamples, &channel, nChannels);
+	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamplesPerChannel, &channel, nChannels);
 
 	printf ("Trigger delay is set to -50%% (trigger event in centre of block)\n");
 	printf ("\nWaiting for trigger...\n\n");
@@ -350,11 +362,12 @@ void collect_block_triggered (void)
 	fopen_s(&fp, "usb_dr_daq_block_triggered.txt", "w");
 
 	// Run
-	status = UsbDrDaqRun(g_handle, nSamples, BM_SINGLE);
+	status = UsbDrDaqRun(g_handle, nSamplesPerChannel, BM_SINGLE);
 
 	// Wait until unit is ready
 	isReady = 0;
-	while(isReady == 0 && (!_kbhit ()))
+
+	while (isReady == 0 && (!_kbhit ()))
 	{
 		status = UsbDrDaqReady(g_handle, &isReady);
 	}
@@ -363,15 +376,21 @@ void collect_block_triggered (void)
 	status = UsbDrDaqGetValuesF(g_handle, samples, &nSamplesCollected, &overflow, &triggerIndex);
 
 	//Print out the first 10 readings, converting the readings to mV if required
-	printf ("5 readings either side of trigger event (%i samples collected)\n", nSamplesCollected);
+	printf ("5 readings either side of trigger event (%i samples collected per channel)\n", nSamplesCollected);
 	for (i = triggerIndex-5; i < triggerIndex+6; i++)
 	{
 		printf ("%.3f\n", adc_to_mv(samples[i]));
 	}
-	for (i = 0; i < nSamplesCollected; i++)
-	{
-		fprintf (fp, "%.3f\n", adc_to_mv(samples[i]));
-	}
+
+  for (i = 0; i < nSamplesCollected; i++)
+  {
+    for (j = 0; j < (uint32_t) nChannels; j++)
+    {
+      fprintf(fp, "%.3f\t", adc_to_mv(samples[(i * nChannels) + j]));
+    }
+
+    fprintf(fp, "\n");
+  }
 
 	fclose(fp);
 	status = UsbDrDaqStop(g_handle);
@@ -389,11 +408,12 @@ void collect_block_triggered (void)
 void collect_windowed_blocks (void)
 {
 	uint32_t	i;
+  uint32_t  j;
 	uint32_t	nSamples = 1000;
 	int16_t		nChannels = 1;
-	uint32_t	nSamplesPerChannel = 1000;
+	uint32_t	nSamplesPerChannel = nSamples / nChannels;
 	uint32_t	nSamplesCollected;
-	float		samples[1000];
+  float		samples[1000] = {0.0};
 	uint32_t	usForBlock = 10000000;	//10 seconds
 	uint16_t	overflow;
 	uint32_t	triggerIndex = 0;
@@ -410,16 +430,16 @@ void collect_windowed_blocks (void)
 	status = UsbDrDaqSetTrigger(g_handle, FALSE, 0, 0, 0, 0, 0, 0, 0);
 
 	//set sampling rate and channels
-	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamples, &channel, nChannels);
+	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamplesPerChannel, &channel, nChannels);
 
 	//Start 
-	status = UsbDrDaqRun(g_handle, nSamples, BM_WINDOW);
+	status = UsbDrDaqRun(g_handle, nSamplesPerChannel, BM_WINDOW);
 
 	//Wait until unit is ready
 	printf ("Waiting for first block...\n");
 	isReady = 0;
 	
-	while(isReady == 0)
+	while (isReady == 0)
 	{
 		status = UsbDrDaqReady(g_handle, &isReady);
 	}
@@ -427,13 +447,14 @@ void collect_windowed_blocks (void)
 	printf("Press any key to stop\n");
 	fopen_s(&fp, "usb_dr_daq_block_windowed.txt", "w");
 
-	while(!_kbhit())
+	while (!_kbhit())
 	{
 		nSamplesCollected = nSamplesPerChannel;
 		status = UsbDrDaqGetValuesF(g_handle, samples, &nSamplesCollected, &overflow, &triggerIndex);
 
 		printf("%d values\n", nSamplesCollected);
-		if(nLines == 20)
+		
+    if(nLines == 20)
 		{
 			printf("Press any key to stop\n");
 			nLines = 0;
@@ -443,15 +464,21 @@ void collect_windowed_blocks (void)
 			nLines++;
 		}
 
-		for (i = 0; i < nSamplesCollected; i++)
-		{
-			fprintf (fp, "%.3f\n", adc_to_mv(samples[i]));
-		}
+    for (i = 0; i < nSamplesCollected; i++)
+    {
+      for (j = 0; j < (uint32_t) nChannels; j++)
+      {
+        fprintf(fp, "%.3f\t", adc_to_mv(samples[(i * nChannels) + j]));
+      }
+
+      fprintf(fp, "\n");
+    }
 
 		Sleep(1000);		//Wait 1 second before collecting next 10 second block.
 
 		printf("\n");
 	}
+
 	fclose(fp);
 	status = UsbDrDaqStop(g_handle);
 
@@ -469,11 +496,12 @@ void collect_windowed_blocks (void)
 void collect_streaming (void)
 {
 	uint32_t	i;
+  uint32_t  j;
 	uint32_t	nSamples = 1000;
 	int16_t		nChannels = 1;
-	uint32_t	nSamplesPerChannel = 1000;
+	uint32_t	nSamplesPerChannel = nSamples / nChannels;
 	uint32_t	nSamplesCollected;
-	float		samples[1000];
+  float		samples[1000] = {0.0};
 	uint32_t	usForBlock = 1000000;
 	uint16_t	overflow;
 	uint32_t	triggerIndex = 0;
@@ -489,15 +517,15 @@ void collect_streaming (void)
 	status = UsbDrDaqSetTrigger(g_handle, FALSE, 0, 0, 0, 0, 0, 0, 0);
 
 	//set sampling rate and channels
-	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamples, &channel, nChannels);
+	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamplesPerChannel, &channel, nChannels);
 
 	//Start streaming
-	status = UsbDrDaqRun(g_handle, nSamples, BM_STREAM);
+	status = UsbDrDaqRun(g_handle, nSamplesPerChannel, BM_STREAM);
 
 	//Wait until unit is ready
 	isReady = 0;
 	
-	while(isReady == 0)
+	while (isReady == 0)
 	{
 		status = UsbDrDaqReady(g_handle, &isReady);
 	}
@@ -505,14 +533,14 @@ void collect_streaming (void)
 	printf("Press any key to stop\n");
 	fopen_s(&fp, "usb_dr_daq_streaming.txt", "w");
 
-	while(!_kbhit())
+	while (!_kbhit())
 	{
 		nSamplesCollected = nSamplesPerChannel;
 		status = UsbDrDaqGetValuesF(g_handle, samples, &nSamplesCollected, &overflow, &triggerIndex);
 
 		printf("%d values\n", nSamplesCollected);
 
-		if(nLines == 20)
+		if (nLines == 20)
 		{
 			printf("Press any key to stop\n");
 			nLines = 0;
@@ -522,10 +550,15 @@ void collect_streaming (void)
 			nLines++;
 		}
 
-		for (i = 0; i < nSamplesCollected; i++)
-		{
-			fprintf (fp, "%.3f\n", adc_to_mv(samples[i]));
-		}
+    for (i = 0; i < nSamplesCollected; i++)
+    {
+      for (j = 0; j < (uint32_t) nChannels; j++)
+      {
+        fprintf(fp, "%.3f\t", adc_to_mv(samples[(i * nChannels) + j]));
+      }
+
+      fprintf(fp, "\n");
+    }
 
 		Sleep(100);
 
@@ -593,7 +626,7 @@ void outputToggle(USB_DRDAQ_GPIO IOChannel)
 	{
 		case USB_DRDAQ_GPIO_1:
 		{
-			if(d1State)
+			if (d1State)
 			{
 				d1State = 0;
 			}
@@ -607,7 +640,7 @@ void outputToggle(USB_DRDAQ_GPIO IOChannel)
 		}
 		case USB_DRDAQ_GPIO_2:
 		{
-			if(d2State)
+			if (d2State)
 			{
 				d2State = 0;
 			}
@@ -621,7 +654,7 @@ void outputToggle(USB_DRDAQ_GPIO IOChannel)
 		}
 		case USB_DRDAQ_GPIO_3:
 		{
-			if(d3State)
+			if (d3State)
 			{
 				d3State = 0;
 			}
@@ -635,7 +668,7 @@ void outputToggle(USB_DRDAQ_GPIO IOChannel)
 		}
 		case USB_DRDAQ_GPIO_4:
 		{
-			if(d4State)
+			if (d4State)
 			{
 				d4State = 0;
 			}
@@ -680,30 +713,30 @@ void pwm()
 		printf("Select GPIO channel (1 or 2):");
 		scanf_s("%d", &IOChannel);
 		fflush(stdin);
-	}while(IOChannel < 1 || IOChannel > 2);
+	}while (IOChannel < USB_DRDAQ_GPIO_1 || IOChannel > USB_DRDAQ_GPIO_2);
 
 	do
 	{
 		printf("Enter period (0 to 65535 microseconds):");
 		scanf_s("%d", &period);
 		fflush(stdin);
-	}while(period < 0 || period > 65535);
+	}while (period < 0 || period > 65535);
 
 	do
 	{
 		printf("Enter duty cycle (0 to 100%%):");
 		scanf_s("%d", &cycle);
 		fflush(stdin);
-	}while(cycle < 0 || cycle > 100);
+	}while (cycle < 0 || cycle > 100);
 		
 	UsbDrDaqSetPWM(g_handle, (USB_DRDAQ_GPIO) IOChannel, (uint16_t)period, (uint8_t)cycle);
 
-	//Clear state of channel we are using
-	if(IOChannel == 1)
+	// Clear state of channel we are using
+	if (IOChannel == USB_DRDAQ_GPIO_1)
 	{
 		d1State = 0;
 	}
-	else if(IOChannel == 2)
+	else if (IOChannel == USB_DRDAQ_GPIO_2)
 	{
 		d2State = 0;
 	}
@@ -721,9 +754,9 @@ void DigitalInput()
 
 	printf("Press any key to stop...\n");
 
-	while(!_kbhit())
+	while (!_kbhit())
 	{
-		for(channel = USB_DRDAQ_GPIO_1; channel <= USB_DRDAQ_GPIO_4; channel++)
+		for (channel = USB_DRDAQ_GPIO_1; channel <= USB_DRDAQ_GPIO_4; channel++)
 		{
 			UsbDrDaqGetInput(g_handle, channel, 0, &value);				//Not using pull-up resistor
 			printf("%d\t", value);
@@ -753,7 +786,7 @@ void pulseCounting()
 	{
 		printf("Select GPIO (1 or 2):");
 		scanf_s("%d", &value);
-	}while(value != USB_DRDAQ_GPIO_1 && value != USB_DRDAQ_GPIO_2);
+	}while (value != USB_DRDAQ_GPIO_1 && value != USB_DRDAQ_GPIO_2);
 
 	printf("\n");
 	
@@ -763,7 +796,7 @@ void pulseCounting()
 	{
 		printf("Select direction (0: rising. 1: falling):");
 		scanf_s("%d", &direction);
-	}while(direction != 0 && direction != 1);
+	}while (direction != 0 && direction != 1);
 
 	printf("\n");
 
@@ -774,7 +807,7 @@ void pulseCounting()
 
 	printf("Press any key to stop...\n");
 
-	while(!_kbhit())
+	while (!_kbhit())
 	{
 		Sleep(1000);
 		
@@ -819,7 +852,7 @@ void sigGen()
 	{
 		printf("\nSelect wave type:");
 		scanf_s("%d", &value);
-	}while((value < 0 || value > 5) && value != 99);
+	}while ((value < 0 || value > 5) && value != 99);
 
 	if(value == 99)
 	{
@@ -833,7 +866,7 @@ void sigGen()
 	{
 		printf("\nEnter offset (microvolts):");
 		scanf_s("%d", &offset);
-	}while(offset < -1500000 || offset > 1500000);
+	}while (offset < -1500000 || offset > 1500000);
 
 	if(waveType != USB_DRDAQ_DC)		//Frequency and peak to peak are ignored for DC output
 	{
@@ -841,13 +874,13 @@ void sigGen()
 		{
 			printf("\nEnter frequency (0 to 20,000 Hz):");
 			scanf_s("%d", &frequency);
-		}while(frequency < 0 || frequency > 20000);
+		}while (frequency < 0 || frequency > 20000);
 
 		do
 		{
 			printf("Enter peak-to-peak amplitude (microvolts)");
 			scanf_s("%d", &pToP);
-		}while(pToP < 0|| pToP > 3000000);
+		}while (pToP < 0|| pToP > 3000000);
 	}
 
 	UsbDrDaqSetSigGenBuiltIn(g_handle, (int32_t)offset, (uint32_t)pToP, (int16_t)frequency, waveType);
