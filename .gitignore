@@ -13,6 +13,8 @@
 **/*.opensdf
 **/*.dll
 **/*.lib
+**/*.db
+**/*.opendb
 
 # Linux/Mac OS X platforms
 
