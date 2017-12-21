@@ -350,7 +350,7 @@ void collect_block_triggered (void)
 	_getch();
 
 	// Set the trigger
-	status = UsbDrDaqSetTrigger(g_handle, TRUE, 0, 0, channel, (uint16_t) threshold, 16000, 0, -50);
+	status = UsbDrDaqSetTrigger(g_handle, TRUE, 0, 0, channel, 0, (uint16_t)threshold, 1, -50);
 
 	// Set sampling rate and channels
 	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamplesPerChannel, &channel, nChannels);
@@ -530,7 +530,7 @@ void collect_streaming (void)
 		status = UsbDrDaqReady(g_handle, &isReady);
 	}
 
-	printf("Press any key to stop\n");
+	printf("\nPress any key to stop\n\n");
 	fopen_s(&fp, "usb_dr_daq_streaming.txt", "w");
 
 	while (!_kbhit())
@@ -538,11 +538,11 @@ void collect_streaming (void)
 		nSamplesCollected = nSamplesPerChannel;
 		status = UsbDrDaqGetValuesF(g_handle, samples, &nSamplesCollected, &overflow, &triggerIndex);
 
-		printf("%d values\n", nSamplesCollected);
+		printf("%d values per channel\n", nSamplesCollected);
 
 		if (nLines == 20)
 		{
-			printf("Press any key to stop\n");
+			printf("\nPress any key to stop\n\n");
 			nLines = 0;
 		}
 		else
