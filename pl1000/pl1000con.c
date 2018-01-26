@@ -720,6 +720,7 @@ void displayOutputStates()
  ****************************************************************************/
 void pwm()
 {
+  PICO_STATUS status = PICO_OK;
 	int32_t period = 0;
 	int32_t cycle = 0;
 
@@ -738,7 +739,12 @@ void pwm()
 		fflush(stdin);
 	}while(cycle < 0 || cycle > 100);
 		
-	pl1000SetPulseWidth(g_handle, (uint16_t) period, (uint8_t) cycle);
+	status = pl1000SetPulseWidth(g_handle, (uint16_t) period, (uint8_t) cycle);
+
+  if (status != PICO_OK)
+  {
+    printf("\nUnable to set pulse-width modulated output - status code %d (0x%08lx)\n", status, status);
+  }
 }
 
 /****************************************************************************
