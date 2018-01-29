@@ -48,7 +48,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- *  Copyright (C) 2009 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ *  Copyright (C) 2009-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  *******************************************************************************/
 

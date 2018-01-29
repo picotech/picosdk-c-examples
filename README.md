@@ -77,5 +77,5 @@ See [LICENSE.md](LICENSE.md) for license terms.
 
 *Linux* is the registered trademark of Linus Torvalds in the U.S. and other countries.
 
-Copyright © 2004-2017 Pico Technology Ltd. All rights reserved. 
+Copyright © 2004-2018 Pico Technology Ltd. All rights reserved. 
 
