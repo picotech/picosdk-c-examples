@@ -45,6 +45,8 @@
  *
  ******************************************************************************/
 #include <stdio.h>
+#include <math.h>
+
 #ifdef WIN32
 #include <conio.h>
 #include <windows.h>
@@ -136,15 +138,16 @@ int16_t		g_device;
 int16_t		g_doSet;
 int16_t		g_maxNoOfChannels;
 
-double inputRangeV [] = {1, 2, 4, 8, 16, 32, 64};
+
+double inputRangeDivider [] = {1, 2, 4, 8, 16, 32, 64}; // Used for different voltage scales
 
 /****************************************************************************
 *
 * ResetChannels
 *
 * Switches all the channels to off
-* The voltage level to 2500mV range,
-* All to single ended
+* The voltage level to 2500 mV range,
+* All to single-ended
 *
 ****************************************************************************/
 void RestChannels()
@@ -212,7 +215,7 @@ float AdcToMv (HRDL_INPUTS channel, int32_t raw)
 
 	if (g_scaleTo_mv)
 	{
-		return (float)  ((double) raw * 2500.0 / (double)inputRangeV[g_channelSettings[channel].range]) / (double)(maxAdc);
+		return (float)  ((double) raw * (2500.0 / pow(2.0, (double) g_channelSettings[channel].range)) / (double)(maxAdc));
 	}
 	else
 	{
@@ -584,7 +587,7 @@ void CollectStreaming (void)
 	//
 	// Collect data at 1 second intervals, with maximum resolution
 	//
-	HRDLSetInterval(g_device, 61, HRDL_60MS);
+	HRDLSetInterval(g_device, 1000, HRDL_660MS);
 
 	printf("Starting data collection...\n");
 
@@ -675,10 +678,10 @@ void CollectStreaming (void)
 			}
 		
 			//
-			// Wait 100ms before asking again
+			// Wait 2 seconds before asking again
 			//
 
-			Sleep (100);
+			Sleep (2000);
 		}
 
 	}
@@ -687,6 +690,7 @@ void CollectStreaming (void)
 	HRDLStop(g_device);
 	_getch ();   
 }
+
 /****************************************************************************
 *
 * CollectSingle using blocking Api Calls
@@ -696,13 +700,12 @@ void CollectStreaming (void)
 *
 *	In this mode, you can collect data and manage your own timing
 *
-*  
-*
 ****************************************************************************/
 void CollectSingleBlocked (void)
 {
 	int16_t channel;
 	int32_t value;
+  int16_t status;
 
 	printf("\n");
 
@@ -714,7 +717,9 @@ void CollectSingleBlocked (void)
 			continue;
 		}
 
-		if (!HRDLGetSingleValue(g_device, channel, HRDL_2500_MV, HRDL_660MS, TRUE, NULL,&value))
+    status = HRDLGetSingleValue(g_device, channel, g_channelSettings[channel].range, HRDL_660MS, TRUE, NULL, &value);
+
+		if (!status)
 		{
 			printf ("Channel %d not converted\n", channel); 
 		}
@@ -752,6 +757,7 @@ void CollectSingleUnblocked (void)
 	int8_t strError[80];
 	int16_t channel;
 	int32_t value;
+  int16_t status;
 
 	printf("\n");
 
@@ -763,7 +769,9 @@ void CollectSingleUnblocked (void)
 			continue;
 		}
 
-		if (!HRDLCollectSingleValueAsync(g_device, channel, HRDL_2500_MV, HRDL_660MS, TRUE))
+    status = HRDLCollectSingleValueAsync(g_device, channel, g_channelSettings[channel].range, HRDL_660MS, TRUE);
+
+		if (!status)
 		{
 			HRDLGetUnitInfo(g_device, strError, (int16_t)80, HRDL_SETTINGS);
 			printf("Error occurred: %s\n\n", strError);
@@ -777,7 +785,9 @@ void CollectSingleUnblocked (void)
 			Sleep(50);
 		}
 
-		if (!HRDLGetSingleValueAsync(g_device, &value, NULL))
+    status = HRDLGetSingleValueAsync(g_device, &value, NULL);
+
+		if (!status)
 		{
 			printf ("Channel %d not converted\n", channel); 
 		}
@@ -828,7 +838,7 @@ void SetAnalogChannels(void)
 	// a) it is not available on the current device,
 	// b) the input is a secondary differential input and is already in use for a differential channel or
 	// c) the input is a primary differential input and cannot be used for a differential channel because the
-	//    secondary input of the pair is already in use for a single ended channel.
+	//    secondary input of the pair is already in use for a single-ended channel.
 	//
 	// Primary inputs for differential pairs are odd channel numbers eg  1, 3, 5, etc. Their corresponding
 	// secondary numbers are primary channel number + 1 eg 1 and 2, 3 and 4, etc.
@@ -880,7 +890,7 @@ void SetAnalogChannels(void)
 
 		if (status == 1)
 		{
-			printf("%d - %d mV\n", range, (int32_t)(2500/inputRangeV[range]));    
+			printf("%d - %d mV\n", range, (int32_t) round(2500.0 / (double) inputRangeDivider[range]));
 			available = 1;
 		}
 	}
@@ -892,7 +902,7 @@ void SetAnalogChannels(void)
 		if ((channel & 0x01) && g_channelSettings[channel + 1].enabled )  // odd channels
 		{
 			printf("The channel cannot be enabled because it is a primary differential channel  \
-						and its corresponding secondary channel is already in use for a single ended measurement\n");           
+						and its corresponding secondary channel is already in use for a single-ended measurement\n");           
 		}
 		else if (g_channelSettings[channel - 1].enabled)
 		{
@@ -921,11 +931,11 @@ void SetAnalogChannels(void)
 	// 
 	// It may not be used as differential if this input is a secondary differential input
 	// or this input is a primary differential input and the corresponding secondary input
-	// is already in use for a single ended channel.
+	// is already in use for a single-ended channel.
 
 	if (HRDLSetAnalogInChannel(g_device, (int16_t)channel, (int16_t) 1, (int16_t) g_channelSettings[channel].range, (int16_t) 0))
 	{
-		printf("Single ended? (Y\\N)");  
+		printf("Single-ended? (Y\\N)");  
 		g_channelSettings[channel].singleEnded = (int16_t) toupper(_getch()) == 'Y';
 	}
 	else
@@ -936,7 +946,7 @@ void SetAnalogChannels(void)
 	HRDLSetAnalogInChannel(g_device, (int16_t) channel, (int16_t) 1, (int16_t) g_channelSettings[channel].range, g_channelSettings[channel].singleEnded);
 
 	// Let the user know what they have set
-	printf("\nChannel %d, %d mV range, %s\n\n", channel, (int32_t)(2500 / inputRangeV[g_channelSettings[channel].range]), g_channelSettings[channel].singleEnded ? "single ended" : "differential");
+	printf("\nChannel %d: %d mV range, %s\n\n", channel, (int32_t) round(2500.0 / (double) inputRangeDivider[g_channelSettings[channel].range]), g_channelSettings[channel].singleEnded ? "single-ended" : "differential");
 
 }
 /****************************************************************************
@@ -1239,6 +1249,7 @@ void main (void)
 		printf("W - Windowed block\n");
 		printf("S - Streaming\n");
 		printf("U - Single readings\n");
+    printf("R - Single readings (blocking call)\n");
 		printf("A - Set analog channels \n");
 		printf("D - Set digital channels \n");
 		printf("X - Exit\n");
