@@ -717,7 +717,7 @@ void CollectSingleBlocked (void)
 			continue;
 		}
 
-    status = HRDLGetSingleValue(g_device, channel, g_channelSettings[channel].range, HRDL_660MS, TRUE, NULL, &value);
+    status = HRDLGetSingleValue(g_device, channel, g_channelSettings[channel].range, HRDL_660MS, g_channelSettings[channel].singleEnded, NULL, &value);
 
 		if (!status)
 		{
@@ -769,7 +769,7 @@ void CollectSingleUnblocked (void)
 			continue;
 		}
 
-    status = HRDLCollectSingleValueAsync(g_device, channel, g_channelSettings[channel].range, HRDL_660MS, TRUE);
+    status = HRDLCollectSingleValueAsync(g_device, channel, g_channelSettings[channel].range, HRDL_660MS, g_channelSettings[channel].singleEnded);
 
 		if (!status)
 		{
