@@ -23,7 +23,7 @@
 *			 Add usbtc08.h to the project
 *			 Build the project
 *
-* Copyright (C) 2007 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+* Copyright (C) 2007-2018 Pico Technology Ltd. See LICENSE file for terms.
 *
 ******************************************************************************/
 
@@ -174,7 +174,7 @@ int PASCAL WinMain(HINSTANCE hInst,
 
 	if (!tc08_found)
 	{
-		MessageBox (NULL, "No USB TC-08's Found", "TC-08 Report", MB_ICONEXCLAMATION);
+		MessageBox (NULL, "No USB TC-08 devices found", "USB TC-08 Report", MB_ICONEXCLAMATION);
 		exit (99);
 	}
 
