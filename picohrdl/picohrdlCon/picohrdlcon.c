@@ -41,7 +41,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- *  Copyright © 2004-2017 Pico Technology Ltd. See LICENSE file for terms.
+ *  Copyright © 2004-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 #include <stdio.h>
@@ -1007,7 +1007,7 @@ void SetDigitalChannels(void)
 /****************************************************************************
 *
 * OpenDevice
-*  this function demonstrates how to open the next avaiable unit
+*  this function demonstrates how to open the next available unit
 *
 ****************************************************************************/
 int16_t OpenDevice(int16_t async)
@@ -1164,8 +1164,8 @@ void main (void)
 
 	g_doSet = FALSE;
 	printf("PicoLog High Resolution Data Logger (picohrdl) driver example program for ADC-20/24 data loggers\n");
-	printf("Version 1.3\n");
-	printf("Copyright (c) 2004-2017 Pico Technology Ltd.\n");
+	printf("Version 1.4\n");
+	printf("Copyright (c) 2004-2018 Pico Technology Ltd.\n");
   
 	memset(g_channelSettings, 0, sizeof(g_channelSettings));
 
