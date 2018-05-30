@@ -51,7 +51,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- * Copyright (C) 2013 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2013-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 
@@ -65,16 +65,15 @@
 #define DUAL_SCOPE		2
 
 const uint32_t	bufferLength = 100000;
-PICO_STATUS		status = PICO_OK;
-int64_t			g_totalSamples = 0;
-int16_t    		g_ready = FALSE;
-int32_t      	g_sampleCount = 0;
-uint32_t		g_startIndex;
-int16_t			g_autoStop;
-int16_t			g_trig = 0;
-uint32_t		g_trigAt = 0;
-
-uint32_t		timebase = 8;
+PICO_STATUS			status = PICO_OK;
+int64_t					g_totalSamples = 0;
+int16_t    			g_ready = FALSE;
+int32_t      		g_sampleCount = 0;
+uint32_t				g_startIndex;
+int16_t					g_autoStop;
+int16_t					g_trig = 0;
+uint32_t				g_trigAt = 0;
+int16_t					g_probeStateChanged = 0;
 
 typedef enum
 {
@@ -102,28 +101,39 @@ typedef enum
 
 typedef struct
 {
-	int16_t handle;
-	MODEL_TYPE					model;
+	int16_t						handle;
+	MODEL_TYPE				model;
 	int8_t						modelString[8];
 	int8_t						serial[11];
 	int16_t						complete;
 	int16_t						openStatus;
 	int16_t						openProgress;
-	PS4000A_RANGE				firstRange;
-	PS4000A_RANGE				lastRange;
+	PS4000A_RANGE			firstRange;
+	PS4000A_RANGE			lastRange;
 	int16_t						channelCount;
 	int16_t						maxADCValue;
-	SIGGEN_TYPE					sigGen;
+	SIGGEN_TYPE				sigGen;
 	int16_t						hasETS;
 	uint16_t					AWGFileSize;
-	CHANNEL_SETTINGS			channelSettings[PS4000A_MAX_CHANNELS];
+	CHANNEL_SETTINGS	channelSettings[PS4000A_MAX_CHANNELS];
+	uint16_t					hasFlexibleResolution;
+	uint16_t					hasIntelligentProbes;
 }UNIT;
+
+// Struct to store intelligent probe information
+typedef struct tUserProbeInfo
+{
+		PICO_STATUS status;
+		PS4000A_USER_PROBE_INTERACTIONS userProbeInteractions[PS4000A_MAX_4_CHANNELS];
+		uint32_t numberOfProbes;
+
+}USER_PROBE_INFO;
 
 typedef struct tBufferInfo
 {
-	UNIT *unit;
-	int16_t **driverBuffers;
-	int16_t **appBuffers;
+	UNIT			*unit;
+	int16_t		**driverBuffers;
+	int16_t		**appBuffers;
 
 } BUFFER_INFO;
 
@@ -143,6 +153,8 @@ uint32_t inputRanges[] = {
 							100000,
 							200000 };
 
+USER_PROBE_INFO userProbeInfo;
+
 
 /****************************************************************************
 * adc_to_mv
@@ -159,7 +171,7 @@ int32_t adc_to_mv(int32_t raw, int32_t rangeIndex, UNIT * unit)
 *
 * Convert a millivolt value into a 16-bit ADC count
 *
-*  (useful for setting trigger thresholds)
+* (useful for setting trigger thresholds)
 ****************************************************************************/
 int16_t mv_to_adc(int16_t mv, int16_t rangeIndex, UNIT * unit)
 {
@@ -168,8 +180,8 @@ int16_t mv_to_adc(int16_t mv, int16_t rangeIndex, UNIT * unit)
 
 /****************************************************************************
 * Callback
-* used by ps4000a data streaming collection calls, on receipt of data.
-* used to set global flags etc checked by user routines
+* Used by ps4000a data streaming collection calls, on receipt of data.
+* Used to set global flags etc checked by user routines
 ****************************************************************************/
 void PREF4 CallBackStreaming
 (
@@ -189,15 +201,16 @@ void PREF4 CallBackStreaming
 	{
 		bufferInfo = (BUFFER_INFO *)pParameter;
 	}
-	// used for streaming
+
+	// Used for streaming
 	g_sampleCount = noOfSamples;
 	g_startIndex = startIndex;
 	g_autoStop = autoStop;
 
-	// flag to say done reading data
+	// Flag to say done reading data
 	g_ready = TRUE;
 
-	// flags to show if & where a trigger has occurred
+	// Flags to show if & where a trigger has occurred
 	g_trig = triggered;
 	g_trigAt = triggerAt;
 
@@ -229,6 +242,52 @@ void PREF4 CallBackStreaming
 }
 
 /****************************************************************************
+* Probe Interaction Callback
+*
+* See ps4000aProbeInteractions (callback)
+*
+****************************************************************************/
+void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status, PS4000A_USER_PROBE_INTERACTIONS * probes, uint32_t	nProbes)
+{
+		uint32_t i = 0;
+
+		userProbeInfo.status = status;
+		userProbeInfo.numberOfProbes = nProbes;
+
+		for (i = 0; i < nProbes; ++i)
+		{
+				userProbeInfo.userProbeInteractions[i].connected = probes[i].connected;
+
+				userProbeInfo.userProbeInteractions[i].channel = probes[i].channel;
+				userProbeInfo.userProbeInteractions[i].enabled = probes[i].enabled;
+
+				userProbeInfo.userProbeInteractions[i].probeName = probes[i].probeName;
+
+				userProbeInfo.userProbeInteractions[i].requiresPower_ = probes[i].requiresPower_;
+				userProbeInfo.userProbeInteractions[i].isPowered_ = probes[i].isPowered_;
+
+				userProbeInfo.userProbeInteractions[i].status_ = probes[i].status_;
+
+				userProbeInfo.userProbeInteractions[i].probeOff = probes[i].probeOff;
+
+				userProbeInfo.userProbeInteractions[i].rangeFirst_ = probes[i].rangeFirst_;
+				userProbeInfo.userProbeInteractions[i].rangeLast_ = probes[i].rangeLast_;
+				userProbeInfo.userProbeInteractions[i].rangeCurrent_ = probes[i].rangeLast_;
+
+				userProbeInfo.userProbeInteractions[i].couplingFirst_ = probes[i].couplingFirst_;
+				userProbeInfo.userProbeInteractions[i].couplingLast_ = probes[i].couplingLast_;
+				userProbeInfo.userProbeInteractions[i].couplingCurrent_ = probes[i].couplingCurrent_;
+
+				userProbeInfo.userProbeInteractions[i].filterFlags_ = probes[i].filterFlags_;
+				userProbeInfo.userProbeInteractions[i].filterCurrent_ = probes[i].filterCurrent_;
+				userProbeInfo.userProbeInteractions[i].defaultFilter_ = probes[i].defaultFilter_;
+		}
+
+		g_probeStateChanged = 1;
+
+}
+
+/****************************************************************************
 * SetDefaults - set up channel voltage scales, coupling and offset
 ****************************************************************************/
 void SetDefaults(UNIT *unit)
@@ -236,12 +295,12 @@ void SetDefaults(UNIT *unit)
 
 	for (int32_t ch = 0; ch < unit->channelCount; ch++)
 	{
-		status = ps4000aSetChannel(unit->handle,													// handle to select the correct device
-			(PS4000A_CHANNEL)(PS4000A_CHANNEL_A + ch),												// channel
-			unit->channelSettings[PS4000A_CHANNEL_A + ch].enabled,									// if channel is enabled or not
-			(PS4000A_COUPLING)unit->channelSettings[PS4000A_CHANNEL_A + ch].DCcoupled,				// if ac or dc coupling
-			(PICO_CONNECT_PROBE_RANGE) unit->channelSettings[PS4000A_CHANNEL_A + ch].range,			// the voltage scale of the channel
-			unit->channelSettings[PS4000A_CHANNEL_A + ch].analogueOffset);							// analogue offset
+		status = ps4000aSetChannel(unit->handle,																						// Handle to select the correct device
+			(PS4000A_CHANNEL)(PS4000A_CHANNEL_A + ch),																				// channel
+			unit->channelSettings[PS4000A_CHANNEL_A + ch].enabled,														// If channel is enabled or not
+			(PS4000A_COUPLING)unit->channelSettings[PS4000A_CHANNEL_A + ch].DCcoupled,				// If AC or DC coupling
+			(PICO_CONNECT_PROBE_RANGE) unit->channelSettings[PS4000A_CHANNEL_A + ch].range,		// The voltage scale of the channel
+			unit->channelSettings[PS4000A_CHANNEL_A + ch].analogueOffset);										// Analogue offset
 
 		printf(status ? "SetDefaults:ps4000aSetChannel------ 0x%08lx for channel %i\n" : "", status, ch);
 	}
@@ -270,7 +329,7 @@ PICO_STATUS OpenDevice(UNIT *unit)
 	uint32_t maxArbitraryWaveformBufferSize = 0;
 
 	// Can call this function multiple times to open multiple devices 
-	// Note tha the unit.handle is specific to each device make sure you don't overwrite them
+	// Note that the unit.handle is specific to each device make sure you don't overwrite them
 	status = ps4000aOpenUnit(&unit->handle, nullptr);
 	
 	if (unit->handle == 0)
@@ -373,6 +432,8 @@ PICO_STATUS OpenDevice(UNIT *unit)
 		unit->channelCount = OCTO_SCOPE;
 		unit->hasETS = FALSE;
 		unit->AWGFileSize = maxArbitraryWaveformBufferSize;
+		unit->hasFlexibleResolution = 0;
+		unit->hasIntelligentProbes = 0;
 		break;
 
 	case MODEL_PS4225:
@@ -383,6 +444,8 @@ PICO_STATUS OpenDevice(UNIT *unit)
 		unit->channelCount = DUAL_SCOPE;
 		unit->hasETS = FALSE;
 		unit->AWGFileSize = 0;
+		unit->hasFlexibleResolution = 0;
+		unit->hasIntelligentProbes = 0;
 		break;
 
 	case MODEL_PS4425:
@@ -393,6 +456,8 @@ PICO_STATUS OpenDevice(UNIT *unit)
 		unit->channelCount = QUAD_SCOPE;
 		unit->hasETS = FALSE;
 		unit->AWGFileSize = 0;
+		unit->hasFlexibleResolution = 0;
+		unit->hasIntelligentProbes = 0;
 		break;
 
 	case MODEL_PS4444:
@@ -403,11 +468,23 @@ PICO_STATUS OpenDevice(UNIT *unit)
 		unit->channelCount = QUAD_SCOPE;
 		unit->hasETS = FALSE;
 		unit->AWGFileSize = 0;
+		unit->hasFlexibleResolution = 0;
+		unit->hasIntelligentProbes = 1;
 		break;
 
 	default:
 		unit->model = MODEL_NONE;
 		break;
+	}
+
+	// Register probe interaction callback 
+	if (unit->hasIntelligentProbes)
+	{
+			status = ps4000aSetProbeInteractionCallback(unit->handle, CallBackProbeInteractions);
+
+			// Wait for information to populate (callback will be called twice initially)
+			Sleep(2000);
+
 	}
 
 	for (int ch = 0; ch < unit->channelCount; ch++)
@@ -596,7 +673,7 @@ void StreamDataHandler(UNIT * unit)
 
 	while (!_kbhit() && !g_autoStop)
 	{
-		/* Poll until data is received. Until then, ps4000aGetStreamingLatestValues wont call the callback */
+		/* Poll until data is received. Until then, ps4000aGetStreamingLatestValues() wont call the callback */
 		Sleep(0);
 		g_ready = FALSE;
 
