@@ -346,23 +346,23 @@ PICO_STATUS OpenDevice(UNIT *unit)
 
 		case PICO_POWER_SUPPLY_NOT_CONNECTED:
 
-		do
-		{
-			printf("\n5 V power supply not connected.");
-			printf("\nDo you want to run using USB only Y/N?\n");
+				do
+				{
+					printf("\n5 V power supply not connected.");
+					printf("\nDo you want to run using USB only Y/N?\n");
 
-			ch = toupper(_getch());
+					ch = toupper(_getch());
 
-			if (ch == 'Y')
-			{
-				printf("\nPower OK\n\n");
-				status = ps4000aChangePowerSource(unit->handle, PICO_POWER_SUPPLY_NOT_CONNECTED);		// Tell the driver that's ok
-			}
+					if (ch == 'Y')
+					{
+						printf("\nPower OK\n\n");
+						status = ps4000aChangePowerSource(unit->handle, PICO_POWER_SUPPLY_NOT_CONNECTED);		// Tell the driver that's ok
+					}
 
-		} while (ch != 'Y' && ch != 'N');
+				} while (ch != 'Y' && ch != 'N');
 
-		printf(ch == 'N' ? "Please set correct USB connection setting for this device\n" : "");
-		break;
+				printf(ch == 'N' ? "Please set correct USB connection setting for this device\n" : "");
+				break;
 
 		case PICO_USB3_0_DEVICE_NON_USB3_0_PORT:	// User must acknowledge they want to power via USB
 
