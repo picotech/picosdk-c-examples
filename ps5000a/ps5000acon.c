@@ -9,9 +9,9 @@
  *
  *	Supported PicoScope models:
  *
- *		PicoScope 5242A/B & 5442A/B
- *		PicoScope 5243A/B & 5443A/B
- *		PicoScope 5244A/B & 5444A/B
+ *		PicoScope 5242A/B/D & 5442A/B/D
+ *		PicoScope 5243A/B/D & 5443A/B/D
+ *		PicoScope 5244A/B/D & 5444A/B/D
  *
  * Examples:
  *   Collect a block of samples immediately
@@ -200,25 +200,25 @@ typedef struct tPwq
 typedef struct
 {
 	int16_t handle;
-	MODEL_TYPE					model;
+	MODEL_TYPE				model;
 	int8_t						modelString[8];
 	int8_t						serial[10];
 	int16_t						complete;
 	int16_t						openStatus;
 	int16_t						openProgress;
-	PS5000A_RANGE				firstRange;
-	PS5000A_RANGE				lastRange;
+	PS5000A_RANGE			firstRange;
+	PS5000A_RANGE			lastRange;
 	int16_t						channelCount;
 	int16_t						maxADCValue;
-	SIGGEN_TYPE					sigGen;
+	SIGGEN_TYPE				sigGen;
 	int16_t						hasHardwareETS;
 	uint16_t					awgBufferSize;
-	CHANNEL_SETTINGS			channelSettings [PS5000A_MAX_CHANNELS];
+	CHANNEL_SETTINGS	channelSettings [PS5000A_MAX_CHANNELS];
 	PS5000A_DEVICE_RESOLUTION	resolution;
 }UNIT;
 
-uint32_t timebase = 8;
-BOOL      scaleVoltages = TRUE;
+uint32_t	timebase = 8;
+BOOL			scaleVoltages = TRUE;
 
 uint16_t inputRanges [PS5000A_MAX_RANGES] = {
 												10,
@@ -235,10 +235,10 @@ uint16_t inputRanges [PS5000A_MAX_RANGES] = {
 												50000};
 
 int16_t			g_autoStopped;
-int16_t   		g_ready = FALSE;
+int16_t   	g_ready = FALSE;
 uint64_t 		g_times [PS5000A_MAX_CHANNELS];
-int16_t     	g_timeUnit;
-int32_t      	g_sampleCount;
+int16_t     g_timeUnit;
+int32_t     g_sampleCount;
 uint32_t		g_startIndex;
 int16_t			g_trig = 0;
 uint32_t		g_trigAt = 0;
@@ -257,8 +257,8 @@ typedef struct tBufferInfo
 
 /****************************************************************************
 * callbackStreaming
-* used by ps5000a data streaming collection calls, on receipt of data.
-* used to set global flags etc checked by user routines
+* Used by ps5000a data streaming collection calls, on receipt of data.
+* Used to set global flags etc checked by user routines
 ****************************************************************************/
 void PREF4 callBackStreaming(	int16_t handle,
 	int32_t noOfSamples,
@@ -326,7 +326,9 @@ void PREF4 callBackStreaming(	int16_t handle,
 void PREF4 callBackBlock( int16_t handle, PICO_STATUS status, void * pParameter)
 {
 	if (status != PICO_CANCELLED)
+	{
 		g_ready = TRUE;
+	}
 }
 
 /****************************************************************************
@@ -401,6 +403,7 @@ PICO_STATUS changePowerSource(int16_t handle, PICO_STATUS status, UNIT * unit)
 				printf("\n5 V power supply not connected.");
 				printf("\nDo you want to run using USB only Y/N?\n");
 				ch = toupper(_getch());
+				
 				if(ch == 'Y')
 				{
 					printf("\nPowering the unit via USB\n");
@@ -427,8 +430,34 @@ PICO_STATUS changePowerSource(int16_t handle, PICO_STATUS status, UNIT * unit)
 			break;
 
 		case PICO_POWER_SUPPLY_CONNECTED:
-			printf("\nUsing +5 V power supply voltage\n");
+			printf("\nUsing +5 V power supply voltage.\n");
 			status = ps5000aChangePowerSource(handle, PICO_POWER_SUPPLY_CONNECTED);		// Tell the driver we are powered from +5V supply
+			break;
+
+		case PICO_USB3_0_DEVICE_NON_USB3_0_PORT:
+			do
+			{
+				printf("\nUSB 3.0 device on non-USB 3.0 port.");
+				printf("\nDo you wish to continue Y/N?\n");
+				ch = toupper(_getch());
+
+				if (ch == 'Y')
+				{
+					printf("\nSwitching to use USB power from non-USB 3.0 port.\n");
+					status = ps5000aChangePowerSource(handle, PICO_USB3_0_DEVICE_NON_USB3_0_PORT);		// Tell the driver that's ok
+
+					if (status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
+					{
+						status = changePowerSource(handle, status, unit);
+					}
+					else
+					{
+						// Do nothing
+					}
+
+				}
+			} while (ch != 'Y' && ch != 'N');
+			printf(ch == 'N' ? "Please use a USB 3.0 port or press 'Y'.\n" : "");
 			break;
 
 		case PICO_POWER_SUPPLY_UNDERVOLTAGE:
@@ -581,8 +610,10 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 
 		if (status != PICO_OK)
 		{
+			// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+			// PicoScope 524XD devices on non-USB 3.0 port
 			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || 
-				status == PICO_POWER_SUPPLY_UNDERVOLTAGE)       // PicoScope 5x4xA/B devices...+5 V PSU connected or removed
+						status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE) 
 			{
 				status = changePowerSource(unit->handle, status, unit);
 				retry = 1;
@@ -620,8 +651,10 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 
 		if (status != PICO_OK)
 		{
-			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || 
-					status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
+			// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+			// PicoScope 524XD devices on non-USB 3.0 port
+			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED ||
+						status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 			{
 				if (status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 				{
@@ -847,7 +880,7 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 	{
 		printf("\nStreaming Data for %lu samples", postTrigger / downsampleRatio);
 		
-		if (preTrigger)							// we pass 0 for preTrigger if we're not setting up a trigger
+		if (preTrigger)	// We pass 0 for preTrigger if we're not setting up a trigger
 		{
 			printf(" after the trigger occurs\nNote: %lu Pre Trigger samples before Trigger arms\n\n",preTrigger / downsampleRatio);
 		}
@@ -873,7 +906,10 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 
 		if (status != PICO_OK)
 		{
-			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
+			// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+			// PicoScope 524XD devices on non-USB 3.0 port
+			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED ||
+						status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)		
 			{
 				status = changePowerSource(unit->handle, status, unit);
 				retry = 1;
@@ -918,8 +954,10 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 
 		status = ps5000aGetStreamingLatestValues(unit->handle, callBackStreaming, &bufferInfo);
 
-		if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || 
-				status == PICO_POWER_SUPPLY_UNDERVOLTAGE) // PicoScope 5x4xA/B devices...+5 V PSU connected or removed
+		// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+		// PicoScope 524XD devices on non-USB 3.0 port
+		if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED ||
+			status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 		{
 			if (status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 			{
@@ -932,11 +970,11 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 
 		index ++;
 
-		if (g_ready && g_sampleCount > 0) /* can be ready and have no data, if autoStop has fired */
+		if (g_ready && g_sampleCount > 0) /* Can be ready and have no data, if autoStop has fired */
 		{
 			if (g_trig)
 			{
-				triggeredAt = totalSamples + g_trigAt;		// calculate where the trigger occurred in the total samples collected
+				triggeredAt = totalSamples + g_trigAt;		// Calculate where the trigger occurred in the total samples collected
 			}
 
 			totalSamples += g_sampleCount;
@@ -951,7 +989,7 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 			for (i = g_startIndex; i < (int32_t)(g_startIndex + g_sampleCount); i++) 
 			{
 				
-				if(fp != NULL)
+				if (fp != NULL)
 				{
 					for (j = 0; j < unit->channelCount; j++) 
 					{
@@ -1387,7 +1425,9 @@ void collectRapidBlock(UNIT * unit)
 
 		if (status != PICO_OK)
 		{
-			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+			// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+			// PicoScope 524XD devices on non-USB 3.0 port
+			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
 			{
 				status = changePowerSource(unit->handle, status, unit);
 				retry = 1;
@@ -1467,7 +1507,8 @@ void collectRapidBlock(UNIT * unit)
 	// Get data
 	status = ps5000aGetValuesBulk(unit->handle, &nSamples, 0, nCaptures - 1, 1, PS5000A_RATIO_MODE_NONE, overflow);
 
-	if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+	if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED ||
+				status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 	{
 		printf("\nPower Source Changed. Data collection aborted.\n");
 	}
@@ -1586,6 +1627,19 @@ void set_info(UNIT * unit)
 	int32_t variant;
 	PICO_STATUS status = PICO_OK;
 
+	// Variables used for arbitrary waveform parameters
+	int16_t			minArbitraryWaveformValue = 0;
+	int16_t			maxArbitraryWaveformValue = 0;
+	uint32_t		minArbitraryWaveformSize = 0;
+	uint32_t		maxArbitraryWaveformSize = 0;
+
+	//Initialise default unit properties and change when required
+	unit->sigGen = SIGGEN_FUNCTGEN;
+	unit->firstRange = PS5000A_10MV;
+	unit->lastRange = PS5000A_20V;
+	unit->channelCount = DUAL_SCOPE;
+	unit->awgBufferSize = MIN_SIG_GEN_BUFFER_SIZE;
+
 	if (unit->handle) 
 	{
 		for (i = 0; i < 11; i++) 
@@ -1598,37 +1652,11 @@ void set_info(UNIT * unit)
 				variant = atoi(line);
 				memcpy(&(unit->modelString), line, sizeof(unit->modelString)==5?5:sizeof(unit->modelString));
 				
-				// To identify variants.....
-				if (strlen(line) == 5)						// A or B variant unit
-				{
-					line[4] = toupper(line[4]);
+				variant = atoi(line);
 
-					if (line[1] == '2' && line[4] == 'A')		// i.e 5244A -> 0xA244
-					{
-						variant += 0x8DC8;
-					}
-					else
-					{
-						if (line[1] == '2' && line[4] == 'B')		//i.e 5244B -> 0xB244
-						{
-							variant +=0x9DC8;
-						}
-						else
-						{
-							if (line[1] == '4' && line[4] == 'A')		// i.e 5444A -> 0xA444
-							{
-								variant += 0x8F00;
-							}
-							else
-							{
-								if (line[1] == '4' && line[4] == 'B')		//i.e 5444B -> 0xB444
-								{
-									variant +=0x9F00;
-								}
-							}
-						}
-					}
-				}
+				unit->channelCount = (int16_t)line[1];
+				unit->channelCount = unit->channelCount - 48; // Subtract ASCII 0 (48)
+				
 			}
 			else if(i == PICO_BATCH_AND_SERIAL)	// info = 4 - PICO_BATCH_AND_SERIAL
 			{
@@ -1640,131 +1668,18 @@ void set_info(UNIT * unit)
 
 		printf("\n");
 
-		switch (variant)
+		// Set sig gen parameters
+		// If device has Arbitrary Waveform Generator, find the maximum AWG buffer size
+		status = ps5000aSigGenArbitraryMinMaxValues(unit->handle, &minArbitraryWaveformValue, &maxArbitraryWaveformValue, &minArbitraryWaveformSize, &maxArbitraryWaveformSize);
+		unit->awgBufferSize = maxArbitraryWaveformSize;
+
+		if (unit->awgBufferSize > 0)
 		{
-			case MODEL_PS5242A:
-				unit->model				= MODEL_PS5242A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= FALSE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5242B:
-				unit->model				= MODEL_PS5242B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= FALSE;
-				unit->awgBufferSize		= PS5X42A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5243A:
-				unit->model				= MODEL_PS5243A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5243B:
-				unit->model				= MODEL_PS5243B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= PS5X43A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5244A:
-				unit->model				= MODEL_PS5244A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5244B:
-				unit->model				= MODEL_PS5244B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= PS5X44A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5442A:
-				unit->model				= MODEL_PS5442A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= FALSE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5442B:
-				unit->model				= MODEL_PS5442B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= FALSE;
-				unit->awgBufferSize		= PS5X42A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5443A:
-				unit->model				= MODEL_PS5443A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5443B:
-				unit->model				= MODEL_PS5443B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= PS5X43A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5444A:
-				unit->model				= MODEL_PS5444A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5444B:
-				unit->model				= MODEL_PS5444B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= PS5X44A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			default:
-				unit->model				= MODEL_NONE;
-				break;
+			unit->sigGen = SIGGEN_AWG;
+		}
+		else
+		{
+			unit->sigGen = SIGGEN_FUNCTGEN;
 		}
 	}
 }
@@ -2487,9 +2402,9 @@ PICO_STATUS handleDevice(UNIT * unit)
 	struct tTriggerDirections directions;
 	PICO_STATUS status;
 
-	if (unit->openStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
+	if (unit->openStatus == PICO_POWER_SUPPLY_NOT_CONNECTED || unit->openStatus == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
 	{
-		unit->openStatus = (int16_t) changePowerSource(unit->handle, PICO_POWER_SUPPLY_NOT_CONNECTED, unit);
+		unit->openStatus = (int16_t) changePowerSource(unit->handle, unit->openStatus, unit);
 	}
 
 	printf("Handle: %d\n", unit->handle);
@@ -2676,7 +2591,8 @@ int32_t main(void)
 	{
 		status = openDevice(&(allUnits[devCount]), NULL);
 		
-		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED 
+					|| status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
 		{
 			allUnits[devCount++].openStatus = (int16_t) status;
 		}
@@ -2694,7 +2610,8 @@ int32_t main(void)
 		printf("Found one device, opening...\n\n");
 		status = allUnits[0].openStatus;
 
-		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED
+					|| status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
 		{
 			set_info(&allUnits[0]);
 			status = handleDevice(&allUnits[0]);
