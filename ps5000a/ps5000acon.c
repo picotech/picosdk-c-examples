@@ -494,7 +494,7 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 	int16_t triggerEnabled = 0;
 	int16_t pwqEnabled = 0;
 
-	int16_t * buffers[PS5000A_MAX_CHANNEL_BUFFERS];
+	int16_t * buffers[2 * PS5000A_MAX_CHANNELS];
 
 	int32_t i, j;
 	int32_t timeInterval;
@@ -787,8 +787,8 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 	int32_t i, j;
 	uint32_t sampleCount = 50000; /* make sure overview buffer is large enough */
 	FILE * fp = NULL;
-	int16_t * buffers[PS5000A_MAX_CHANNEL_BUFFERS];
-	int16_t * appBuffers[PS5000A_MAX_CHANNEL_BUFFERS];
+	int16_t * buffers[2 * PS5000A_MAX_CHANNELS];
+	int16_t * appBuffers[2 * PS5000A_MAX_CHANNELS];
 	PICO_STATUS status;
 	PICO_STATUS powerStatus;
 	uint32_t sampleInterval;
@@ -1379,6 +1379,7 @@ void collectRapidBlock(UNIT * unit)
 	{
 		status = ps5000aGetTimebase(unit->handle, timebase, nSamples, &timeIntervalNs, &maxSamples, 0);
 
+		if (status == PICO_INVALID_TIMEBASE)
 		{
 			timebase++;
 		}
@@ -1392,6 +1393,7 @@ void collectRapidBlock(UNIT * unit)
 
 		if (status != PICO_OK)
 		{
+			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
 			{
 				status = changePowerSource(unit->handle, status, unit);
 				retry = 1;
@@ -1407,10 +1409,12 @@ void collectRapidBlock(UNIT * unit)
 	// Wait until data ready
 	g_ready = 0;
 
+	while (!g_ready && !_kbhit())
 	{
 		Sleep(0);
 	}
 
+	if (!g_ready)
 	{
 		_getch();
 		status = ps5000aStop(unit->handle);
@@ -1420,6 +1424,7 @@ void collectRapidBlock(UNIT * unit)
 		printf("\nPress any key...\n\n");
 		_getch();
 
+		if (nCompletedCaptures == 0)
 		{
 			return;
 		}
@@ -1434,6 +1439,7 @@ void collectRapidBlock(UNIT * unit)
 
 	for (channel = 0; channel < unit->channelCount; channel++) 
 	{
+		if (unit->channelSettings[channel].enabled)
 		{
 			rapidBuffers[channel] = (int16_t **) calloc(nCaptures, sizeof(int16_t*));
 		}
@@ -1441,6 +1447,7 @@ void collectRapidBlock(UNIT * unit)
 
 	for (channel = 0; channel < unit->channelCount; channel++) 
 	{	
+		if (unit->channelSettings[channel].enabled)
 		{
 			for (capture = 0; capture < nCaptures; capture++) 
 			{
@@ -1470,19 +1477,29 @@ void collectRapidBlock(UNIT * unit)
 
 	if (status == PICO_OK)
 	{
+		// Print first 10 samples from each capture
 		for (capture = 0; capture < nCaptures; capture++)
 		{
+			printf("\nCapture %d:-\n\n", capture + 1);
+
+			for (channel = 0; channel < unit->channelCount; channel++)
 			{
+				if (unit->channelSettings[channel].enabled)
 				{
 					printf("Channel %c:\t", 'A' + channel);
 				}
 			}
 			printf("\n\n");
 
+			for (i = 0; i < 10; i++)
 			{
+				for (channel = 0; channel < unit->channelCount; channel++)
 				{
+					if (unit->channelSettings[channel].enabled)
 					{
-							: rapidBuffers[channel][capture][i]);																	// else print ADC Count
+						printf("   %6d       ", scaleVoltages ?
+							adc_to_mv(rapidBuffers[channel][capture][i], unit->channelSettings[PS5000A_CHANNEL_A + channel].range, unit)	// If scaleVoltages, print mV value
+							: rapidBuffers[channel][capture][i]); // else print ADC Count
 					}
 				}
 
