@@ -1259,18 +1259,17 @@ void collectBlockTriggered(UNIT * unit)
 
 /****************************************************************************
 * collectRapidBlock
-*  this function demonstrates how to collect a set of captures using 
+*  this function demonstrates how to collect a set of captures using
 *  rapid block mode.
 ****************************************************************************/
 void collectRapidBlock(UNIT * unit)
 {
 	uint32_t	nCaptures;
 	uint32_t	nSegments;
-	uint32_t	maxSegments;
 	int32_t		nMaxSamples;
 	uint32_t	nSamples = 1000;
 	int32_t		timeIndisposed;
-	uint32_t	capture; 
+	uint32_t	capture;
 	int16_t		channel;
 	int16_t***	rapidBuffers;
 	int16_t*	overflow;
@@ -1280,12 +1279,16 @@ void collectRapidBlock(UNIT * unit)
 	int16_t		retry;
 
 	int16_t		triggerVoltage = 1000; // mV
-	int32_t		triggerChannel = (int32_t) PS5000A_CHANNEL_A;
-	int16_t		voltageRange   = inputRanges[unit->channelSettings[triggerChannel].range];
+	int32_t		triggerChannel = (int32_t)PS5000A_CHANNEL_A;
+	int16_t		voltageRange = inputRanges[unit->channelSettings[triggerChannel].range];
 	int16_t		triggerThreshold = 0;
 
 	int32_t		timeIntervalNs = 0;
 	int32_t		maxSamples = 0;
+
+	uint64_t timeStampCounterDiff = 0;
+
+	PS5000A_TRIGGER_INFO * triggerInfo; // Struct to store trigger timestamping information
 
 	struct tPS5000ATriggerChannelProperties sourceDetails;
 	struct tPS5000ATriggerConditions conditions;
@@ -1314,36 +1317,36 @@ void collectRapidBlock(UNIT * unit)
 	triggerThreshold = mv_to_adc(triggerVoltage, unit->channelSettings[triggerChannel].range, unit);
 
 	// Set trigger channel properties
-	sourceDetails.thresholdUpper			= triggerThreshold;
-	sourceDetails.thresholdUpperHysteresis	= 256 * 10;
-	sourceDetails.thresholdLower			= triggerThreshold;
-	sourceDetails.thresholdLowerHysteresis	= 256 * 10;
-	sourceDetails.channel					= (PS5000A_CHANNEL) (triggerChannel);
-	sourceDetails.thresholdMode				= PS5000A_LEVEL;
+	sourceDetails.thresholdUpper = triggerThreshold;
+	sourceDetails.thresholdUpperHysteresis = 256 * 10;
+	sourceDetails.thresholdLower = triggerThreshold;
+	sourceDetails.thresholdLowerHysteresis = 256 * 10;
+	sourceDetails.channel = (PS5000A_CHANNEL)(triggerChannel);
+	sourceDetails.thresholdMode = PS5000A_LEVEL;
 
 	// Set trigger conditions
-	conditions.channelA				= PS5000A_CONDITION_TRUE;
-	conditions.channelB				= PS5000A_CONDITION_DONT_CARE;
-	conditions.channelC				= PS5000A_CONDITION_DONT_CARE;
-	conditions.channelD				= PS5000A_CONDITION_DONT_CARE;
-	conditions.external				= PS5000A_CONDITION_DONT_CARE;
-	conditions.aux					= PS5000A_CONDITION_DONT_CARE;
-	conditions.pulseWidthQualifier	= PS5000A_CONDITION_DONT_CARE;
+	conditions.channelA = PS5000A_CONDITION_TRUE;
+	conditions.channelB = PS5000A_CONDITION_DONT_CARE;
+	conditions.channelC = PS5000A_CONDITION_DONT_CARE;
+	conditions.channelD = PS5000A_CONDITION_DONT_CARE;
+	conditions.external = PS5000A_CONDITION_DONT_CARE;
+	conditions.aux = PS5000A_CONDITION_DONT_CARE;
+	conditions.pulseWidthQualifier = PS5000A_CONDITION_DONT_CARE;
 
 	// Set trigger directions
 	directions.channelA = PS5000A_RISING;
 	directions.channelB = PS5000A_NONE;
 	directions.channelC = PS5000A_NONE;
 	directions.channelD = PS5000A_NONE;
-	directions.ext		= PS5000A_NONE;
-	directions.aux		= PS5000A_NONE;
-		
+	directions.ext = PS5000A_NONE;
+	directions.aux = PS5000A_NONE;
+
 	printf("Collect rapid block triggered...\n");
-	printf("Collects when value rises past %d",	scaleVoltages?
+	printf("Collects when value rises past %d", scaleVoltages ?
 		adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
 		: sourceDetails.thresholdUpper);																// else print ADC Count
-	
-	printf(scaleVoltages?"mV\n" : "ADC Counts\n");
+
+	printf(scaleVoltages ? "mV\n" : "ADC Counts\n");
 	printf("Press any key to abort\n");
 
 	setDefaults(unit);
@@ -1351,16 +1354,8 @@ void collectRapidBlock(UNIT * unit)
 	// Trigger enabled
 	setTrigger(unit, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0);
 
-	// Find the maximum number of segments
-	status = ps5000aGetMaxSegments(unit->handle, &maxSegments);
-
 	// Set the number of segments - this can be more than the number of waveforms to collect
 	nSegments = 64;
-
-	if (nSegments > maxSegments)
-	{
-		nSegments = maxSegments;
-	}
 
 	// Set the number of captures
 	nCaptures = 10;
@@ -1374,7 +1369,7 @@ void collectRapidBlock(UNIT * unit)
 	// Run
 	timebase = 127;		// 1 MS/s at 8-bit resolution, ~504 kS/s at 12 & 16-bit resolution
 
-	// Verify timebase and number of samples per channel for segment 0
+										// Verify timebase and number of samples per channel for segment 0
 	do
 	{
 		status = ps5000aGetTimebase(unit->handle, timebase, nSamples, &timeIntervalNs, &maxSamples, 0);
@@ -1383,8 +1378,7 @@ void collectRapidBlock(UNIT * unit)
 		{
 			timebase++;
 		}
-	}
-	while (status != PICO_OK);
+	} while (status != PICO_OK);
 
 	do
 	{
@@ -1403,8 +1397,7 @@ void collectRapidBlock(UNIT * unit)
 				printf("collectRapidBlock:ps5000aRunBlock ------ 0x%08lx \n", status);
 			}
 		}
-	}
-	while(retry);
+	} while (retry);
 
 	// Wait until data ready
 	g_ready = 0;
@@ -1419,7 +1412,7 @@ void collectRapidBlock(UNIT * unit)
 		_getch();
 		status = ps5000aStop(unit->handle);
 		status = ps5000aGetNoOfCaptures(unit->handle, &nCompletedCaptures);
-		
+
 		printf("Rapid capture aborted. %lu complete blocks were captured\n", nCompletedCaptures);
 		printf("\nPress any key...\n\n");
 		_getch();
@@ -1430,42 +1423,46 @@ void collectRapidBlock(UNIT * unit)
 		}
 
 		// Only display the blocks that were captured
-		nCaptures = (uint16_t) nCompletedCaptures;
+		nCaptures = (uint16_t)nCompletedCaptures;
 	}
 
 	// Allocate memory
-	rapidBuffers = (int16_t ***) calloc(unit->channelCount, sizeof(int16_t*));
-	overflow = (int16_t *) calloc(unit->channelCount * nCaptures, sizeof(int16_t));
+	rapidBuffers = (int16_t ***)calloc(unit->channelCount, sizeof(int16_t*));
+	overflow = (int16_t *)calloc(unit->channelCount * nCaptures, sizeof(int16_t));
 
-	for (channel = 0; channel < unit->channelCount; channel++) 
+	for (channel = 0; channel < unit->channelCount; channel++)
 	{
 		if (unit->channelSettings[channel].enabled)
 		{
-			rapidBuffers[channel] = (int16_t **) calloc(nCaptures, sizeof(int16_t*));
+			rapidBuffers[channel] = (int16_t **)calloc(nCaptures, sizeof(int16_t*));
 		}
 	}
 
-	for (channel = 0; channel < unit->channelCount; channel++) 
-	{	
+	for (channel = 0; channel < unit->channelCount; channel++)
+	{
 		if (unit->channelSettings[channel].enabled)
 		{
-			for (capture = 0; capture < nCaptures; capture++) 
+			for (capture = 0; capture < nCaptures; capture++)
 			{
-				rapidBuffers[channel][capture] = (int16_t *) calloc(nSamples, sizeof(int16_t));
+				rapidBuffers[channel][capture] = (int16_t *)calloc(nSamples, sizeof(int16_t));
 			}
 		}
 	}
 
-	for (channel = 0; channel < unit->channelCount; channel++) 
+	for (channel = 0; channel < unit->channelCount; channel++)
 	{
-		if(unit->channelSettings[channel].enabled)
+		if (unit->channelSettings[channel].enabled)
 		{
-			for (capture = 0; capture < nCaptures; capture++) 
+			for (capture = 0; capture < nCaptures; capture++)
 			{
 				status = ps5000aSetDataBuffer(unit->handle, (PS5000A_CHANNEL)channel, rapidBuffers[channel][capture], nSamples, capture, PS5000A_RATIO_MODE_NONE);
 			}
 		}
 	}
+
+	// Allocate memory for the trigger timestamping
+	triggerInfo = (PS5000A_TRIGGER_INFO *)malloc(nCaptures * sizeof(PS5000A_TRIGGER_INFO));
+	memset(triggerInfo, 0, nCaptures * sizeof(PS5000A_TRIGGER_INFO));
 
 	// Get data
 	status = ps5000aGetValuesBulk(unit->handle, &nSamples, 0, nCaptures - 1, 1, PS5000A_RATIO_MODE_NONE, overflow);
@@ -1475,12 +1472,40 @@ void collectRapidBlock(UNIT * unit)
 		printf("\nPower Source Changed. Data collection aborted.\n");
 	}
 
+	// Retrieve trigger timestamping information
+	status = ps5000aGetTriggerInfoBulk(unit->handle, triggerInfo, 0, nCaptures - 1);
+
 	if (status == PICO_OK)
 	{
-		// Print first 10 samples from each capture
+
+		//print first 10 samples from each capture
 		for (capture = 0; capture < nCaptures; capture++)
 		{
-			printf("\nCapture %d:-\n\n", capture + 1);
+			printf("\n");
+
+			printf("Capture index %d:-\n\n", capture);
+
+			// Trigger Info status & Timestamp 
+			printf("Trigger Info:- Status: %u  Timestamp Counter: %u\n", triggerInfo[capture].status, triggerInfo[capture].timeStampCounter);
+
+			// Calculate time between trigger events - the first timestamp is arbitrary so is only used to calculate offsets
+
+			// The structure containing the status code with bit flag PICO_DEVICE_TIME_STAMP_RESET will have an arbitrary timeStampCounter value. 
+			// This should be the first segment in each run, so in this case segment 0 will be ignored.
+
+			if (capture == 0)
+			{
+				// Nothing to display
+			}
+			else if (capture > 0 && triggerInfo[capture].status == PICO_OK)
+			{
+				timeStampCounterDiff = triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter;
+				printf("Time since trigger for last segment: %u ns\n\n", (timeStampCounterDiff * (uint64_t)timeIntervalNs));
+			}
+			else
+			{
+				// Do nothing
+			}
 
 			for (channel = 0; channel < unit->channelCount; channel++)
 			{
@@ -1489,6 +1514,7 @@ void collectRapidBlock(UNIT * unit)
 					printf("Channel %c:\t", 'A' + channel);
 				}
 			}
+
 			printf("\n\n");
 
 			for (i = 0; i < 10; i++)
@@ -1499,7 +1525,7 @@ void collectRapidBlock(UNIT * unit)
 					{
 						printf("   %6d       ", scaleVoltages ?
 							adc_to_mv(rapidBuffers[channel][capture][i], unit->channelSettings[PS5000A_CHANNEL_A + channel].range, unit)	// If scaleVoltages, print mV value
-							: rapidBuffers[channel][capture][i]); // else print ADC Count
+							: rapidBuffers[channel][capture][i]);																	// else print ADC Count
 					}
 				}
 
@@ -1514,26 +1540,27 @@ void collectRapidBlock(UNIT * unit)
 	// Free memory
 	free(overflow);
 
-	for (channel = 0; channel < unit->channelCount; channel++) 
-	{	
-		if(unit->channelSettings[channel].enabled)
+	for (channel = 0; channel < unit->channelCount; channel++)
+	{
+		if (unit->channelSettings[channel].enabled)
 		{
-			for (capture = 0; capture < nCaptures; capture++) 
+			for (capture = 0; capture < nCaptures; capture++)
 			{
 				free(rapidBuffers[channel][capture]);
 			}
 		}
 	}
 
-	for (channel = 0; channel < unit->channelCount; channel++) 
+	for (channel = 0; channel < unit->channelCount; channel++)
 	{
-		if(unit->channelSettings[channel].enabled)
+		if (unit->channelSettings[channel].enabled)
 		{
 			free(rapidBuffers[channel]);
 		}
 	}
 
 	free(rapidBuffers);
+	free(triggerInfo);
 }
 
 /****************************************************************************
