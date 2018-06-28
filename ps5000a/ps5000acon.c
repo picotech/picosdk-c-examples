@@ -53,7 +53,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- * Copyright (C) 2013 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2013-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 
@@ -1379,7 +1379,6 @@ void collectRapidBlock(UNIT * unit)
 	{
 		status = ps5000aGetTimebase(unit->handle, timebase, nSamples, &timeIntervalNs, &maxSamples, 0);
 
-		if(status == PICO_INVALID_TIMEBASE)
 		{
 			timebase++;
 		}
@@ -1393,7 +1392,6 @@ void collectRapidBlock(UNIT * unit)
 
 		if (status != PICO_OK)
 		{
-			if(status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
 			{
 				status = changePowerSource(unit->handle, status, unit);
 				retry = 1;
@@ -1409,12 +1407,10 @@ void collectRapidBlock(UNIT * unit)
 	// Wait until data ready
 	g_ready = 0;
 
-	while(!g_ready && !_kbhit())
 	{
 		Sleep(0);
 	}
 
-	if(!g_ready)
 	{
 		_getch();
 		status = ps5000aStop(unit->handle);
@@ -1424,7 +1420,6 @@ void collectRapidBlock(UNIT * unit)
 		printf("\nPress any key...\n\n");
 		_getch();
 
-		if(nCompletedCaptures == 0)
 		{
 			return;
 		}
@@ -1439,7 +1434,6 @@ void collectRapidBlock(UNIT * unit)
 
 	for (channel = 0; channel < unit->channelCount; channel++) 
 	{
-		if(unit->channelSettings[channel].enabled)
 		{
 			rapidBuffers[channel] = (int16_t **) calloc(nCaptures, sizeof(int16_t*));
 		}
@@ -1447,7 +1441,6 @@ void collectRapidBlock(UNIT * unit)
 
 	for (channel = 0; channel < unit->channelCount; channel++) 
 	{	
-		if(unit->channelSettings[channel].enabled)
 		{
 			for (capture = 0; capture < nCaptures; capture++) 
 			{
@@ -1477,28 +1470,18 @@ void collectRapidBlock(UNIT * unit)
 
 	if (status == PICO_OK)
 	{
-		// Print first 10 samples from each capture
 		for (capture = 0; capture < nCaptures; capture++)
 		{
-			printf("\nCapture %d:-\n\n", capture + 1);
-			
-			for (channel = 0; channel < unit->channelCount; channel++) 
 			{
-				if(unit->channelSettings[channel].enabled)
 				{
 					printf("Channel %c:\t", 'A' + channel);
 				}
 			}
 			printf("\n\n");
 
-			for(i = 0; i < 10; i++)
 			{
-				for (channel = 0; channel < unit->channelCount; channel++) 
 				{
-					if(unit->channelSettings[channel].enabled)
 					{
-						printf("   %6d       ", scaleVoltages ? 
-							adc_to_mv(rapidBuffers[channel][capture][i], unit->channelSettings[PS5000A_CHANNEL_A +channel].range, unit)	// If scaleVoltages, print mV value
 							: rapidBuffers[channel][capture][i]);																	// else print ADC Count
 					}
 				}
