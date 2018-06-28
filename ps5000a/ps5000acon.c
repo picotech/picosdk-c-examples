@@ -1058,48 +1058,57 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 * - Used to call all the functions required to set up triggering
 *
 ***************************************************************************/
-PICO_STATUS setTrigger(	UNIT * unit,
-	struct tPS5000ATriggerChannelProperties * channelProperties,
+PICO_STATUS setTrigger(UNIT * unit,
+	PS5000A_TRIGGER_CHANNEL_PROPERTIES_V2 * channelProperties,
 	int16_t nChannelProperties,
-	PS5000A_TRIGGER_CONDITIONS * triggerConditions,
+	PS5000A_CONDITION * triggerConditions,
 	int16_t nTriggerConditions,
-	TRIGGER_DIRECTIONS * directions,
+	PS5000A_CONDITIONS_INFO info,
+	PS5000A_DIRECTION * directions,
+	uint16_t nDirections,
 	struct tPwq * pwq,
 	uint32_t delay,
-	int16_t auxOutputEnabled,
-	int32_t autoTriggerMs)
+	int32_t autoTriggerUs)
 {
 	PICO_STATUS status;
 
-	if ((status = ps5000aSetTriggerChannelProperties(unit->handle,
-		channelProperties,
-		nChannelProperties,
-		auxOutputEnabled,
-		autoTriggerMs)) != PICO_OK) 
+	int16_t auxOutputEnabled = 0; // Not used by function call
+
+	status = ps5000aSetTriggerChannelPropertiesV2(unit->handle, channelProperties, nChannelProperties, auxOutputEnabled);
+
+	if (status != PICO_OK) 
 	{
-		printf("setTrigger:ps5000aSetTriggerChannelProperties ------ Ox%08lx \n", status);
+		printf("setTrigger:ps5000aSetTriggerChannelPropertiesV2 ------ Ox%08lx \n", status);
 		return status;
 	}
 
-	if ((status = ps5000aSetTriggerChannelConditions(unit->handle, triggerConditions, nTriggerConditions)) != PICO_OK)
+	status = ps5000aSetTriggerChannelConditionsV2(unit->handle, triggerConditions, nTriggerConditions, info);
+
+	if (status != PICO_OK)
 	{
-		printf("setTrigger:ps5000aSetTriggerChannelConditions ------ 0x%08lx \n", status);
+		printf("setTrigger:ps5000aSetTriggerChannelConditionsV2 ------ 0x%08lx \n", status);
 		return status;
 	}
 
-	if ((status = ps5000aSetTriggerChannelDirections(unit->handle,
-		directions->channelA,
-		directions->channelB,
-		directions->channelC,
-		directions->channelD,
-		directions->ext,
-		directions->aux)) != PICO_OK) 
+	status = ps5000aSetTriggerChannelDirectionsV2(unit->handle, directions, nDirections);
+
+	if (status != PICO_OK) 
 	{
-		printf("setTrigger:ps5000aSetTriggerChannelDirections ------ 0x%08lx \n", status);
+		printf("setTrigger:ps5000aSetTriggerChannelDirectionsV2 ------ 0x%08lx \n", status);
 		return status;
 	}
 
-	if ((status = ps5000aSetTriggerDelay(unit->handle, delay)) != PICO_OK)
+	status = ps5000aSetAutoTriggerMicroSeconds(unit->handle, autoTriggerUs);
+
+	if (status != PICO_OK)
+	{
+		printf("setTrigger:ps5000aSetAutoTriggerMicroSeconds ------ 0x%08lx \n", status);
+		return status;
+	}
+
+	status = ps5000aSetTriggerDelay(unit->handle, delay);
+	
+	if (status != PICO_OK)
 	{
 		printf("setTrigger:ps5000aSetTriggerDelay ------ 0x%08lx \n", status);
 		return status;
