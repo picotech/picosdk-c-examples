@@ -63,6 +63,7 @@
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
+#include <math.h>
 #include "ps5000aApi.h"
 #else
 #include <sys/types.h>
@@ -206,6 +207,7 @@ typedef struct
 	uint16_t					awgBufferSize;
 	CHANNEL_SETTINGS	channelSettings [PS5000A_MAX_CHANNELS];
 	PS5000A_DEVICE_RESOLUTION	resolution;
+	int16_t						digitalPortCount;
 }UNIT;
 
 uint32_t	timebase = 8;
@@ -1674,6 +1676,7 @@ void set_info(UNIT * unit)
 	unit->lastRange = PS5000A_20V;
 	unit->channelCount = DUAL_SCOPE;
 	unit->awgBufferSize = MIN_SIG_GEN_BUFFER_SIZE;
+	unit->digitalPortCount = 0;
 
 	if (unit->handle) 
 	{
@@ -1691,9 +1694,19 @@ void set_info(UNIT * unit)
 
 				unit->channelCount = (int16_t)line[1];
 				unit->channelCount = unit->channelCount - 48; // Subtract ASCII 0 (48)
+
+				// Determine if the device is an MSO
+				if (strstr(line, "MSO") != NULL)
+				{
+					unit->digitalPortCount = 2;
+				}
+				else
+				{
+					unit->digitalPortCount = 0;
+				}
 				
 			}
-			else if(i == PICO_BATCH_AND_SERIAL)	// info = 4 - PICO_BATCH_AND_SERIAL
+			else if (i == PICO_BATCH_AND_SERIAL)	// info = 4 - PICO_BATCH_AND_SERIAL
 			{
 				memcpy(&(unit->serial), line, requiredSize);
 			}
@@ -1845,8 +1858,41 @@ void setVoltages(UNIT * unit)
 void setTimebase(UNIT * unit)
 {
 	PICO_STATUS status = PICO_OK;
+	PICO_STATUS powerStatus = PICO_OK;
 	int32_t timeInterval;
 	int32_t maxSamples;
+	int32_t ch;
+
+	uint32_t shortestTimebase;
+	double timeIntervalSeconds;
+
+	PS5000A_CHANNEL_FLAGS enabledChannelOrPortFlags = (PS5000A_CHANNEL_FLAGS) 0;
+
+	int16_t numValidChannels = unit->channelCount; // Dependent on power setting - i.e. channel A & B if USB powered on 4-channel device
+
+	if (unit->channelCount == QUAD_SCOPE)
+	{
+		powerStatus = ps5000aCurrentPowerSource(unit->handle);
+
+		if (powerStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		{
+			numValidChannels = DUAL_SCOPE;
+		}
+	}
+
+	// Find the channels that are enabled
+	for (ch = 0; ch < numValidChannels; ch++)
+	{
+		if (unit->channelSettings[ch].enabled)
+		{
+				enabledChannelOrPortFlags = enabledChannelOrPortFlags | (PS5000A_CHANNEL_FLAGS) pow(2, ch);
+		}
+	}
+
+	// Find the shortest possible timebase and inform the user.
+	status = ps5000aGetMinimumTimebaseStateless(unit->handle, enabledChannelOrPortFlags, &timebase, &timeIntervalSeconds, unit->resolution);
+
+	printf("Shortest timebase index available %d (%f seconds)\n", timebase, timeIntervalSeconds);
 
 	printf("Specify desired timebase: ");
 	fflush(stdin);
@@ -1856,12 +1902,12 @@ void setTimebase(UNIT * unit)
 	{
 		status = ps5000aGetTimebase(unit->handle, timebase, BUFFER_SIZE, &timeInterval, &maxSamples, 0);
 
-		if(status == PICO_INVALID_NUMBER_CHANNELS_FOR_RESOLUTION)
+		if (status == PICO_INVALID_NUMBER_CHANNELS_FOR_RESOLUTION)
 		{
 			printf("SetTimebase: Error - Invalid number of channels for resolution.\n");
 			return;
 		}
-		else if(status == PICO_OK)
+		else if (status == PICO_OK)
 		{
 			// Do nothing
 		}
@@ -2443,10 +2489,21 @@ PICO_STATUS handleDevice(UNIT * unit)
 
 	printf("Device opened successfully, cycle %d\n\n", ++cycles);
 	
-	// setup device info - unless it's set already
+	// Setup device info - unless it's set already
 	if (unit->model == MODEL_NONE)
 	{
 		set_info(unit);
+	}
+
+	// Turn off any digital ports (MSO models only)
+	if (unit->digitalPortCount > 0)
+	{
+		printf("Turning off digital ports.");
+
+		for (i = 0; i < unit->digitalPortCount; i++)
+		{
+			status = ps5000aSetDigitalPort(unit->handle, (PS5000A_CHANNEL)(i + PS5000A_DIGITAL_PORT0), 0, 0);
+		}
 	}
 	
 	timebase = 1;
@@ -2627,6 +2684,7 @@ int32_t main(void)
 		printf("Picoscope devices not found\n");
 		return 1;
 	}
+
 	// if there is only one device, open and handle it here
 	if (devCount == 1)
 	{
