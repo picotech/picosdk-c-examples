@@ -1557,7 +1557,6 @@ void collectRapidBlock(UNIT * unit)
 
 	if (status == PICO_OK)
 	{
-
 		//print first 10 samples from each capture
 		for (capture = 0; capture < nCaptures; capture++)
 		{
@@ -1566,7 +1565,7 @@ void collectRapidBlock(UNIT * unit)
 			printf("Capture index %d:-\n\n", capture);
 
 			// Trigger Info status & Timestamp 
-			printf("Trigger Info:- Status: %u  Timestamp Counter: %u\n", triggerInfo[capture].status, triggerInfo[capture].timeStampCounter);
+			printf("Trigger Info:- Status: %u  Trigger index: %u  Timestamp Counter: %u\n", triggerInfo[capture].status, triggerInfo[capture].triggerIndex, triggerInfo[capture].timeStampCounter);
 
 			// Calculate time between trigger events - the first timestamp is arbitrary so is only used to calculate offsets
 
@@ -1576,6 +1575,7 @@ void collectRapidBlock(UNIT * unit)
 			if (capture == 0)
 			{
 				// Nothing to display
+				printf("\n");
 			}
 			else if (capture > 0 && triggerInfo[capture].status == PICO_OK)
 			{
