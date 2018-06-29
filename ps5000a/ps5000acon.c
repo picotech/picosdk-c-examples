@@ -473,6 +473,8 @@ PICO_STATUS changePowerSource(int16_t handle, PICO_STATUS status, UNIT * unit)
 			while (status == PICO_POWER_SUPPLY_REQUEST_INVALID);
 			break;
 	}
+
+	printf("\n");
 	return status;
 }
 
@@ -1680,6 +1682,8 @@ void set_info(UNIT * unit)
 
 	if (unit->handle) 
 	{
+		printf("Device information:-\n\n");
+
 		for (i = 0; i < 11; i++) 
 		{
 			status = ps5000aGetUnitInfo(unit->handle, line, sizeof (line), &requiredSize, i);
@@ -2440,11 +2444,6 @@ PICO_STATUS handleDevice(UNIT * unit)
 	struct tPwq pulseWidth;
 	PICO_STATUS status;
 
-	if (unit->openStatus == PICO_POWER_SUPPLY_NOT_CONNECTED || unit->openStatus == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
-	{
-		unit->openStatus = (int16_t) changePowerSource(unit->handle, unit->openStatus, unit);
-	}
-
 	printf("Handle: %d\n", unit->handle);
 	
 	if (unit->openStatus != PICO_OK)
@@ -2662,6 +2661,11 @@ int32_t main(void)
 		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED
 					|| status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
 		{
+			if (allUnits[0].openStatus == PICO_POWER_SUPPLY_NOT_CONNECTED || allUnits[0].openStatus == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
+			{
+				allUnits[0].openStatus = (int16_t)changePowerSource(allUnits[0].handle, allUnits[0].openStatus, &allUnits[0]);
+			}
+
 			set_info(&allUnits[0]);
 			status = handleDevice(&allUnits[0]);
 		}
