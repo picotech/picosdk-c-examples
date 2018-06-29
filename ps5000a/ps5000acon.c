@@ -23,7 +23,7 @@
  *   Set Signal Generator, using standard or custom signals
  *   Change timebase & voltage scales
  *   Display data in mV or ADC counts
- *	 Handle power source changes (PicoScope5[24]xxA/B devices only)
+ *	 Handle power source changes
  *
  *	To build this application:-
  *
