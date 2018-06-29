@@ -1861,39 +1861,7 @@ void setTimebase(UNIT * unit)
 	PICO_STATUS powerStatus = PICO_OK;
 	int32_t timeInterval;
 	int32_t maxSamples;
-	int32_t ch;
-
-	uint32_t shortestTimebase;
-	double timeIntervalSeconds;
-
-	PS5000A_CHANNEL_FLAGS enabledChannelOrPortFlags = (PS5000A_CHANNEL_FLAGS) 0;
-
-	int16_t numValidChannels = unit->channelCount; // Dependent on power setting - i.e. channel A & B if USB powered on 4-channel device
-
-	if (unit->channelCount == QUAD_SCOPE)
-	{
-		powerStatus = ps5000aCurrentPowerSource(unit->handle);
-
-		if (powerStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
-		{
-			numValidChannels = DUAL_SCOPE;
-		}
-	}
-
-	// Find the channels that are enabled
-	for (ch = 0; ch < numValidChannels; ch++)
-	{
-		if (unit->channelSettings[ch].enabled)
-		{
-				enabledChannelOrPortFlags = enabledChannelOrPortFlags | (PS5000A_CHANNEL_FLAGS) pow(2, ch);
-		}
-	}
-
-	// Find the shortest possible timebase and inform the user.
-	status = ps5000aGetMinimumTimebaseStateless(unit->handle, enabledChannelOrPortFlags, &timebase, &timeIntervalSeconds, unit->resolution);
-
-	printf("Shortest timebase index available %d (%f seconds)\n", timebase, timeIntervalSeconds);
-
+	
 	printf("Specify desired timebase: ");
 	fflush(stdin);
 	scanf_s("%lud", &timebase);
