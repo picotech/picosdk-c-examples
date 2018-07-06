@@ -12,7 +12,7 @@
  *		PicoScope 6402 & 6402A/B/C/D
  *		PicoScope 6403 & 6403A/B/C/D
  *		PicoScope 6404 & 6404A/B/C/D
- *      PicoScope 6407
+ *    PicoScope 6407
  *
  * Examples:
  *    Collect a block of samples immediately
@@ -1072,7 +1072,7 @@ void CollectRapidBlock(UNIT * unit)
 
 	// If the trigger voltage level is greater than the range selected, set the threshold to half
 	// of the range selected e.g. for +/- 200mV, set the threshold to 100mV
-	if(triggerVoltage > voltageRange)
+	if (triggerVoltage > voltageRange)
 	{
 		triggerVoltage = (voltageRange / 2);
 	}
@@ -1115,21 +1115,21 @@ void CollectRapidBlock(UNIT * unit)
 	SetDefaults(unit);
 
 	// Trigger enabled
-	SetTrigger(unit->handle, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0);
+	status = SetTrigger(unit->handle, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0);
 	
 	// Set the number of segments
 	nSegments = 16;
 
-	//Set the number of captures
+	// Set the number of captures
 	nCaptures = 10;
 
-	//Segment the memory
+	// Segment the memory
 	status = ps6000MemorySegments(unit->handle, nSegments, &nMaxSamples);
 
-	//Set the number of captures
+	// Set the number of captures
 	status = ps6000SetNoOfCaptures(unit->handle, nCaptures);
 
-	//Run
+	// Run
 	
 	while (ps6000GetTimebase2(unit->handle, timebase, nSamples, &timeInterval, oversample, &maxSamples, segmentIndex))
 	{
@@ -1140,15 +1140,15 @@ void CollectRapidBlock(UNIT * unit)
 
 	status = ps6000RunBlock(unit->handle, 0, nSamples, timebase, 1, &timeIndisposed, segmentIndex, CallBackBlock, NULL);
 
-	//Wait until data ready
+	// Wait until data ready
 	g_ready = 0;
 
-	while(!g_ready && !_kbhit())
+	while (!g_ready && !_kbhit())
 	{
 		Sleep(0);
 	}
 
-	if(!g_ready)
+	if (!g_ready)
 	{
 		_getch();
 		status = ps6000Stop(unit->handle);
@@ -1174,7 +1174,7 @@ void CollectRapidBlock(UNIT * unit)
 	// Memory for segments
 	for (channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++) 
 	{
-		if(unit->channelSettings[channel].enabled)
+		if (unit->channelSettings[channel].enabled)
 		{
 			rapidBuffers[channel] = (int16_t**) calloc(nCaptures, sizeof(int16_t*));
 		}
@@ -1183,7 +1183,7 @@ void CollectRapidBlock(UNIT * unit)
 	// Memory for buffers for channel - segment combination
 	for (channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++) 
 	{	
-		if(unit->channelSettings[channel].enabled)
+		if (unit->channelSettings[channel].enabled)
 		{
 			for (capture = 0; capture < nCaptures; capture++) 
 			{
@@ -1194,7 +1194,7 @@ void CollectRapidBlock(UNIT * unit)
 
 	for (channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++) 
 	{
-		if(unit->channelSettings[channel].enabled)
+		if (unit->channelSettings[channel].enabled)
 		{
 			for (capture = 0; capture < nCaptures; capture++) 
 			{
@@ -1215,9 +1215,9 @@ void CollectRapidBlock(UNIT * unit)
 		printf("Capture %d\n", capture + 1);
 		printf("----------\n");
 
-		for(channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++)
+		for (channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++)
 		{
-			if(unit->channelSettings[channel].enabled)
+			if (unit->channelSettings[channel].enabled)
 			{
 				printf("Channel %C\t", 'A' + channel);
 			}
@@ -1226,11 +1226,11 @@ void CollectRapidBlock(UNIT * unit)
 		printf("\n\n");
 
 		
-		for(i = 0; i < 10; i++)
+		for (i = 0; i < 10; i++)
 		{
-			for(channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++)
+			for (channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++)
 			{
-				if(unit->channelSettings[channel].enabled)
+				if (unit->channelSettings[channel].enabled)
 				{
 					printf("%d\t\t", rapidBuffers[channel][capture][i]);
 				}
@@ -1247,7 +1247,7 @@ void CollectRapidBlock(UNIT * unit)
 
 	for (channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++) 
 	{	
-		if(unit->channelSettings[channel].enabled)
+		if (unit->channelSettings[channel].enabled)
 		{
 			for (capture = 0; capture < nCaptures; capture++) 
 			{
@@ -1258,7 +1258,7 @@ void CollectRapidBlock(UNIT * unit)
 
 	for (channel = (int16_t) PS6000_CHANNEL_A; channel < unit->channelCount; channel++) 
 	{
-		if(unit->channelSettings[channel].enabled)
+		if (unit->channelSettings[channel].enabled)
 		{
 			free(rapidBuffers[channel]);
 		}
