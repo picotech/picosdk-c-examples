@@ -1891,7 +1891,7 @@ void setTimebase(UNIT * unit)
 	}
 	while(status != PICO_OK);
 
-	printf("Timebase used %lu = %ldns sample interval\n", timebase, timeInterval);
+	printf("Timebase used %lu = %ld ns sample interval\n", timebase, timeInterval);
 }
 
 /****************************************************************************
