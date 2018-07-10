@@ -591,7 +591,7 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 
 	if (!etsModeSet)
 	{
-		printf("\nTimebase: %lu  SampleInterval: %ldns\n", timebase, timeInterval);
+		printf("\nTimebase: %lu  SampleInterval: %ld ns\n", timebase, timeInterval);
 	}
 
 	/* Start it collecting, then wait for completion*/
@@ -737,11 +737,11 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 				{
 					if (etsModeSet)
 					{
-						fprintf(fp, "%d ", etsTime[i]);
+						fprintf(fp, "%I64d ", etsTime[i]);
 					}
 					else
 					{
-						fprintf(fp, "%u ", g_times[0] + (uint64_t)(i * timeInterval));
+						fprintf(fp, "%I64u ", g_times[0] + (uint64_t)(i * timeInterval));
 					}
 
 					for (j = 0; j < unit->channelCount; j++) 
@@ -1565,7 +1565,7 @@ void collectRapidBlock(UNIT * unit)
 			printf("Capture index %d:-\n\n", capture);
 
 			// Trigger Info status & Timestamp 
-			printf("Trigger Info:- Status: %u  Trigger index: %u  Timestamp Counter: %u\n", triggerInfo[capture].status, triggerInfo[capture].triggerIndex, triggerInfo[capture].timeStampCounter);
+			printf("Trigger Info:- Status: %u  Trigger index: %u  Timestamp Counter: %I64u\n", triggerInfo[capture].status, triggerInfo[capture].triggerIndex, triggerInfo[capture].timeStampCounter);
 
 			// Calculate time between trigger events - the first timestamp is arbitrary so is only used to calculate offsets
 
@@ -1580,7 +1580,7 @@ void collectRapidBlock(UNIT * unit)
 			else if (capture > 0 && triggerInfo[capture].status == PICO_OK)
 			{
 				timeStampCounterDiff = triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter;
-				printf("Time since trigger for last segment: %u ns\n\n", (timeStampCounterDiff * (uint64_t)timeIntervalNs));
+				printf("Time since trigger for last segment: %I64u ns\n\n", (timeStampCounterDiff * (uint64_t)timeIntervalNs));
 			}
 			else
 			{
