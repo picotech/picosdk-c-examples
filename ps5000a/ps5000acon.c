@@ -2135,8 +2135,11 @@ void setSignalGenerator(UNIT * unit)
 			scanf_s("%s", fileName, 128);
 
 			if (fopen_s(&fp, fileName, "r") == 0) 
-			{ // Having opened file, read in data - one number per line (max 16384 lines for PicoScope 5X42B device, 
-			  // 32768 for PicoScope 5X43B, 49152 for PicoScope 5X44B), with values in (-32768..+32767)
+			{ 
+				// Having opened file, read in data - one number per line (max 16384 lines for PicoScope 5X42B device, 
+			  // 32768 for PicoScope 5X43B & 5000D devices, 49152 for PicoScope 5X44B), with values in (-32768...+32767)
+				// The min and max arbitrary waveform values can also be obtained from the ps5000aSigGenArbitraryMinMaxValues()
+				// function.
 				while (EOF != fscanf_s(fp, "%hi", (arbitraryWaveform + waveformSize)) && waveformSize++ < unit->awgBufferSize - 1);
 				fclose(fp);
 				printf("File successfully loaded\n");
