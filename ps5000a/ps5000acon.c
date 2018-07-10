@@ -27,7 +27,7 @@
  *
  *	To build this application:-
  *
- *		If Microsoft Visual Studio (including Express) is being used:
+ *		If Microsoft Visual Studio (including Express/Community Edition) is being used:
  *
  *			Select the solution configuration (Debug/Release) and platform (x86/x64)
  *			Ensure that the 32-/64-bit ps5000a.lib can be located
