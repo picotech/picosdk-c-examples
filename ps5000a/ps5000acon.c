@@ -1368,6 +1368,7 @@ void collectRapidBlock(UNIT * unit)
 
 	int32_t		timeIntervalNs = 0;
 	int32_t		maxSamples = 0;
+	uint32_t	maxSegments = 0;
 
 	uint64_t timeStampCounterDiff = 0;
 
@@ -1419,7 +1420,7 @@ void collectRapidBlock(UNIT * unit)
 	directions.mode = PS5000A_LEVEL;
 
 	printf("Collect rapid block triggered...\n");
-	printf("Collects when value rises past %d", scaleVoltages ?
+	printf("Collects when value rises past %d ", scaleVoltages ?
 		adc_to_mv(triggerProperties.thresholdUpper, unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
 		: triggerProperties.thresholdUpper);																// else print ADC Count
 
@@ -1429,10 +1430,18 @@ void collectRapidBlock(UNIT * unit)
 	setDefaults(unit);
 
 	// Trigger enabled
-	setTrigger(unit, &triggerProperties, 1, &conditions, 1, &directions, 1, &pulseWidth, 0, 0);
+	status = setTrigger(unit, &triggerProperties, 1, &conditions, 1, &directions, 1, &pulseWidth, 0, 0);
+
+	// Find the maximum number of segments
+	status = ps5000aGetMaxSegments(unit->handle, &maxSegments);
 
 	// Set the number of segments - this can be more than the number of waveforms to collect
 	nSegments = 64;
+
+	if (nSegments > maxSegments)
+	{
+		nSegments = maxSegments;
+	}
 
 	// Set the number of captures
 	nCaptures = 10;
