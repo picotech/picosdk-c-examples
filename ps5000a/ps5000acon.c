@@ -1178,7 +1178,7 @@ void collectBlockEts(UNIT * unit)
 {
 	PICO_STATUS status;
 	int32_t ets_sampletime;
-	int16_t	triggerVoltage = mv_to_adc(1000, unit->channelSettings[PS5000A_CHANNEL_A].range, unit);
+	int16_t triggerVoltage = 1000; // millivolts
 	uint32_t delay = 0;
 	int16_t etsModeSet = FALSE;
 
@@ -1236,7 +1236,7 @@ void collectBlockEts(UNIT * unit)
 		adc_to_mv(triggerProperties.thresholdUpper,	unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
 		: triggerProperties.thresholdUpper);																// else print ADC Count
 	
-	printf(scaleVoltages? "mV\n" : "ADC Counts\n");
+	printf(scaleVoltages? " mV\n" : "ADC Counts\n");
 	printf("Press a key to start...\n");
 	_getch();
 
