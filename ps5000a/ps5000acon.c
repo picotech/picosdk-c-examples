@@ -1760,11 +1760,11 @@ void setVoltages(UNIT * unit)
 	int16_t numEnabledChannels = 0;
 	int16_t retry = FALSE;
 
-	if(unit->channelCount == QUAD_SCOPE)
+	if (unit->channelCount == QUAD_SCOPE)
 	{
 		powerStatus = ps5000aCurrentPowerSource(unit->handle); 
 
-		if(powerStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		if (powerStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
 		{
 			numValidChannels = DUAL_SCOPE;
 		}
@@ -1813,17 +1813,17 @@ void setVoltages(UNIT * unit)
 			}
 			printf(count == 0? "\n** At least 1 channel must be enabled **\n\n":"");
 		}
-		while(count == 0);	// must have at least one channel enabled
+		while (count == 0);	// must have at least one channel enabled
 
 		status = ps5000aGetDeviceResolution(unit->handle, &resolution);
 
 		// Verify that the number of enabled channels is valid for the resolution set.
 
-		switch(resolution)
+		switch (resolution)
 		{
 			case PS5000A_DR_15BIT:
 
-				if(count > 2)
+				if (count > 2)
 				{
 					printf("\nError: Only 2 channels may be enabled with 15-bit resolution set.\n");
 					printf("Please switch off %d channel(s).\n", numValidChannels - 2);
@@ -1837,7 +1837,7 @@ void setVoltages(UNIT * unit)
 
 			case PS5000A_DR_16BIT:
 
-				if(count > 1)
+				if (count > 1)
 				{
 					printf("\nError: Only one channes may be enabled with 16-bit resolution set.\n");
 					printf("Please switch off %d channel(s).\n", numValidChannels - 1);
@@ -1858,7 +1858,7 @@ void setVoltages(UNIT * unit)
 
 		printf("\n");
 	}
-	while(retry == TRUE);
+	while (retry == TRUE);
 
 	setDefaults(unit);	// Put these changes into effect
 }
@@ -1874,6 +1874,44 @@ void setTimebase(UNIT * unit)
 	PICO_STATUS powerStatus = PICO_OK;
 	int32_t timeInterval;
 	int32_t maxSamples;
+	int32_t ch;
+
+	uint32_t shortestTimebase;
+	double timeIntervalSeconds;
+	
+	PS5000A_CHANNEL_FLAGS enabledChannelOrPortFlags = (PS5000A_CHANNEL_FLAGS)0;
+	
+	int16_t numValidChannels = unit->channelCount; // Dependent on power setting - i.e. channel A & B if USB powered on 4-channel device
+	
+	if (unit->channelCount == QUAD_SCOPE)
+	{
+		powerStatus = ps5000aCurrentPowerSource(unit->handle);
+		
+		if (powerStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		{
+			numValidChannels = DUAL_SCOPE;
+		}
+	}
+	
+	// Find the channels that are enabled
+	for (ch = 0; ch < numValidChannels; ch++)
+	{
+		if (unit->channelSettings[ch].enabled)
+		{
+			enabledChannelOrPortFlags = enabledChannelOrPortFlags | (PS5000A_CHANNEL_FLAGS)pow(2, ch);
+		}
+	}
+	
+	// Find the shortest possible timebase and inform the user.
+	status = ps5000aGetMinimumTimebaseStateless(unit->handle, enabledChannelOrPortFlags, &timebase, &timeIntervalSeconds, unit->resolution);
+
+	if (status != PICO_OK)
+	{
+		printf("setTimebase:ps5000aGetMinimumTimebaseStateless ------ 0x%08lx \n", status);
+		return;
+	}
+
+	printf("Shortest timebase index available %d (%.9f seconds).\n", timebase, timeIntervalSeconds);
 	
 	printf("Specify desired timebase: ");
 	fflush(stdin);
@@ -1898,7 +1936,7 @@ void setTimebase(UNIT * unit)
 		}
 
 	}
-	while(status != PICO_OK);
+	while (status != PICO_OK);
 
 	printf("Timebase used %lu = %ld ns sample interval\n", timebase, timeInterval);
 }
@@ -2028,11 +2066,11 @@ void setResolution(UNIT * unit)
 
 		// Verify if resolution can be selected for number of channels enabled
 
-		if(newResolution == PS5000A_DR_16BIT && numEnabledChannels > 1)
+		if (newResolution == PS5000A_DR_16BIT && numEnabledChannels > 1)
 		{
 			printf("setResolution: 16 bit resolution can only be selected with 1 channel enabled.\n");
 		}
-		else if(newResolution == PS5000A_DR_15BIT && numEnabledChannels > 2)
+		else if (newResolution == PS5000A_DR_15BIT && numEnabledChannels > 2)
 		{
 			printf("setResolution: 15 bit resolution can only be selected with a maximum of 2 channels enabled.\n");
 		}
@@ -2051,7 +2089,7 @@ void setResolution(UNIT * unit)
 
 	status = ps5000aSetDeviceResolution(unit->handle, (PS5000A_DEVICE_RESOLUTION) newResolution);
 
-	if(status == PICO_OK)
+	if (status == PICO_OK)
 	{
 		unit->resolution = newResolution;
 
@@ -2425,14 +2463,15 @@ void displaySettings(UNIT *unit)
 PICO_STATUS openDevice(UNIT *unit, int8_t *serial)
 {
 	PICO_STATUS status;
+	unit->resolution = PS5000A_DR_8BIT;
 
 	if (serial == NULL)
 	{
-		status = ps5000aOpenUnit(&unit->handle, NULL, PS5000A_DR_8BIT);
+		status = ps5000aOpenUnit(&unit->handle, NULL, unit->resolution);
 	}
 	else
 	{
-		status = ps5000aOpenUnit(&unit->handle, serial, PS5000A_DR_8BIT);
+		status = ps5000aOpenUnit(&unit->handle, serial, unit->resolution);
 	}
 
 	unit->openStatus = (int16_t) status;
