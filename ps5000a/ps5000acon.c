@@ -9,9 +9,9 @@
  *
  *	Supported PicoScope models:
  *
- *		PicoScope 5242A/B & 5442A/B
- *		PicoScope 5243A/B & 5443A/B
- *		PicoScope 5244A/B & 5444A/B
+ *		PicoScope 5242A/B/D & 5442A/B/D
+ *		PicoScope 5243A/B/D & 5443A/B/D
+ *		PicoScope 5244A/B/D & 5444A/B/D
  *
  * Examples:
  *   Collect a block of samples immediately
@@ -23,11 +23,11 @@
  *   Set Signal Generator, using standard or custom signals
  *   Change timebase & voltage scales
  *   Display data in mV or ADC counts
- *	 Handle power source changes (PicoScope5[24]xxA/B devices only)
+ *	 Handle power source changes
  *
  *	To build this application:-
  *
- *		If Microsoft Visual Studio (including Express) is being used:
+ *		If Microsoft Visual Studio (including Express/Community Edition) is being used:
  *
  *			Select the solution configuration (Debug/Release) and platform (x86/x64)
  *			Ensure that the 32-/64-bit ps5000a.lib can be located
@@ -63,6 +63,7 @@
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
+#include <math.h>
 #include "ps5000aApi.h"
 #else
 #include <sys/types.h>
@@ -177,21 +178,12 @@ typedef enum
 	SIGGEN_AWG = 2
 } SIGGEN_TYPE;
 
-typedef struct tTriggerDirections
-{
-	PS5000A_THRESHOLD_DIRECTION channelA;
-	PS5000A_THRESHOLD_DIRECTION channelB;
-	PS5000A_THRESHOLD_DIRECTION channelC;
-	PS5000A_THRESHOLD_DIRECTION channelD;
-	PS5000A_THRESHOLD_DIRECTION ext;
-	PS5000A_THRESHOLD_DIRECTION aux;
-}TRIGGER_DIRECTIONS;
-
 typedef struct tPwq
 {
-	PS5000A_PWQ_CONDITIONS * conditions;
-	int16_t nConditions;
-	PS5000A_THRESHOLD_DIRECTION direction;
+	PS5000A_CONDITION * pwqConditions;
+	int16_t nPwqConditions;
+	PS5000A_DIRECTION * pwqDirections;
+	int16_t nPwqDirections;
 	uint32_t lower;
 	uint32_t upper;
 	PS5000A_PULSE_WIDTH_TYPE type;
@@ -200,25 +192,26 @@ typedef struct tPwq
 typedef struct
 {
 	int16_t handle;
-	MODEL_TYPE					model;
+	MODEL_TYPE				model;
 	int8_t						modelString[8];
 	int8_t						serial[10];
 	int16_t						complete;
 	int16_t						openStatus;
 	int16_t						openProgress;
-	PS5000A_RANGE				firstRange;
-	PS5000A_RANGE				lastRange;
+	PS5000A_RANGE			firstRange;
+	PS5000A_RANGE			lastRange;
 	int16_t						channelCount;
 	int16_t						maxADCValue;
-	SIGGEN_TYPE					sigGen;
+	SIGGEN_TYPE				sigGen;
 	int16_t						hasHardwareETS;
 	uint16_t					awgBufferSize;
-	CHANNEL_SETTINGS			channelSettings [PS5000A_MAX_CHANNELS];
+	CHANNEL_SETTINGS	channelSettings [PS5000A_MAX_CHANNELS];
 	PS5000A_DEVICE_RESOLUTION	resolution;
+	int16_t						digitalPortCount;
 }UNIT;
 
-uint32_t timebase = 8;
-BOOL      scaleVoltages = TRUE;
+uint32_t	timebase = 8;
+BOOL			scaleVoltages = TRUE;
 
 uint16_t inputRanges [PS5000A_MAX_RANGES] = {
 												10,
@@ -235,10 +228,10 @@ uint16_t inputRanges [PS5000A_MAX_RANGES] = {
 												50000};
 
 int16_t			g_autoStopped;
-int16_t   		g_ready = FALSE;
+int16_t   	g_ready = FALSE;
 uint64_t 		g_times [PS5000A_MAX_CHANNELS];
-int16_t     	g_timeUnit;
-int32_t      	g_sampleCount;
+int16_t     g_timeUnit;
+int32_t     g_sampleCount;
 uint32_t		g_startIndex;
 int16_t			g_trig = 0;
 uint32_t		g_trigAt = 0;
@@ -257,8 +250,8 @@ typedef struct tBufferInfo
 
 /****************************************************************************
 * callbackStreaming
-* used by ps5000a data streaming collection calls, on receipt of data.
-* used to set global flags etc checked by user routines
+* Used by ps5000a data streaming collection calls, on receipt of data.
+* Used to set global flags etc checked by user routines
 ****************************************************************************/
 void PREF4 callBackStreaming(	int16_t handle,
 	int32_t noOfSamples,
@@ -326,7 +319,9 @@ void PREF4 callBackStreaming(	int16_t handle,
 void PREF4 callBackBlock( int16_t handle, PICO_STATUS status, void * pParameter)
 {
 	if (status != PICO_CANCELLED)
+	{
 		g_ready = TRUE;
+	}
 }
 
 /****************************************************************************
@@ -401,6 +396,7 @@ PICO_STATUS changePowerSource(int16_t handle, PICO_STATUS status, UNIT * unit)
 				printf("\n5 V power supply not connected.");
 				printf("\nDo you want to run using USB only Y/N?\n");
 				ch = toupper(_getch());
+				
 				if(ch == 'Y')
 				{
 					printf("\nPowering the unit via USB\n");
@@ -427,8 +423,34 @@ PICO_STATUS changePowerSource(int16_t handle, PICO_STATUS status, UNIT * unit)
 			break;
 
 		case PICO_POWER_SUPPLY_CONNECTED:
-			printf("\nUsing +5 V power supply voltage\n");
+			printf("\nUsing +5 V power supply voltage.\n");
 			status = ps5000aChangePowerSource(handle, PICO_POWER_SUPPLY_CONNECTED);		// Tell the driver we are powered from +5V supply
+			break;
+
+		case PICO_USB3_0_DEVICE_NON_USB3_0_PORT:
+			do
+			{
+				printf("\nUSB 3.0 device on non-USB 3.0 port.");
+				printf("\nDo you wish to continue Y/N?\n");
+				ch = toupper(_getch());
+
+				if (ch == 'Y')
+				{
+					printf("\nSwitching to use USB power from non-USB 3.0 port.\n");
+					status = ps5000aChangePowerSource(handle, PICO_USB3_0_DEVICE_NON_USB3_0_PORT);		// Tell the driver that's ok
+
+					if (status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
+					{
+						status = changePowerSource(handle, status, unit);
+					}
+					else
+					{
+						// Do nothing
+					}
+
+				}
+			} while (ch != 'Y' && ch != 'N');
+			printf(ch == 'N' ? "Please use a USB 3.0 port or press 'Y'.\n" : "");
 			break;
 
 		case PICO_POWER_SUPPLY_UNDERVOLTAGE:
@@ -451,6 +473,8 @@ PICO_STATUS changePowerSource(int16_t handle, PICO_STATUS status, UNIT * unit)
 			while (status == PICO_POWER_SUPPLY_REQUEST_INVALID);
 			break;
 	}
+
+	printf("\n");
 	return status;
 }
 
@@ -567,7 +591,7 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 
 	if (!etsModeSet)
 	{
-		printf("\nTimebase: %lu  SampleInterval: %ldns\n", timebase, timeInterval);
+		printf("\nTimebase: %lu  SampleInterval: %ld ns\n", timebase, timeInterval);
 	}
 
 	/* Start it collecting, then wait for completion*/
@@ -581,8 +605,10 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 
 		if (status != PICO_OK)
 		{
+			// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+			// PicoScope 524XD devices on non-USB 3.0 port
 			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || 
-				status == PICO_POWER_SUPPLY_UNDERVOLTAGE)       // PicoScope 5x4xA/B devices...+5 V PSU connected or removed
+						status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE) 
 			{
 				status = changePowerSource(unit->handle, status, unit);
 				retry = 1;
@@ -620,8 +646,10 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 
 		if (status != PICO_OK)
 		{
-			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || 
-					status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
+			// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+			// PicoScope 524XD devices on non-USB 3.0 port
+			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED ||
+						status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 			{
 				if (status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 				{
@@ -709,11 +737,11 @@ void blockDataHandler(UNIT * unit, int8_t * text, int32_t offset, int16_t etsMod
 				{
 					if (etsModeSet)
 					{
-						fprintf(fp, "%d ", etsTime[i]);
+						fprintf(fp, "%I64d ", etsTime[i]);
 					}
 					else
 					{
-						fprintf(fp, "%u ", g_times[0] + (uint64_t)(i * timeInterval));
+						fprintf(fp, "%I64u ", g_times[0] + (uint64_t)(i * timeInterval));
 					}
 
 					for (j = 0; j < unit->channelCount; j++) 
@@ -847,7 +875,7 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 	{
 		printf("\nStreaming Data for %lu samples", postTrigger / downsampleRatio);
 		
-		if (preTrigger)							// we pass 0 for preTrigger if we're not setting up a trigger
+		if (preTrigger)	// We pass 0 for preTrigger if we're not setting up a trigger
 		{
 			printf(" after the trigger occurs\nNote: %lu Pre Trigger samples before Trigger arms\n\n",preTrigger / downsampleRatio);
 		}
@@ -873,7 +901,10 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 
 		if (status != PICO_OK)
 		{
-			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
+			// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+			// PicoScope 524XD devices on non-USB 3.0 port
+			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED ||
+						status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)		
 			{
 				status = changePowerSource(unit->handle, status, unit);
 				retry = 1;
@@ -918,8 +949,10 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 
 		status = ps5000aGetStreamingLatestValues(unit->handle, callBackStreaming, &bufferInfo);
 
-		if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || 
-				status == PICO_POWER_SUPPLY_UNDERVOLTAGE) // PicoScope 5x4xA/B devices...+5 V PSU connected or removed
+		// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+		// PicoScope 524XD devices on non-USB 3.0 port
+		if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED ||
+			status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 		{
 			if (status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 			{
@@ -932,11 +965,11 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 
 		index ++;
 
-		if (g_ready && g_sampleCount > 0) /* can be ready and have no data, if autoStop has fired */
+		if (g_ready && g_sampleCount > 0) /* Can be ready and have no data, if autoStop has fired */
 		{
 			if (g_trig)
 			{
-				triggeredAt = totalSamples + g_trigAt;		// calculate where the trigger occurred in the total samples collected
+				triggeredAt = totalSamples + g_trigAt;		// Calculate where the trigger occurred in the total samples collected
 			}
 
 			totalSamples += g_sampleCount;
@@ -951,7 +984,7 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 			for (i = g_startIndex; i < (int32_t)(g_startIndex + g_sampleCount); i++) 
 			{
 				
-				if(fp != NULL)
+				if (fp != NULL)
 				{
 					for (j = 0; j < unit->channelCount; j++) 
 					{
@@ -1017,65 +1050,98 @@ void streamDataHandler(UNIT * unit, uint32_t preTrigger)
 /****************************************************************************
 * setTrigger
 *
-* - Used to call all the functions required to set up triggering
+* - Used to call all the functions required to set up triggering.
 *
 ***************************************************************************/
-PICO_STATUS setTrigger(	UNIT * unit,
-	struct tPS5000ATriggerChannelProperties * channelProperties,
+PICO_STATUS setTrigger(UNIT * unit,
+	PS5000A_TRIGGER_CHANNEL_PROPERTIES_V2 * channelProperties,
 	int16_t nChannelProperties,
-	PS5000A_TRIGGER_CONDITIONS * triggerConditions,
+	PS5000A_CONDITION * triggerConditions,
 	int16_t nTriggerConditions,
-	TRIGGER_DIRECTIONS * directions,
+	PS5000A_DIRECTION * directions,
+	uint16_t nDirections,
 	struct tPwq * pwq,
 	uint32_t delay,
-	int16_t auxOutputEnabled,
-	int32_t autoTriggerMs)
+	uint64_t autoTriggerUs)
 {
 	PICO_STATUS status;
+	PS5000A_CONDITIONS_INFO info = PS5000A_CLEAR;
+	PS5000A_CONDITIONS_INFO pwqInfo = PS5000A_CLEAR;
 
-	if ((status = ps5000aSetTriggerChannelProperties(unit->handle,
-		channelProperties,
-		nChannelProperties,
-		auxOutputEnabled,
-		autoTriggerMs)) != PICO_OK) 
+	int16_t auxOutputEnabled = 0; // Not used by function call
+
+	status = ps5000aSetTriggerChannelPropertiesV2(unit->handle, channelProperties, nChannelProperties, auxOutputEnabled);
+
+	if (status != PICO_OK) 
 	{
-		printf("setTrigger:ps5000aSetTriggerChannelProperties ------ Ox%08lx \n", status);
+		printf("setTrigger:ps5000aSetTriggerChannelPropertiesV2 ------ Ox%08lx \n", status);
 		return status;
 	}
 
-	if ((status = ps5000aSetTriggerChannelConditions(unit->handle, triggerConditions, nTriggerConditions)) != PICO_OK)
+	if (nTriggerConditions != 0)
 	{
-		printf("setTrigger:ps5000aSetTriggerChannelConditions ------ 0x%08lx \n", status);
+		info = (PS5000A_CONDITIONS_INFO)(PS5000A_CLEAR | PS5000A_ADD); // Clear and add trigger condition specified unless no trigger conditions have been specified
+	}
+
+	status = ps5000aSetTriggerChannelConditionsV2(unit->handle, triggerConditions, nTriggerConditions, info);
+
+	if (status != PICO_OK)
+	{
+		printf("setTrigger:ps5000aSetTriggerChannelConditionsV2 ------ 0x%08lx \n", status);
 		return status;
 	}
 
-	if ((status = ps5000aSetTriggerChannelDirections(unit->handle,
-		directions->channelA,
-		directions->channelB,
-		directions->channelC,
-		directions->channelD,
-		directions->ext,
-		directions->aux)) != PICO_OK) 
+	status = ps5000aSetTriggerChannelDirectionsV2(unit->handle, directions, nDirections);
+
+	if (status != PICO_OK) 
 	{
-		printf("setTrigger:ps5000aSetTriggerChannelDirections ------ 0x%08lx \n", status);
+		printf("setTrigger:ps5000aSetTriggerChannelDirectionsV2 ------ 0x%08lx \n", status);
 		return status;
 	}
 
-	if ((status = ps5000aSetTriggerDelay(unit->handle, delay)) != PICO_OK)
+	status = ps5000aSetAutoTriggerMicroSeconds(unit->handle, autoTriggerUs);
+
+	if (status != PICO_OK)
+	{
+		printf("setTrigger:ps5000aSetAutoTriggerMicroSeconds ------ 0x%08lx \n", status);
+		return status;
+	}
+
+	status = ps5000aSetTriggerDelay(unit->handle, delay);
+	
+	if (status != PICO_OK)
 	{
 		printf("setTrigger:ps5000aSetTriggerDelay ------ 0x%08lx \n", status);
 		return status;
 	}
 
-	if((status = ps5000aSetPulseWidthQualifier(unit->handle,
-		pwq->conditions,
-		pwq->nConditions, 
-		pwq->direction,
-		pwq->lower, 
-		pwq->upper, 
-		pwq->type)) != PICO_OK)
+	// Clear and add pulse width qualifier condition, clear if no pulse width qualifier has been specified
+	if (pwq->nPwqConditions != 0)
 	{
-		printf("setTrigger:ps5000aSetPulseWidthQualifier ------ 0x%08lx \n", status);
+		pwqInfo = (PS5000A_CONDITIONS_INFO)(PS5000A_CLEAR | PS5000A_ADD);
+	}
+
+	status = ps5000aSetPulseWidthQualifierConditions(unit->handle, pwq->pwqConditions, pwq->nPwqConditions, pwqInfo);
+
+	if (status != PICO_OK)
+	{
+		printf("setTrigger:ps5000aSetPulseWidthQualifierConditions ------ 0x%08lx \n", status);
+		return status;
+	}
+
+	status = ps5000aSetPulseWidthQualifierDirections(unit->handle, pwq->pwqDirections, pwq->nPwqDirections);
+
+	if (status != PICO_OK)
+	{
+		printf("setTrigger:ps5000aSetPulseWidthQualifierDirections ------ 0x%08lx \n", status);
+		return status;
+	}
+
+	status = ps5000aSetPulseWidthQualifierProperties(unit->handle, pwq->lower, pwq->upper, pwq->type);
+
+	if (status != PICO_OK)
+	{
+		printf("setTrigger:ps5000aSetPulseWidthQualifierProperties ------ Ox%08lx \n", status);
 		return status;
 	}
 
@@ -1089,11 +1155,7 @@ PICO_STATUS setTrigger(	UNIT * unit,
 ****************************************************************************/
 void collectBlockImmediate(UNIT * unit)
 {
-	struct tPwq pulseWidth;
-	struct tTriggerDirections directions;
-
-	memset(&directions, 0, sizeof(struct tTriggerDirections));
-	memset(&pulseWidth, 0, sizeof(struct tPwq));
+	PICO_STATUS status = PICO_OK;
 
 	printf("Collect block immediate...\n");
 	printf("Press a key to start\n");
@@ -1102,7 +1164,7 @@ void collectBlockImmediate(UNIT * unit)
 	setDefaults(unit);
 
 	/* Trigger disabled	*/
-	setTrigger(unit, NULL, 0, NULL, 0, &directions, &pulseWidth, 0, 0, 0);
+	status = ps5000aSetSimpleTrigger(unit->handle, 0, PS5000A_CHANNEL_A, 0, PS5000A_RISING, 0, 0);
 
 	blockDataHandler(unit, (int8_t *) "First 10 readings\n", 0, FALSE);
 }
@@ -1116,38 +1178,65 @@ void collectBlockEts(UNIT * unit)
 {
 	PICO_STATUS status;
 	int32_t ets_sampletime;
-	int16_t	triggerVoltage = mv_to_adc(1000, unit->channelSettings[PS5000A_CHANNEL_A].range, unit);
+	int16_t triggerVoltage = 1000; // millivolts
 	uint32_t delay = 0;
 	int16_t etsModeSet = FALSE;
 
+	PS5000A_CHANNEL triggerChannel = PS5000A_CHANNEL_A;
+	int16_t voltageRange = inputRanges[unit->channelSettings[triggerChannel].range];
+	int16_t triggerThreshold = 0;
+
+	// Structures for setting up trigger - declare each as an array of multiple structures if using multiple channels
+	struct tPS5000ATriggerChannelPropertiesV2 triggerProperties;
+	struct tPS5000ACondition conditions;
+	struct tPS5000ADirection directions;
+
+	// Struct to hold Pulse Width Qualifier information
 	struct tPwq pulseWidth;
-	struct tTriggerDirections directions;
 
-	struct tPS5000ATriggerChannelProperties sourceDetails = {	triggerVoltage,
-		256 * 10,
-		triggerVoltage,
-		256 * 10,
-		PS5000A_CHANNEL_A,
-		PS5000A_LEVEL };
-
-	struct tPS5000ATriggerConditions conditions = {	PS5000A_CONDITION_TRUE,
-		PS5000A_CONDITION_DONT_CARE,
-		PS5000A_CONDITION_DONT_CARE,
-		PS5000A_CONDITION_DONT_CARE,
-		PS5000A_CONDITION_DONT_CARE,
-		PS5000A_CONDITION_DONT_CARE,
-		PS5000A_CONDITION_DONT_CARE};
-
+	memset(&triggerProperties, 0, sizeof(struct tPS5000ATriggerChannelPropertiesV2));
+	memset(&conditions, 0, sizeof(struct tPS5000ACondition));
+	memset(&directions, 0, sizeof(struct tPS5000ADirection));
 	memset(&pulseWidth, 0, sizeof(struct tPwq));
-	memset(&directions, 0, sizeof(struct tTriggerDirections));
-	directions.channelA = PS5000A_RISING;
+
+	// If the channel is not enabled, warn the User and return
+	if (unit->channelSettings[triggerChannel].enabled == 0)
+	{
+		printf("collectBlockTriggered: Channel not enabled.");
+		return;
+	}
+
+	// If the trigger voltage level is greater than the range selected, set the threshold to half
+	// of the range selected e.g. for +/- 200mV, set the threshold to 100mV
+	if (triggerVoltage > voltageRange)
+	{
+		triggerVoltage = (voltageRange / 2);
+	}
+
+	triggerThreshold = mv_to_adc(triggerVoltage, unit->channelSettings[triggerChannel].range, unit);
+
+	// Set trigger channel properties
+	triggerProperties.thresholdUpper = triggerThreshold;
+	triggerProperties.thresholdUpperHysteresis = 256 * 10;
+	triggerProperties.thresholdLower = triggerThreshold;
+	triggerProperties.thresholdLowerHysteresis = 256 * 10;
+	triggerProperties.channel = (PS5000A_CHANNEL)(triggerChannel);
+
+	// Set trigger conditions
+	conditions.source = (PS5000A_CHANNEL)triggerChannel;
+	conditions.condition = PS5000A_CONDITION_TRUE;
+
+	// Set trigger directions
+	directions.source = (PS5000A_CHANNEL)triggerChannel;
+	directions.direction = PS5000A_RISING;
+	directions.mode = PS5000A_LEVEL;
 
 	printf("Collect ETS block...\n");
 	printf("Collects when value rises past %d", scaleVoltages? 
-		adc_to_mv(sourceDetails.thresholdUpper,	unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
-		: sourceDetails.thresholdUpper);																// else print ADC Count
+		adc_to_mv(triggerProperties.thresholdUpper,	unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
+		: triggerProperties.thresholdUpper);																// else print ADC Count
 	
-	printf(scaleVoltages? "mV\n" : "ADC Counts\n");
+	printf(scaleVoltages? " mV\n" : "ADC Counts\n");
 	printf("Press a key to start...\n");
 	_getch();
 
@@ -1155,12 +1244,12 @@ void collectBlockEts(UNIT * unit)
 
 	// Trigger enabled
 	// Rising edge
-	// Threshold = 1000mV
-	status = setTrigger(unit, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, delay, 0, 0);
+	// Threshold = 1000 mV
+	status = setTrigger(unit, &triggerProperties, 1, &conditions, 1, &directions, 1, &pulseWidth, delay, 0);
 
 	status = ps5000aSetEts(unit->handle, PS5000A_ETS_FAST, 20, 4, &ets_sampletime);
 
-	if(status == PICO_OK)
+	if (status == PICO_OK)
 	{
 		etsModeSet = TRUE;
 	}
@@ -1181,31 +1270,34 @@ void collectBlockEts(UNIT * unit)
 ****************************************************************************/
 void collectBlockTriggered(UNIT * unit)
 {
-	int16_t triggerVoltage		= 1000; // mV
-	int32_t triggerChannel		= (int32_t) PS5000A_CHANNEL_A;
-	int16_t voltageRange		= inputRanges[unit->channelSettings[triggerChannel].range];
-	int16_t triggerThreshold	= 0;
+	int16_t triggerVoltage					= 1000; // mV
+	PS5000A_CHANNEL triggerChannel	= PS5000A_CHANNEL_A;
+	int16_t voltageRange						= inputRanges[unit->channelSettings[triggerChannel].range];
+	int16_t triggerThreshold				= 0;
 
-	struct tPS5000ATriggerChannelProperties sourceDetails;
-	struct tPS5000ATriggerConditions conditions;
-	struct tTriggerDirections directions;
+	// Structures for setting up trigger - declare each as an array of multiple structures if using multiple channels
+	struct tPS5000ATriggerChannelPropertiesV2 triggerProperties; 
+	struct tPS5000ACondition conditions; 
+	struct tPS5000ADirection directions; 
+
+	// Struct to hold Pulse Width Qualifier information
 	struct tPwq pulseWidth;
 
-	memset(&sourceDetails, 0, sizeof(struct tPS5000ATriggerChannelProperties));
-	memset(&conditions, 0, sizeof(struct tPS5000ATriggerConditions));
-	memset(&directions, 0, sizeof(struct tTriggerDirections));
+	memset(&triggerProperties, 0, sizeof(struct tPS5000ATriggerChannelPropertiesV2));
+	memset(&conditions, 0, sizeof(struct tPS5000ACondition));
+	memset(&directions, 0, sizeof(struct tPS5000ADirection));
 	memset(&pulseWidth, 0, sizeof(struct tPwq));
 
 	// If the channel is not enabled, warn the User and return
-	if(unit->channelSettings[triggerChannel].enabled == 0)
+	if (unit->channelSettings[triggerChannel].enabled == 0)
 	{
 		printf("collectBlockTriggered: Channel not enabled.");
 		return;
 	}
 
 	// If the trigger voltage level is greater than the range selected, set the threshold to half
-	// of the range selected e.g. for +/- 200mV, set the threshold to 100mV
-	if(triggerVoltage > voltageRange)
+	// of the range selected e.g. for ±200 mV, set the threshold to 10 0mV
+	if (triggerVoltage > voltageRange)
 	{
 		triggerVoltage = (voltageRange / 2);
 	}
@@ -1213,34 +1305,25 @@ void collectBlockTriggered(UNIT * unit)
 	triggerThreshold = mv_to_adc(triggerVoltage, unit->channelSettings[triggerChannel].range, unit);
 
 	// Set trigger channel properties
-	sourceDetails.thresholdUpper			= triggerThreshold;
-	sourceDetails.thresholdUpperHysteresis	= 256 * 10;
-	sourceDetails.thresholdLower			= triggerThreshold;
-	sourceDetails.thresholdLowerHysteresis	= 256 * 10;
-	sourceDetails.channel					= (PS5000A_CHANNEL) (triggerChannel);
-	sourceDetails.thresholdMode				= PS5000A_LEVEL;
+	triggerProperties.thresholdUpper						= triggerThreshold;
+	triggerProperties.thresholdUpperHysteresis	= 256 * 10;
+	triggerProperties.thresholdLower						= triggerThreshold;
+	triggerProperties.thresholdLowerHysteresis	= 256 * 10;
+	triggerProperties.channel										= triggerChannel;
 
 	// Set trigger conditions
-	conditions.channelA				= PS5000A_CONDITION_TRUE;
-	conditions.channelB				= PS5000A_CONDITION_DONT_CARE;
-	conditions.channelC				= PS5000A_CONDITION_DONT_CARE;
-	conditions.channelD				= PS5000A_CONDITION_DONT_CARE;
-	conditions.external				= PS5000A_CONDITION_DONT_CARE;
-	conditions.aux					= PS5000A_CONDITION_DONT_CARE;
-	conditions.pulseWidthQualifier	= PS5000A_CONDITION_DONT_CARE;
-
+	conditions.source = triggerChannel;
+	conditions.condition = PS5000A_CONDITION_TRUE;
+	
 	// Set trigger directions
-	directions.channelA = PS5000A_RISING;
-	directions.channelB = PS5000A_NONE;
-	directions.channelC = PS5000A_NONE;
-	directions.channelD = PS5000A_NONE;
-	directions.ext		= PS5000A_NONE;
-	directions.aux		= PS5000A_NONE;
+	directions.source = triggerChannel;
+	directions.direction = PS5000A_RISING;
+	directions.mode = PS5000A_LEVEL;
 
 	printf("Collect block triggered...\n");
 	printf("Collects when value rises past %d", scaleVoltages?
-		adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
-		: sourceDetails.thresholdUpper);																// else print ADC Count
+		adc_to_mv(triggerProperties.thresholdUpper, unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
+		: triggerProperties.thresholdUpper);																// else print ADC Count
 	
 	printf(scaleVoltages?"mV\n" : "ADC Counts\n");
 
@@ -1251,8 +1334,8 @@ void collectBlockTriggered(UNIT * unit)
 
 	/* Trigger enabled
 	* Rising edge
-	* Threshold = 1000mV */
-	setTrigger(unit, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0);
+	* Threshold = 1000 mV */
+	setTrigger(unit, &triggerProperties, 1, &conditions, 1, &directions, 1, &pulseWidth, 0, 0);
 
 	blockDataHandler(unit, (int8_t *) "Ten readings after trigger\n", 0, FALSE);
 }
@@ -1279,25 +1362,29 @@ void collectRapidBlock(UNIT * unit)
 	int16_t		retry;
 
 	int16_t		triggerVoltage = 1000; // mV
-	int32_t		triggerChannel = (int32_t)PS5000A_CHANNEL_A;
+	PS5000A_CHANNEL triggerChannel = PS5000A_CHANNEL_A;
 	int16_t		voltageRange = inputRanges[unit->channelSettings[triggerChannel].range];
 	int16_t		triggerThreshold = 0;
 
 	int32_t		timeIntervalNs = 0;
 	int32_t		maxSamples = 0;
+	uint32_t	maxSegments = 0;
 
 	uint64_t timeStampCounterDiff = 0;
 
 	PS5000A_TRIGGER_INFO * triggerInfo; // Struct to store trigger timestamping information
 
-	struct tPS5000ATriggerChannelProperties sourceDetails;
-	struct tPS5000ATriggerConditions conditions;
-	struct tTriggerDirections directions;
+	// Structures for setting up trigger - declare each as an array of multiple structures if using multiple channels
+	struct tPS5000ATriggerChannelPropertiesV2 triggerProperties;
+	struct tPS5000ACondition conditions;
+	struct tPS5000ADirection directions;
+
+	// Struct to hold Pulse Width Qualifier information
 	struct tPwq pulseWidth;
 
-	memset(&sourceDetails, 0, sizeof(struct tPS5000ATriggerChannelProperties));
-	memset(&conditions, 0, sizeof(struct tPS5000ATriggerConditions));
-	memset(&directions, 0, sizeof(struct tTriggerDirections));
+	memset(&triggerProperties, 0, sizeof(struct tPS5000ATriggerChannelPropertiesV2));
+	memset(&conditions, 0, sizeof(struct tPS5000ACondition));
+	memset(&directions, 0, sizeof(struct tPS5000ADirection));
 	memset(&pulseWidth, 0, sizeof(struct tPwq));
 
 	// If the channel is not enabled, warn the User and return
@@ -1308,7 +1395,7 @@ void collectRapidBlock(UNIT * unit)
 	}
 
 	// If the trigger voltage level is greater than the range selected, set the threshold to half
-	// of the range selected e.g. for ±200 mV, set the threshold to 100 mV
+	// of the range selected e.g. for ±200 mV, set the threshold to 10 0mV
 	if (triggerVoltage > voltageRange)
 	{
 		triggerVoltage = (voltageRange / 2);
@@ -1317,34 +1404,25 @@ void collectRapidBlock(UNIT * unit)
 	triggerThreshold = mv_to_adc(triggerVoltage, unit->channelSettings[triggerChannel].range, unit);
 
 	// Set trigger channel properties
-	sourceDetails.thresholdUpper = triggerThreshold;
-	sourceDetails.thresholdUpperHysteresis = 256 * 10;
-	sourceDetails.thresholdLower = triggerThreshold;
-	sourceDetails.thresholdLowerHysteresis = 256 * 10;
-	sourceDetails.channel = (PS5000A_CHANNEL)(triggerChannel);
-	sourceDetails.thresholdMode = PS5000A_LEVEL;
+	triggerProperties.thresholdUpper = triggerThreshold;
+	triggerProperties.thresholdUpperHysteresis = 256 * 10;
+	triggerProperties.thresholdLower = triggerThreshold;
+	triggerProperties.thresholdLowerHysteresis = 256 * 10;
+	triggerProperties.channel = triggerChannel;
 
 	// Set trigger conditions
-	conditions.channelA = PS5000A_CONDITION_TRUE;
-	conditions.channelB = PS5000A_CONDITION_DONT_CARE;
-	conditions.channelC = PS5000A_CONDITION_DONT_CARE;
-	conditions.channelD = PS5000A_CONDITION_DONT_CARE;
-	conditions.external = PS5000A_CONDITION_DONT_CARE;
-	conditions.aux = PS5000A_CONDITION_DONT_CARE;
-	conditions.pulseWidthQualifier = PS5000A_CONDITION_DONT_CARE;
+	conditions.source = triggerChannel;
+	conditions.condition = PS5000A_CONDITION_TRUE;
 
 	// Set trigger directions
-	directions.channelA = PS5000A_RISING;
-	directions.channelB = PS5000A_NONE;
-	directions.channelC = PS5000A_NONE;
-	directions.channelD = PS5000A_NONE;
-	directions.ext = PS5000A_NONE;
-	directions.aux = PS5000A_NONE;
+	directions.source = triggerChannel;
+	directions.direction = PS5000A_RISING;
+	directions.mode = PS5000A_LEVEL;
 
 	printf("Collect rapid block triggered...\n");
-	printf("Collects when value rises past %d", scaleVoltages ?
-		adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
-		: sourceDetails.thresholdUpper);																// else print ADC Count
+	printf("Collects when value rises past %d ", scaleVoltages ?
+		adc_to_mv(triggerProperties.thresholdUpper, unit->channelSettings[PS5000A_CHANNEL_A].range, unit)	// If scaleVoltages, print mV value
+		: triggerProperties.thresholdUpper);																// else print ADC Count
 
 	printf(scaleVoltages ? "mV\n" : "ADC Counts\n");
 	printf("Press any key to abort\n");
@@ -1352,10 +1430,18 @@ void collectRapidBlock(UNIT * unit)
 	setDefaults(unit);
 
 	// Trigger enabled
-	setTrigger(unit, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0);
+	status = setTrigger(unit, &triggerProperties, 1, &conditions, 1, &directions, 1, &pulseWidth, 0, 0);
+
+	// Find the maximum number of segments
+	status = ps5000aGetMaxSegments(unit->handle, &maxSegments);
 
 	// Set the number of segments - this can be more than the number of waveforms to collect
 	nSegments = 64;
+
+	if (nSegments > maxSegments)
+	{
+		nSegments = maxSegments;
+	}
 
 	// Set the number of captures
 	nCaptures = 10;
@@ -1369,7 +1455,7 @@ void collectRapidBlock(UNIT * unit)
 	// Run
 	timebase = 127;		// 1 MS/s at 8-bit resolution, ~504 kS/s at 12 & 16-bit resolution
 
-										// Verify timebase and number of samples per channel for segment 0
+	// Verify timebase and number of samples per channel for segment 0
 	do
 	{
 		status = ps5000aGetTimebase(unit->handle, timebase, nSamples, &timeIntervalNs, &maxSamples, 0);
@@ -1387,7 +1473,9 @@ void collectRapidBlock(UNIT * unit)
 
 		if (status != PICO_OK)
 		{
-			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+			// PicoScope 5X4XA/B/D devices...+5 V PSU connected or removed or
+			// PicoScope 524XD devices on non-USB 3.0 port
+			if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED || status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
 			{
 				status = changePowerSource(unit->handle, status, unit);
 				retry = 1;
@@ -1467,7 +1555,8 @@ void collectRapidBlock(UNIT * unit)
 	// Get data
 	status = ps5000aGetValuesBulk(unit->handle, &nSamples, 0, nCaptures - 1, 1, PS5000A_RATIO_MODE_NONE, overflow);
 
-	if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+	if (status == PICO_POWER_SUPPLY_CONNECTED || status == PICO_POWER_SUPPLY_NOT_CONNECTED ||
+				status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT || status == PICO_POWER_SUPPLY_UNDERVOLTAGE)
 	{
 		printf("\nPower Source Changed. Data collection aborted.\n");
 	}
@@ -1477,7 +1566,6 @@ void collectRapidBlock(UNIT * unit)
 
 	if (status == PICO_OK)
 	{
-
 		//print first 10 samples from each capture
 		for (capture = 0; capture < nCaptures; capture++)
 		{
@@ -1486,7 +1574,7 @@ void collectRapidBlock(UNIT * unit)
 			printf("Capture index %d:-\n\n", capture);
 
 			// Trigger Info status & Timestamp 
-			printf("Trigger Info:- Status: %u  Timestamp Counter: %u\n", triggerInfo[capture].status, triggerInfo[capture].timeStampCounter);
+			printf("Trigger Info:- Status: %u  Trigger index: %u  Timestamp Counter: %I64u\n", triggerInfo[capture].status, triggerInfo[capture].triggerIndex, triggerInfo[capture].timeStampCounter);
 
 			// Calculate time between trigger events - the first timestamp is arbitrary so is only used to calculate offsets
 
@@ -1496,11 +1584,12 @@ void collectRapidBlock(UNIT * unit)
 			if (capture == 0)
 			{
 				// Nothing to display
+				printf("\n");
 			}
 			else if (capture > 0 && triggerInfo[capture].status == PICO_OK)
 			{
 				timeStampCounterDiff = triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter;
-				printf("Time since trigger for last segment: %u ns\n\n", (timeStampCounterDiff * (uint64_t)timeIntervalNs));
+				printf("Time since trigger for last segment: %I64u ns\n\n", (timeStampCounterDiff * (uint64_t)timeIntervalNs));
 			}
 			else
 			{
@@ -1586,8 +1675,24 @@ void set_info(UNIT * unit)
 	int32_t variant;
 	PICO_STATUS status = PICO_OK;
 
+	// Variables used for arbitrary waveform parameters
+	int16_t			minArbitraryWaveformValue = 0;
+	int16_t			maxArbitraryWaveformValue = 0;
+	uint32_t		minArbitraryWaveformSize = 0;
+	uint32_t		maxArbitraryWaveformSize = 0;
+
+	//Initialise default unit properties and change when required
+	unit->sigGen = SIGGEN_FUNCTGEN;
+	unit->firstRange = PS5000A_10MV;
+	unit->lastRange = PS5000A_20V;
+	unit->channelCount = DUAL_SCOPE;
+	unit->awgBufferSize = MIN_SIG_GEN_BUFFER_SIZE;
+	unit->digitalPortCount = 0;
+
 	if (unit->handle) 
 	{
+		printf("Device information:-\n\n");
+
 		for (i = 0; i < 11; i++) 
 		{
 			status = ps5000aGetUnitInfo(unit->handle, line, sizeof (line), &requiredSize, i);
@@ -1598,39 +1703,23 @@ void set_info(UNIT * unit)
 				variant = atoi(line);
 				memcpy(&(unit->modelString), line, sizeof(unit->modelString)==5?5:sizeof(unit->modelString));
 				
-				// To identify variants.....
-				if (strlen(line) == 5)						// A or B variant unit
-				{
-					line[4] = toupper(line[4]);
+				variant = atoi(line);
 
-					if (line[1] == '2' && line[4] == 'A')		// i.e 5244A -> 0xA244
-					{
-						variant += 0x8DC8;
-					}
-					else
-					{
-						if (line[1] == '2' && line[4] == 'B')		//i.e 5244B -> 0xB244
-						{
-							variant +=0x9DC8;
-						}
-						else
-						{
-							if (line[1] == '4' && line[4] == 'A')		// i.e 5444A -> 0xA444
-							{
-								variant += 0x8F00;
-							}
-							else
-							{
-								if (line[1] == '4' && line[4] == 'B')		//i.e 5444B -> 0xB444
-								{
-									variant +=0x9F00;
-								}
-							}
-						}
-					}
+				unit->channelCount = (int16_t)line[1];
+				unit->channelCount = unit->channelCount - 48; // Subtract ASCII 0 (48)
+
+				// Determine if the device is an MSO
+				if (strstr(line, "MSO") != NULL)
+				{
+					unit->digitalPortCount = 2;
 				}
+				else
+				{
+					unit->digitalPortCount = 0;
+				}
+				
 			}
-			else if(i == PICO_BATCH_AND_SERIAL)	// info = 4 - PICO_BATCH_AND_SERIAL
+			else if (i == PICO_BATCH_AND_SERIAL)	// info = 4 - PICO_BATCH_AND_SERIAL
 			{
 				memcpy(&(unit->serial), line, requiredSize);
 			}
@@ -1640,131 +1729,18 @@ void set_info(UNIT * unit)
 
 		printf("\n");
 
-		switch (variant)
+		// Set sig gen parameters
+		// If device has Arbitrary Waveform Generator, find the maximum AWG buffer size
+		status = ps5000aSigGenArbitraryMinMaxValues(unit->handle, &minArbitraryWaveformValue, &maxArbitraryWaveformValue, &minArbitraryWaveformSize, &maxArbitraryWaveformSize);
+		unit->awgBufferSize = maxArbitraryWaveformSize;
+
+		if (unit->awgBufferSize > 0)
 		{
-			case MODEL_PS5242A:
-				unit->model				= MODEL_PS5242A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= FALSE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5242B:
-				unit->model				= MODEL_PS5242B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= FALSE;
-				unit->awgBufferSize		= PS5X42A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5243A:
-				unit->model				= MODEL_PS5243A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5243B:
-				unit->model				= MODEL_PS5243B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= PS5X43A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5244A:
-				unit->model				= MODEL_PS5244A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5244B:
-				unit->model				= MODEL_PS5244B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= DUAL_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= PS5X44A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5442A:
-				unit->model				= MODEL_PS5442A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= FALSE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5442B:
-				unit->model				= MODEL_PS5442B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= FALSE;
-				unit->awgBufferSize		= PS5X42A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5443A:
-				unit->model				= MODEL_PS5443A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5443B:
-				unit->model				= MODEL_PS5443B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= PS5X43A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			case MODEL_PS5444A:
-				unit->model				= MODEL_PS5444A;
-				unit->sigGen			= SIGGEN_FUNCTGEN;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= 0;
-				break;
-
-			case MODEL_PS5444B:
-				unit->model				= MODEL_PS5444B;
-				unit->sigGen			= SIGGEN_AWG;
-				unit->firstRange		= PS5000A_10MV;
-				unit->lastRange			= PS5000A_20V;
-				unit->channelCount		= QUAD_SCOPE;
-				unit->hasHardwareETS	= TRUE;
-				unit->awgBufferSize		= PS5X44A_MAX_SIG_GEN_BUFFER_SIZE;
-				break;
-
-			default:
-				unit->model				= MODEL_NONE;
-				break;
+			unit->sigGen = SIGGEN_AWG;
+		}
+		else
+		{
+			unit->sigGen = SIGGEN_FUNCTGEN;
 		}
 	}
 }
@@ -1784,11 +1760,11 @@ void setVoltages(UNIT * unit)
 	int16_t numEnabledChannels = 0;
 	int16_t retry = FALSE;
 
-	if(unit->channelCount == QUAD_SCOPE)
+	if (unit->channelCount == QUAD_SCOPE)
 	{
 		powerStatus = ps5000aCurrentPowerSource(unit->handle); 
 
-		if(powerStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		if (powerStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
 		{
 			numValidChannels = DUAL_SCOPE;
 		}
@@ -1837,17 +1813,17 @@ void setVoltages(UNIT * unit)
 			}
 			printf(count == 0? "\n** At least 1 channel must be enabled **\n\n":"");
 		}
-		while(count == 0);	// must have at least one channel enabled
+		while (count == 0);	// must have at least one channel enabled
 
 		status = ps5000aGetDeviceResolution(unit->handle, &resolution);
 
 		// Verify that the number of enabled channels is valid for the resolution set.
 
-		switch(resolution)
+		switch (resolution)
 		{
 			case PS5000A_DR_15BIT:
 
-				if(count > 2)
+				if (count > 2)
 				{
 					printf("\nError: Only 2 channels may be enabled with 15-bit resolution set.\n");
 					printf("Please switch off %d channel(s).\n", numValidChannels - 2);
@@ -1861,7 +1837,7 @@ void setVoltages(UNIT * unit)
 
 			case PS5000A_DR_16BIT:
 
-				if(count > 1)
+				if (count > 1)
 				{
 					printf("\nError: Only one channes may be enabled with 16-bit resolution set.\n");
 					printf("Please switch off %d channel(s).\n", numValidChannels - 1);
@@ -1882,7 +1858,7 @@ void setVoltages(UNIT * unit)
 
 		printf("\n");
 	}
-	while(retry == TRUE);
+	while (retry == TRUE);
 
 	setDefaults(unit);	// Put these changes into effect
 }
@@ -1895,9 +1871,48 @@ void setVoltages(UNIT * unit)
 void setTimebase(UNIT * unit)
 {
 	PICO_STATUS status = PICO_OK;
+	PICO_STATUS powerStatus = PICO_OK;
 	int32_t timeInterval;
 	int32_t maxSamples;
+	int32_t ch;
 
+	uint32_t shortestTimebase;
+	double timeIntervalSeconds;
+	
+	PS5000A_CHANNEL_FLAGS enabledChannelOrPortFlags = (PS5000A_CHANNEL_FLAGS)0;
+	
+	int16_t numValidChannels = unit->channelCount; // Dependent on power setting - i.e. channel A & B if USB powered on 4-channel device
+	
+	if (unit->channelCount == QUAD_SCOPE)
+	{
+		powerStatus = ps5000aCurrentPowerSource(unit->handle);
+		
+		if (powerStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		{
+			numValidChannels = DUAL_SCOPE;
+		}
+	}
+	
+	// Find the channels that are enabled
+	for (ch = 0; ch < numValidChannels; ch++)
+	{
+		if (unit->channelSettings[ch].enabled)
+		{
+			enabledChannelOrPortFlags = enabledChannelOrPortFlags | (PS5000A_CHANNEL_FLAGS)pow(2, ch);
+		}
+	}
+	
+	// Find the shortest possible timebase and inform the user.
+	status = ps5000aGetMinimumTimebaseStateless(unit->handle, enabledChannelOrPortFlags, &timebase, &timeIntervalSeconds, unit->resolution);
+
+	if (status != PICO_OK)
+	{
+		printf("setTimebase:ps5000aGetMinimumTimebaseStateless ------ 0x%08lx \n", status);
+		return;
+	}
+
+	printf("Shortest timebase index available %d (%.9f seconds).\n", timebase, timeIntervalSeconds);
+	
 	printf("Specify desired timebase: ");
 	fflush(stdin);
 	scanf_s("%lud", &timebase);
@@ -1906,12 +1921,12 @@ void setTimebase(UNIT * unit)
 	{
 		status = ps5000aGetTimebase(unit->handle, timebase, BUFFER_SIZE, &timeInterval, &maxSamples, 0);
 
-		if(status == PICO_INVALID_NUMBER_CHANNELS_FOR_RESOLUTION)
+		if (status == PICO_INVALID_NUMBER_CHANNELS_FOR_RESOLUTION)
 		{
 			printf("SetTimebase: Error - Invalid number of channels for resolution.\n");
 			return;
 		}
-		else if(status == PICO_OK)
+		else if (status == PICO_OK)
 		{
 			// Do nothing
 		}
@@ -1921,9 +1936,9 @@ void setTimebase(UNIT * unit)
 		}
 
 	}
-	while(status != PICO_OK);
+	while (status != PICO_OK);
 
-	printf("Timebase used %lu = %ldns sample interval\n", timebase, timeInterval);
+	printf("Timebase used %lu = %ld ns sample interval\n", timebase, timeInterval);
 }
 
 /****************************************************************************
@@ -2051,11 +2066,11 @@ void setResolution(UNIT * unit)
 
 		// Verify if resolution can be selected for number of channels enabled
 
-		if(newResolution == PS5000A_DR_16BIT && numEnabledChannels > 1)
+		if (newResolution == PS5000A_DR_16BIT && numEnabledChannels > 1)
 		{
 			printf("setResolution: 16 bit resolution can only be selected with 1 channel enabled.\n");
 		}
-		else if(newResolution == PS5000A_DR_15BIT && numEnabledChannels > 2)
+		else if (newResolution == PS5000A_DR_15BIT && numEnabledChannels > 2)
 		{
 			printf("setResolution: 15 bit resolution can only be selected with a maximum of 2 channels enabled.\n");
 		}
@@ -2074,7 +2089,7 @@ void setResolution(UNIT * unit)
 
 	status = ps5000aSetDeviceResolution(unit->handle, (PS5000A_DEVICE_RESOLUTION) newResolution);
 
-	if(status == PICO_OK)
+	if (status == PICO_OK)
 	{
 		unit->resolution = newResolution;
 
@@ -2167,8 +2182,11 @@ void setSignalGenerator(UNIT * unit)
 			scanf_s("%s", fileName, 128);
 
 			if (fopen_s(&fp, fileName, "r") == 0) 
-			{ // Having opened file, read in data - one number per line (max 16384 lines for PicoScope 5X42B device, 
-			  // 32768 for PicoScope 5X43B, 49152 for PicoScope 5X44B), with values in (-32768..+32767)
+			{ 
+				// Having opened file, read in data - one number per line (max 16384 lines for PicoScope 5X42B device, 
+			  // 32768 for PicoScope 5X43B & 5000D devices, 49152 for PicoScope 5X44B), with values in (-32768...+32767)
+				// The min and max arbitrary waveform values can also be obtained from the ps5000aSigGenArbitraryMinMaxValues()
+				// function.
 				while (EOF != fscanf_s(fp, "%hi", (arbitraryWaveform + waveformSize)) && waveformSize++ < unit->awgBufferSize - 1);
 				fclose(fp);
 				printf("File successfully loaded\n");
@@ -2296,11 +2314,7 @@ void setSignalGenerator(UNIT * unit)
 ***************************************************************************/
 void collectStreamingImmediate(UNIT * unit)
 {
-	struct tPwq pulseWidth;
-	struct tTriggerDirections directions;
-
-	memset(&pulseWidth, 0, sizeof(struct tPwq));
-	memset(&directions, 0, sizeof(struct tTriggerDirections));
+	PICO_STATUS status = PICO_OK;
 
 	setDefaults(unit);
 
@@ -2310,7 +2324,7 @@ void collectStreamingImmediate(UNIT * unit)
 	_getch();
 
 	/* Trigger disabled	*/
-	setTrigger(unit, NULL, 0, NULL, 0, &directions, &pulseWidth, 0, 0, 0);
+	status = ps5000aSetSimpleTrigger(unit->handle, 0, PS5000A_CHANNEL_A, 0, PS5000A_RISING, 0, 0);
 
 	streamDataHandler(unit, 0);
 }
@@ -2322,25 +2336,28 @@ void collectStreamingImmediate(UNIT * unit)
 ***************************************************************************/
 void collectStreamingTriggered(UNIT * unit)
 {
-	int16_t triggerVoltage		= 1000; // mV
-	int32_t triggerChannel		= (int32_t) PS5000A_CHANNEL_A;
-	int16_t voltageRange		= inputRanges[unit->channelSettings[triggerChannel].range];
-	int16_t triggerThreshold	= 0;
+	int16_t triggerVoltage = 1000; // mV
+	PS5000A_CHANNEL triggerChannel = PS5000A_CHANNEL_A;
+	int16_t voltageRange = inputRanges[unit->channelSettings[triggerChannel].range];
+	int16_t triggerThreshold = 0;
 
-	struct tPS5000ATriggerChannelProperties sourceDetails;
-	struct tPS5000ATriggerConditions conditions;
-	struct tTriggerDirections directions;
+	// Structures for setting up trigger - declare each as an array of multiple structures if using multiple channels
+	struct tPS5000ATriggerChannelPropertiesV2 triggerProperties;
+	struct tPS5000ACondition conditions;
+	struct tPS5000ADirection directions;
+
+	// Struct to hold Pulse Width Qualifier information
 	struct tPwq pulseWidth;
 
-	memset(&sourceDetails, 0, sizeof(struct tPS5000ATriggerChannelProperties));
-	memset(&conditions, 0, sizeof(struct tPS5000ATriggerConditions));
-	memset(&directions, 0, sizeof(struct tTriggerDirections));
+	memset(&triggerProperties, 0, sizeof(struct tPS5000ATriggerChannelPropertiesV2));
+	memset(&conditions, 0, sizeof(struct tPS5000ACondition));
+	memset(&directions, 0, sizeof(struct tPS5000ADirection));
 	memset(&pulseWidth, 0, sizeof(struct tPwq));
 
 	// If the channel is not enabled, warn the User and return
-	if(unit->channelSettings[triggerChannel].enabled == 0)
+	if (unit->channelSettings[triggerChannel].enabled == 0)
 	{
-		printf("collectBlockTriggered: Channel not enabled.");
+		printf("collectStreamingTriggered: Channel not enabled.");
 		return;
 	}
 
@@ -2354,29 +2371,20 @@ void collectStreamingTriggered(UNIT * unit)
 	triggerThreshold = mv_to_adc(triggerVoltage, unit->channelSettings[triggerChannel].range, unit);
 
 	// Set trigger channel properties
-	sourceDetails.thresholdUpper			= triggerThreshold;
-	sourceDetails.thresholdUpperHysteresis	= 256 * 10;
-	sourceDetails.thresholdLower			= triggerThreshold;
-	sourceDetails.thresholdLowerHysteresis	= 256 * 10;
-	sourceDetails.channel					= (PS5000A_CHANNEL) (triggerChannel);
-	sourceDetails.thresholdMode				= PS5000A_LEVEL;
+	triggerProperties.thresholdUpper = triggerThreshold;
+	triggerProperties.thresholdUpperHysteresis = 256 * 10;
+	triggerProperties.thresholdLower = triggerThreshold;
+	triggerProperties.thresholdLowerHysteresis = 256 * 10;
+	triggerProperties.channel = triggerChannel;
 
 	// Set trigger conditions
-	conditions.channelA				= PS5000A_CONDITION_TRUE;
-	conditions.channelB				= PS5000A_CONDITION_DONT_CARE;
-	conditions.channelC				= PS5000A_CONDITION_DONT_CARE;
-	conditions.channelD				= PS5000A_CONDITION_DONT_CARE;
-	conditions.external				= PS5000A_CONDITION_DONT_CARE;
-	conditions.aux					= PS5000A_CONDITION_DONT_CARE;
-	conditions.pulseWidthQualifier	= PS5000A_CONDITION_DONT_CARE;
+	conditions.source = triggerChannel;
+	conditions.condition = PS5000A_CONDITION_TRUE;
 
 	// Set trigger directions
-	directions.channelA = PS5000A_RISING;
-	directions.channelB = PS5000A_NONE;
-	directions.channelC = PS5000A_NONE;
-	directions.channelD = PS5000A_NONE;
-	directions.ext		= PS5000A_NONE;
-	directions.aux		= PS5000A_NONE;
+	directions.source = triggerChannel;
+	directions.direction = PS5000A_RISING;
+	directions.mode = PS5000A_LEVEL;
 		
 	printf("Collect streaming triggered...\n");
 	printf("Data is written to disk file (stream.txt)\n");
@@ -2387,8 +2395,8 @@ void collectStreamingTriggered(UNIT * unit)
 
 	/* Trigger enabled
 	* Rising edge
-	* Threshold = 1000mV */
-	setTrigger(unit, &sourceDetails, 1, &conditions, 1, &directions, &pulseWidth, 0, 0, 0);
+	* Threshold = 1000 mV */
+	setTrigger(unit, &triggerProperties, 1, &conditions, 1, &directions, 1, &pulseWidth, 0, 0);
 
 	streamDataHandler(unit, 0);
 }
@@ -2455,14 +2463,15 @@ void displaySettings(UNIT *unit)
 PICO_STATUS openDevice(UNIT *unit, int8_t *serial)
 {
 	PICO_STATUS status;
+	unit->resolution = PS5000A_DR_8BIT;
 
 	if (serial == NULL)
 	{
-		status = ps5000aOpenUnit(&unit->handle, NULL, PS5000A_DR_8BIT);
+		status = ps5000aOpenUnit(&unit->handle, NULL, unit->resolution);
 	}
 	else
 	{
-		status = ps5000aOpenUnit(&unit->handle, serial, PS5000A_DR_8BIT);
+		status = ps5000aOpenUnit(&unit->handle, serial, unit->resolution);
 	}
 
 	unit->openStatus = (int16_t) status;
@@ -2484,13 +2493,7 @@ PICO_STATUS handleDevice(UNIT * unit)
 	int16_t value = 0;
 	int32_t i;
 	struct tPwq pulseWidth;
-	struct tTriggerDirections directions;
 	PICO_STATUS status;
-
-	if (unit->openStatus == PICO_POWER_SUPPLY_NOT_CONNECTED)
-	{
-		unit->openStatus = (int16_t) changePowerSource(unit->handle, PICO_POWER_SUPPLY_NOT_CONNECTED, unit);
-	}
 
 	printf("Handle: %d\n", unit->handle);
 	
@@ -2504,10 +2507,21 @@ PICO_STATUS handleDevice(UNIT * unit)
 
 	printf("Device opened successfully, cycle %d\n\n", ++cycles);
 	
-	// setup device info - unless it's set already
+	// Setup device info - unless it's set already
 	if (unit->model == MODEL_NONE)
 	{
 		set_info(unit);
+	}
+
+	// Turn off any digital ports (MSO models only)
+	if (unit->digitalPortCount > 0)
+	{
+		printf("Turning off digital ports.");
+
+		for (i = 0; i < unit->digitalPortCount; i++)
+		{
+			status = ps5000aSetDigitalPort(unit->handle, (PS5000A_CHANNEL)(i + PS5000A_DIGITAL_PORT0), 0, 0);
+		}
 	}
 	
 	timebase = 1;
@@ -2534,13 +2548,12 @@ PICO_STATUS handleDevice(UNIT * unit)
 		unit->channelSettings[i].analogueOffset = 0.0f;
 	}
 
-	memset(&directions, 0, sizeof(struct tTriggerDirections));
 	memset(&pulseWidth, 0, sizeof(struct tPwq));
 
 	setDefaults(unit);
 
 	/* Trigger disabled	*/
-	setTrigger(unit, NULL, 0, NULL, 0, &directions, &pulseWidth, 0, 0, 0);
+	status = ps5000aSetSimpleTrigger(unit->handle, 0, PS5000A_CHANNEL_A, 0, PS5000A_RISING, 0, 0);
 
 	return unit->openStatus;
 }
@@ -2676,7 +2689,8 @@ int32_t main(void)
 	{
 		status = openDevice(&(allUnits[devCount]), NULL);
 		
-		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED 
+					|| status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
 		{
 			allUnits[devCount++].openStatus = (int16_t) status;
 		}
@@ -2688,14 +2702,21 @@ int32_t main(void)
 		printf("Picoscope devices not found\n");
 		return 1;
 	}
+
 	// if there is only one device, open and handle it here
 	if (devCount == 1)
 	{
 		printf("Found one device, opening...\n\n");
 		status = allUnits[0].openStatus;
 
-		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+		if (status == PICO_OK || status == PICO_POWER_SUPPLY_NOT_CONNECTED
+					|| status == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
 		{
+			if (allUnits[0].openStatus == PICO_POWER_SUPPLY_NOT_CONNECTED || allUnits[0].openStatus == PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
+			{
+				allUnits[0].openStatus = (int16_t)changePowerSource(allUnits[0].handle, allUnits[0].openStatus, &allUnits[0]);
+			}
+
 			set_info(&allUnits[0]);
 			status = handleDevice(&allUnits[0]);
 		}
