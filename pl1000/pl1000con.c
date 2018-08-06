@@ -405,7 +405,7 @@ void collect_windowed_blocks (void)
 	uint32_t	nSamplesCollected;
 	uint16_t * samples = (uint16_t *) calloc(nSamples, sizeof(uint16_t)); // Size of array should be equal to nChannels * nSamplesPerChannel
 	uint32_t	usForBlock = 10000000;	// 10 seconds
-	uint16_t * overflow = 0;
+	uint16_t	overflow = 0;
 	uint32_t	triggerIndex = 0;
 	int16_t		nLines = 0;
 	uint32_t	samplingIntervalUs = 0;
@@ -448,7 +448,7 @@ void collect_windowed_blocks (void)
 	{
     nSamplesCollected = nSamplesPerChannel;
 
-		status = pl1000GetValues(g_handle, samples, &nSamplesCollected, overflow, &triggerIndex);
+		status = pl1000GetValues(g_handle, samples, &nSamplesCollected, &overflow, &triggerIndex);
 
 		printf("%d values\n", nSamplesCollected);
 		
@@ -500,7 +500,7 @@ void collect_streaming (void)
 	uint32_t	nSamplesCollected = 0;
 	uint16_t *  samples = (uint16_t *) calloc(nSamples, sizeof(uint16_t)); // Size of array should be equal to nChannels * nSamplesPerChannel
 	uint32_t	usForBlock = 1000000;
-	uint16_t *	overflow = 0;
+	uint16_t  overflow = 0;
 	uint32_t	triggerIndex = 0;
 	int16_t		nLines = 0;
 	uint32_t	totalSamplesCollected = 0;
@@ -542,7 +542,7 @@ void collect_streaming (void)
 	{
 		nSamplesCollected = nSamplesPerChannel;
 
-		status = pl1000GetValues(g_handle, samples, &nSamplesCollected, overflow, &triggerIndex);
+		status = pl1000GetValues(g_handle, samples, &nSamplesCollected, &overflow, &triggerIndex);
 
 		totalSamplesCollected = totalSamplesCollected + nSamplesCollected;
 		printf("Collected %d values per channel, total per channel: %d\n", nSamplesCollected, totalSamplesCollected);
