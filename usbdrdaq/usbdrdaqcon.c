@@ -156,7 +156,6 @@ PICO_STATUS			status;
 USB_DRDAQ_INPUTS	channel;
 
 
-
 /****************************************************************************
 *
 * adc_to_mv
@@ -256,7 +255,7 @@ void collect_block_immediate (void)
 	int16_t		nChannels = 1;
 	uint32_t	nSamplesPerChannel = nSamples / nChannels;
 	uint32_t	nSamplesCollected;
-	float		samples[1000] = {0.0}; 
+	float			samples[1000] = {0.0}; 
 	uint32_t	usForBlock = 1000000;
 	uint16_t	overflow;
 	uint32_t	triggerIndex = 0;
@@ -380,7 +379,7 @@ void collect_block_triggered (void)
 	nSamplesCollected = nSamplesPerChannel;
 	status = UsbDrDaqGetValuesF(g_handle, samples, &nSamplesCollected, &overflow, &triggerIndex);
 
-	//Print out the first 10 readings, converting the readings to mV if required
+	// Print out the first 10 readings, converting the readings to mV if required
 	printf ("5 readings either side of trigger event (%i samples collected per channel)\n", nSamplesCollected);
 	
 	for (i = triggerIndex-5; i < triggerIndex+6; i++)
@@ -432,16 +431,16 @@ void collect_windowed_blocks (void)
 	printf ("Press a key to start\n");
 	_getch();
 
-	//Set the trigger (disabled)
+	// Set the trigger (disabled)
 	status = UsbDrDaqSetTrigger(g_handle, FALSE, 0, 0, 0, 0, 0, 0, 0);
 
-	//set sampling rate and channels
+	// Set sampling rate and channels
 	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamplesPerChannel, &channel, nChannels);
 
-	//Start 
+	// Start 
 	status = UsbDrDaqRun(g_handle, nSamplesPerChannel, BM_WINDOW);
 
-	//Wait until unit is ready
+	// Wait until unit is ready
 	printf ("Waiting for first block...\n");
 	isReady = 0;
 	
@@ -480,7 +479,7 @@ void collect_windowed_blocks (void)
       fprintf(fp, "\n");
     }
 
-		Sleep(1000);		//Wait 1 second before collecting next 10 second block.
+		Sleep(1000);		// Wait 1 second before collecting next 10 second block.
 
 		printf("\n");
 	}
@@ -506,6 +505,7 @@ void collect_streaming (void)
 	uint32_t	nSamples = 1000;
 	int16_t		nChannels = 1;
 	uint32_t	nSamplesPerChannel = nSamples / nChannels;
+	uint32_t	nSamplesPerChannelForBuffer = 10 * nSamplesPerChannel; // Ensure circular buffer is large enough
 	uint32_t	nSamplesCollected;
   float			samples[1000] = {0.0};
 	uint32_t	usForBlock = 1000000;
@@ -519,16 +519,16 @@ void collect_streaming (void)
 	printf ("Press a key to start\n");
 	_getch();
 
-	//Set the trigger (disabled)
+	// Set the trigger (disabled)
 	status = UsbDrDaqSetTrigger(g_handle, FALSE, 0, 0, 0, 0, 0, 0, 0);
 
-	//set sampling rate and channels
+	// Set sampling rate and channels
 	status = UsbDrDaqSetInterval(g_handle, &usForBlock, nSamplesPerChannel, &channel, nChannels);
 
-	//Start streaming
-	status = UsbDrDaqRun(g_handle, nSamplesPerChannel, BM_STREAM);
+	// Start streaming
+	status = UsbDrDaqRun(g_handle, nSamplesPerChannelForBuffer, BM_STREAM);
 
-	//Wait until unit is ready
+	// Wait until unit is ready
 	isReady = 0;
 	
 	while (isReady == 0)
@@ -775,7 +775,7 @@ void DigitalInput()
 	}
 	_getch();
 
-	//reset digital output status
+	// Reset digital output status
 	d1State = d2State = d3State = d4State = 0;
 }
 
