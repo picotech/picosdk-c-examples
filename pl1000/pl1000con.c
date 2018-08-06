@@ -193,9 +193,9 @@ void printChannelsHeader(FILE * fp, int16_t * channels, int16_t numChannels)
 {
 	int16_t i;
 
-	if(fp != NULL)
+	if (fp != NULL)
 	{
-		for(i = 0; i < numChannels; i++)
+		for (i = 0; i < numChannels; i++)
 		{
 			fprintf (fp, "Ch%3d\t", channels[i]);
 		}
@@ -249,7 +249,7 @@ void collect_block_immediate (void)
 
 	fopen_s(&fp, "pl1000_block.txt", "w");
 
-	if(fp != NULL)
+	if (fp != NULL)
 	{
 		printChannelsHeader(fp, channels, nChannels);
 	}
@@ -260,7 +260,7 @@ void collect_block_immediate (void)
 	// Wait until unit is ready
 	isReady = 0; 
 		
-	while(isReady == 0)
+	while (isReady == 0)
 	{
 		status = pl1000Ready(g_handle, &isReady);
 	}
@@ -342,7 +342,7 @@ void collect_block_triggered (void)
 
 	fopen_s(&fp, "pl1000_triggered_block.txt", "w");
 
-	if(fp != NULL)
+	if (fp != NULL)
 	{
 		printChannelsHeader(fp, channels, nChannels);
 	}
@@ -353,7 +353,7 @@ void collect_block_triggered (void)
 	// Wait until unit is ready
 	isReady = 0;
 	
-	while(isReady == 0 && (!_kbhit ()))
+	while (isReady == 0 && (!_kbhit ()))
 	{
 		status = pl1000Ready(g_handle, &isReady);
 	}
@@ -397,7 +397,7 @@ void collect_block_triggered (void)
 void collect_windowed_blocks (void)
 {
   uint32_t	i = 0;;
-  uint32_t j = 0;
+  uint32_t  j = 0;
 	int16_t		channels [] = {(int16_t) PL1000_CHANNEL_1};
 	uint32_t	nSamples = 1000; // Should be equal to nChannels * nSamplesPerChannel
 	int16_t		nChannels = 1;
@@ -492,7 +492,7 @@ void collect_windowed_blocks (void)
 void collect_streaming (void)
 {
   uint32_t	i = 0;
-  uint32_t j = 0;
+  uint32_t  j = 0;
 	int16_t		channels [] = {1};
 	uint32_t	nSamples = 1000; // Should be equal to nChannels * nSamplesPerChannel
 	int16_t		nChannels = 1;
@@ -530,7 +530,7 @@ void collect_streaming (void)
 	// Wait until unit is ready
 	isReady = 0;
 	
-	while(isReady == 0)
+	while (isReady == 0)
 	{
 		status = pl1000Ready(g_handle, &isReady);
 	}
@@ -538,7 +538,7 @@ void collect_streaming (void)
 	printf("Press any key to stop\n");
 	fopen_s(&fp, "pl1000_streaming.txt", "w");
   
-	while(!_kbhit())
+	while (!_kbhit())
 	{
 		nSamplesCollected = nSamplesPerChannel;
 
@@ -569,6 +569,7 @@ void collect_streaming (void)
 
 		Sleep(100);
 	}
+	
 	fclose(fp);
 	status = pl1000Stop(g_handle);
 
@@ -577,7 +578,7 @@ void collect_streaming (void)
 
 /****************************************************************************
  *
- * Collect_individual()
+ * collect_individual()
  *
  *  This function demonstrates how to collect a single reading from each
  *  channel for a defined number of readings.
@@ -730,14 +731,14 @@ void pwm()
 		printf("Enter period (100 to 1800 microseconds):");
 		scanf_s("%d", &period);
 		fflush(stdin);
-	}while(period < 100 || period > 1800);
+	} while (period < 100 || period > 1800);
 
 	do
 	{
 		printf("Enter duty cycle (0 to 100%%):");
 		scanf_s("%d", &cycle);
 		fflush(stdin);
-	}while(cycle < 0 || cycle > 100);
+	} while(cycle < 0 || cycle > 100);
 		
 	status = pl1000SetPulseWidth(g_handle, (uint16_t) period, (uint8_t) cycle);
 
