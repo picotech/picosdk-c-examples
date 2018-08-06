@@ -497,6 +497,7 @@ void collect_streaming (void)
 	uint32_t	nSamples = 1000; // Should be equal to nChannels * nSamplesPerChannel
 	int16_t		nChannels = 1;
 	uint32_t	nSamplesPerChannel = nSamples / nChannels;
+	uint32_t	nSamplesPerChannelForBuffer = 10 * nSamplesPerChannel; // Used to create the circulat buffer for collecting data into
 	uint32_t	nSamplesCollected = 0;
 	uint16_t *  samples = (uint16_t *) calloc(nSamples, sizeof(uint16_t)); // Size of array should be equal to nChannels * nSamplesPerChannel
 	uint32_t	usForBlock = 1000000;
@@ -525,7 +526,7 @@ void collect_streaming (void)
 	printf("\n");
 
 	// Start streaming
-	status = pl1000Run(g_handle, nSamplesPerChannel, BM_STREAM);
+	status = pl1000Run(g_handle, nSamplesPerChannelForBuffer, BM_STREAM);
 
 	// Wait until unit is ready
 	isReady = 0;
