@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps5000aCon", "ps5000aCon\ps5000aCon.vcxproj", "{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps5000aBlockMSOCon", "ps5000aBlockMSOCon\ps5000aBlockMSOCon.vcxproj", "{D96F17C0-A35F-408C-A1F1-2EEF05413F72}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}.Release|x64.Build.0 = Release|x64
 		{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}.Release|x86.ActiveCfg = Release|Win32
 		{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}.Release|x86.Build.0 = Release|Win32
+		{D96F17C0-A35F-408C-A1F1-2EEF05413F72}.Debug|x64.ActiveCfg = Debug|x64
+		{D96F17C0-A35F-408C-A1F1-2EEF05413F72}.Debug|x64.Build.0 = Debug|x64
+		{D96F17C0-A35F-408C-A1F1-2EEF05413F72}.Debug|x86.ActiveCfg = Debug|Win32
+		{D96F17C0-A35F-408C-A1F1-2EEF05413F72}.Debug|x86.Build.0 = Debug|Win32
+		{D96F17C0-A35F-408C-A1F1-2EEF05413F72}.Release|x64.ActiveCfg = Release|x64
+		{D96F17C0-A35F-408C-A1F1-2EEF05413F72}.Release|x64.Build.0 = Release|x64
+		{D96F17C0-A35F-408C-A1F1-2EEF05413F72}.Release|x86.ActiveCfg = Release|Win32
+		{D96F17C0-A35F-408C-A1F1-2EEF05413F72}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
