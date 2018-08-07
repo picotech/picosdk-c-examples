@@ -1702,8 +1702,6 @@ void set_info(UNIT * unit)
 			{
 				variant = atoi(line);
 				memcpy(&(unit->modelString), line, sizeof(unit->modelString)==5?5:sizeof(unit->modelString));
-				
-				variant = atoi(line);
 
 				unit->channelCount = (int16_t)line[1];
 				unit->channelCount = unit->channelCount - 48; // Subtract ASCII 0 (48)
