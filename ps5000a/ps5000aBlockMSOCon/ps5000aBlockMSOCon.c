@@ -147,9 +147,6 @@ typedef struct tChannelSettings
 	float analogueOffset;
 }CHANNEL_SETTINGS;
 
-uint32_t	timebase = 8;
-BOOL			scaleVoltages = TRUE;
-
 uint16_t inputRanges [PS5000A_MAX_RANGES] = {
 												10,
 												20,
@@ -216,7 +213,7 @@ int32_t main(void)
 	PICO_STATUS status = PICO_OK;
 	int16_t handle = 0;
 
-	printf("PicoScope 5000 Series (ps5000a) Driver MSO Block Capture Example Program\n");
+	printf("PicoScope 5000 Series (ps5000a) Driver MSO Block Capture Example Program\n\n");
 
 	// Establish connection to device
 	// ------------------------------
@@ -233,6 +230,7 @@ int32_t main(void)
 		}
 		else
 		{
+			fprintf(stderr, "No device found - status code %d\n", status);
 			return -1;
 		}
 	}
@@ -258,7 +256,7 @@ int32_t main(void)
 																	"Firmware 1",
 																	"Firmware 2" };
 
-	printf("\nDevice information:-\n\n");
+	printf("Device information:-\n\n");
 
 	for (i = 0; i < 11; i++)
 	{
@@ -280,10 +278,10 @@ int32_t main(void)
 			else
 			{
 				digitalPortCount = 0;
-				printf("This example is for PicoScope 5000 Series Mixed Signal Oscilloscopes.\n");
+				fprintf(stderr, "This example is for PicoScope 5000 Series Mixed Signal Oscilloscopes.\n");
 				printf("Exiting application...\n");
 				Sleep(5000);
-				return;
+				return -1;
 			}
 
 		}
@@ -297,8 +295,8 @@ int32_t main(void)
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aMaximumValue ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aMaximumValue ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	// Channel setup
@@ -334,8 +332,8 @@ int32_t main(void)
 
 		if (status != PICO_OK)
 		{
-			printf("ps5000aSetChannel (ch %d) ------ 0x%08lx \n", ch, status);
-			return;
+			fprintf(stderr, "ps5000aSetChannel (ch %d) ------ 0x%08lx \n", ch, status);
+			return -1;
 		}
 	}
 
@@ -347,16 +345,16 @@ int32_t main(void)
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aSetDigitalPort (PORT0) ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aSetDigitalPort (PORT0) ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	status = ps5000aSetDigitalPort(handle, PS5000A_DIGITAL_PORT1, 1, logicLevel);
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aSetDigitalPort (PORT1) ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aSetDigitalPort (PORT1) ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	// Trigger setup
@@ -374,8 +372,8 @@ int32_t main(void)
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aSetTriggerChannelConditionsV2 ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aSetTriggerChannelConditionsV2 ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	// Set digital channel properties
@@ -387,8 +385,8 @@ int32_t main(void)
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aSetTriggerDigitalPortProperties ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aSetTriggerDigitalPortProperties ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	// Setup data buffers
@@ -416,8 +414,8 @@ int32_t main(void)
 
 			if (status != PICO_OK)
 			{
-				printf("ps5000aSetDataBuffer ------ 0x%08lx \n", status);
-				return;
+				fprintf(stderr, "ps5000aSetDataBuffer ------ 0x%08lx \n", status);
+				return -1;
 			}
 		}
 	}
@@ -429,8 +427,8 @@ int32_t main(void)
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aSetDataBuffer (PORT0) ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aSetDataBuffer (PORT0) ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	digiBuffers[1] = (int16_t*)calloc(totalSamples, sizeof(int16_t));
@@ -439,8 +437,8 @@ int32_t main(void)
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aSetDataBuffer (PORT1) ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aSetDataBuffer (PORT1) ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	// Query timebase function to obtain the time interval
@@ -454,8 +452,8 @@ int32_t main(void)
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aGetTimebase2 ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aGetTimebase2 ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	printf("\nTimebase: %d, time interval: %.1f (ns)\n\n", timebase, timeInterval);
@@ -483,8 +481,8 @@ int32_t main(void)
 
 		if (status != PICO_OK)
 		{
-			printf("ps5000aGetValues ------ 0x%08lx \n", status);
-			return;
+			fprintf(stderr, "ps5000aGetValues ------ 0x%08lx \n", status);
+			return -1;
 		}
 
 		printf("Data collection complete - collected %d samples per channel.\n", totalSamples);
@@ -573,8 +571,8 @@ int32_t main(void)
 
 	if (status != PICO_OK)
 	{
-		printf("ps5000aStop ------ 0x%08lx \n", status);
-		return;
+		fprintf(stderr, "ps5000aStop ------ 0x%08lx \n", status);
+		return -1;
 	}
 
 	// Free memory allocated for buffers
