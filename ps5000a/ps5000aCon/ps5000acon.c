@@ -1702,8 +1702,6 @@ void set_info(UNIT * unit)
 			{
 				variant = atoi(line);
 				memcpy(&(unit->modelString), line, sizeof(unit->modelString)==5?5:sizeof(unit->modelString));
-				
-				variant = atoi(line);
 
 				unit->channelCount = (int16_t)line[1];
 				unit->channelCount = unit->channelCount - 48; // Subtract ASCII 0 (48)
@@ -1903,7 +1901,7 @@ void setTimebase(UNIT * unit)
 	}
 	
 	// Find the shortest possible timebase and inform the user.
-	status = ps5000aGetMinimumTimebaseStateless(unit->handle, enabledChannelOrPortFlags, &timebase, &timeIntervalSeconds, unit->resolution);
+	status = ps5000aGetMinimumTimebaseStateless(unit->handle, enabledChannelOrPortFlags, &shortestTimebase, &timeIntervalSeconds, unit->resolution);
 
 	if (status != PICO_OK)
 	{
@@ -1911,7 +1909,7 @@ void setTimebase(UNIT * unit)
 		return;
 	}
 
-	printf("Shortest timebase index available %d (%.9f seconds).\n", timebase, timeIntervalSeconds);
+	printf("Shortest timebase index available %d (%.9f seconds).\n", shortestTimebase, timeIntervalSeconds);
 	
 	printf("Specify desired timebase: ");
 	fflush(stdin);
