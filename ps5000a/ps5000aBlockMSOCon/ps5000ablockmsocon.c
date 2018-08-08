@@ -218,6 +218,9 @@ int32_t main(void)
 
 	printf("PicoScope 5000 Series (ps5000a) Driver MSO Block Capture Example Program\n");
 
+	// Establish connection to device
+	// ------------------------------
+
 	// Open the connection to the device
 	status = ps5000aOpenUnit(&handle, NULL, PS5000A_DR_8BIT);
 
@@ -298,6 +301,9 @@ int32_t main(void)
 		return;
 	}
 
+	// Channel setup
+	// -------------
+
 	// Setup analogue channels
 
 	struct tChannelSettings channelSettings[PS5000A_MAX_CHANNELS];
@@ -345,7 +351,7 @@ int32_t main(void)
 		return;
 	}
 
-	status = ps5000aSetDigitalPort(handle, PS5000A_DIGITAL_PORT0, 1, logicLevel);
+	status = ps5000aSetDigitalPort(handle, PS5000A_DIGITAL_PORT1, 1, logicLevel);
 
 	if (status != PICO_OK)
 	{
@@ -353,23 +359,10 @@ int32_t main(void)
 		return;
 	}
 
-	// Query timebase function to obtain the time interval.
+	// Trigger setup
+	// -------------
 
-	float timeInterval = 0;
-	int32_t maxSamples = 0;
-	uint32_t timebase = 127;
-
-	status = ps5000aGetTimebase2(handle, timebase, 1, &timeInterval, &maxSamples, 0);
-
-	if (status != PICO_OK)
-	{
-		printf("ps5000aGetTimebase2 ------ 0x%08lx \n", status);
-		return;
-	}
-
-	printf("\nTimebase: %d, time interval: timeInterval: %d (ns)\n", timebase, timeInterval);
-
-	// Set up trigger on digital channel
+	// Set up trigger on digital channel 15, falling edge
 
 	// Set the condition for the port to which the channel belongs
 	struct tPS5000ACondition digitalCondition;
@@ -385,10 +378,10 @@ int32_t main(void)
 		return;
 	}
 
-	// Set digital directions
+	// Set digital channel properties
 	struct tPS5000ADigitalChannelDirections digitalDirection;
 	digitalDirection.channel = PS5000A_DIGITAL_CHANNEL_15;
-	digitalDirection.direction = PS5000A_FALLING;
+	digitalDirection.direction = PS5000A_DIGITAL_DIRECTION_FALLING;
 
 	status = ps5000aSetTriggerDigitalPortProperties(handle, &digitalDirection, 1);
 
@@ -398,21 +391,83 @@ int32_t main(void)
 		return;
 	}
 
-	// Data buffers for raw data collection
+	// Setup data buffers
+	// ------------------
 
+	// Data buffers for raw data collection
 	int16_t * buffers[PS5000A_MAX_CHANNELS];
 	int16_t * digiBuffers[MAX_DIGITAL_PORTS];
 
-	// Other sampling parameters
 	int32_t preTriggerSamples = 100;
 	int32_t postTriggerSamples = 10000;
 	int32_t totalSamples = preTriggerSamples + postTriggerSamples;
-	int32_t timeIndisposed;
+
+	uint32_t downSampleRatio = 1;
+	PS5000A_RATIO_MODE ratioMode = PS5000A_RATIO_MODE_NONE;
+
+	// Set buffers for the analogue channels
+	for (ch = 0; ch < numAvailableChannels; ch++)
+	{
+		if (channelSettings[ch].enabled)
+		{
+			buffers[ch] = (int16_t*)calloc(totalSamples, sizeof(int16_t));
+
+			status = ps5000aSetDataBuffer(handle, (PS5000A_CHANNEL)ch, buffers[ch], totalSamples, 0, ratioMode);
+
+			if (status != PICO_OK)
+			{
+				printf("ps5000aSetDataBuffer ------ 0x%08lx \n", status);
+				return;
+			}
+		}
+	}
+
+	// Set buffers for the digital ports
+	digiBuffers[0] = (int16_t*)calloc(totalSamples, sizeof(int16_t));
+
+	status = ps5000aSetDataBuffer(handle, PS5000A_DIGITAL_PORT0, digiBuffers[0], totalSamples, 0, ratioMode);
+
+	if (status != PICO_OK)
+	{
+		printf("ps5000aSetDataBuffer (PORT0) ------ 0x%08lx \n", status);
+		return;
+	}
+
+	digiBuffers[1] = (int16_t*)calloc(totalSamples, sizeof(int16_t));
+
+	status = ps5000aSetDataBuffer(handle, PS5000A_DIGITAL_PORT1, digiBuffers[1], totalSamples, 0, ratioMode);
+
+	if (status != PICO_OK)
+	{
+		printf("ps5000aSetDataBuffer (PORT1) ------ 0x%08lx \n", status);
+		return;
+	}
+
+	// Query timebase function to obtain the time interval
+	// ---------------------------------------------------
+
+	float timeInterval = 0;
+	int32_t maxSamples = 0;
+	uint32_t timebase = 127;
+
+	status = ps5000aGetTimebase2(handle, timebase, totalSamples, &timeInterval, &maxSamples, 0);
+
+	if (status != PICO_OK)
+	{
+		printf("ps5000aGetTimebase2 ------ 0x%08lx \n", status);
+		return;
+	}
+
+	printf("\nTimebase: %d, time interval: %.1f (ns)\n\n", timebase, timeInterval);
+
+	// Data collection
+	// ---------------
 
 	printf("Starting data collection...\n");
 
 	// Start device collecting, then wait for completion
 	g_ready = FALSE;
+	int32_t timeIndisposed = 0;
 
 	status = ps5000aRunBlock(handle, preTriggerSamples, postTriggerSamples, timebase, &timeIndisposed, 0, callBackBlock, NULL);
 
@@ -422,48 +477,7 @@ int32_t main(void)
 	}
 
 	if (g_ready)
-	{
-		uint32_t downSampleRatio = 1;
-		PS5000A_RATIO_MODE ratioMode = PS5000A_RATIO_MODE_NONE;
-
-		// Set buffers for the analogue channels
-		for (ch = 0; ch < numAvailableChannels; ch++)
-		{
-			if (channelSettings[ch].enabled)
-			{
-				buffers[ch] = (int16_t*)calloc(totalSamples, sizeof(int16_t));
-
-				status = ps5000aSetDataBuffer(handle, (PS5000A_CHANNEL) ch, buffers[ch], totalSamples, 0, ratioMode);
-
-				if (status != PICO_OK)
-				{
-					printf("ps5000aSetDataBuffer ------ 0x%08lx \n", status);
-					return;
-				}
-			}
-		}
-
-		// Set buffers for the digital data
-		digiBuffers[0] = (int16_t*)calloc(totalSamples, sizeof(int16_t));
-
-		status = ps5000aSetDataBuffer(handle, PS5000A_DIGITAL_PORT0, digiBuffers[0], totalSamples, 0, ratioMode);
-
-		if (status != PICO_OK)
-		{
-			printf("ps5000aSetDataBuffer (PORT0) ------ 0x%08lx \n", status);
-			return;
-		}
-
-		digiBuffers[1] = (int16_t*)calloc(totalSamples, sizeof(int16_t));
-
-		status = ps5000aSetDataBuffer(handle, PS5000A_DIGITAL_PORT1, digiBuffers[1], totalSamples, 0, ratioMode);
-
-		if (status != PICO_OK)
-		{
-			printf("ps5000aSetDataBuffer (PORT1) ------ 0x%08lx \n", status);
-			return;
-		}
-		
+	{		
 		// Can retrieve data using different ratios and ratio modes from driver
 		status = ps5000aGetValues(handle, 0, (uint32_t*)&totalSamples, downSampleRatio, ratioMode, 0, &g_overflow);
 
@@ -473,7 +487,7 @@ int32_t main(void)
 			return;
 		}
 
-		printf("Data collection complete - collected %d\n samples per channel.\n", totalSamples);
+		printf("Data collection complete - collected %d samples per channel.\n", totalSamples);
 
 		// Output data to file
 
@@ -486,8 +500,7 @@ int32_t main(void)
 		if (fp != NULL)
 		{
 			fprintf(fp, "Block Data log\n\n");
-			fprintf(fp, "Results shown for each of the %d channels are......\n", numAvailableChannels);
-			fprintf(fp, "ADC Count & millivolts\n\n");
+			fprintf(fp, "Results shown for each of the %d channels are displayed in ADC Count & millivolts.\n\n", numAvailableChannels);
 
 			for (i = 0; i < totalSamples; i++)
 			{
@@ -550,24 +563,43 @@ int32_t main(void)
 		{
 			printf("Cannot open file %s for writing.\n", digiBlockFile);
 		}
-
-		for (ch = 0; ch < numAvailableChannels; ch++)
-		{
-			if (channelSettings[ch].enabled)
-			{
-				free(buffers[ch]);
-			}
-		}
-		
-		free(digiBuffers[0]);
-		free(digiBuffers[1]);
+	}
+	else
+	{
+		printf("Data collection cancelled.\n");
 	}
 
+	status = ps5000aStop(handle);
+
+	if (status != PICO_OK)
+	{
+		printf("ps5000aStop ------ 0x%08lx \n", status);
+		return;
+	}
+
+	// Free memory allocated for buffers
+
+	for (ch = 0; ch < numAvailableChannels; ch++)
+	{
+		if (channelSettings[ch].enabled)
+		{
+			free(buffers[ch]);
+		}
+	}
+
+	free(digiBuffers[0]);
+	free(digiBuffers[1]);
+
 	printf("\n");
+
+	// Close connection to device
+	// --------------------------
 
 	status = ps5000aCloseUnit(handle);
 
 	printf("Exit...\n");
+
+	Sleep(2000);
 	
 	return 0;
 }
