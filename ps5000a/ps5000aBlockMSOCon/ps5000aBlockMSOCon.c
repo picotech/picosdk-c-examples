@@ -41,7 +41,7 @@
  *		Place this file in the same folder as the files from the linux-build-files
  *		folder. Edit the configure.ac and Makefile.am files to use this file. 
  *		In a terminal window, use the following commands to build the 
- *		ps5000ablockmsocon application:
+ *		ps5000aBlockMSOCon application:
  *
  *			./autogen.sh <ENTER>
  *			make <ENTER>
