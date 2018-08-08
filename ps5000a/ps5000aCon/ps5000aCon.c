@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Filename: ps5000acon.c
+ * Filename: ps5000aCon.c
  *
  * Description:
  *   This is a console mode program that demonstrates how to use some of 

@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT([Pico Technology Ltd. PicoScope 5000 Series (A API) Example],1.0.0,[[support@picotech.com]],[ps5000acon])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(ps5000acon.c)
+AC_CONFIG_SRCDIR(ps5000aCon.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])

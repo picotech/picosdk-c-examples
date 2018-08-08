@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ps5000acon.c" />
+    <ClCompile Include="ps5000aCon.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}</ProjectGuid>

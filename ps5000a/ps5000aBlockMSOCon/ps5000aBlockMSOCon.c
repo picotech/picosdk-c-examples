@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Filename: ps5000ablockmsocon.c
+ * Filename: ps5000aBlockMSOCon.c
  *
  * Description:
  *   This is a console mode program that demonstrates how to use some of 
