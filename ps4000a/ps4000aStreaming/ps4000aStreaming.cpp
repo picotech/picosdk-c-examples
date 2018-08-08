@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Filename: ps4000astreaming.cpp
+ * Filename: ps4000aStreaming.cpp
  *
  * Description:
  *   This is a console mode program that demonstrates how to use the
