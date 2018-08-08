@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ps4000astreaming.cpp" />
+    <ClCompile Include="ps4000aStreaming.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5FCAC3CD-1EAA-4A11-818A-9EF4EC8E12D3}</ProjectGuid>
