@@ -89,11 +89,6 @@ typedef enum enBOOL
 #define fscanf_s fscanf
 #define memcpy_s(a,b,c,d) memcpy(a,c,d)
 
-typedef enum enBOOL
-{
-	FALSE, TRUE
-} BOOL;
-
 /* A function to detect a keyboard press on Linux */
 int32_t _getch()
 {
@@ -144,6 +139,7 @@ return (fp>0)?0:-1;
 #define max(a,b) ((a) > (b) ? a : b)
 #define min(a,b) ((a) < (b) ? a : b)
 #endif
+
 #define TRUE		1
 #define FALSE		0
 
