@@ -2,9 +2,9 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology USBDrDAQ Example],1.0.0,[[support@picotech.com]],[usbdrdaqcon])
+AC_INIT([Pico Technology USBDrDAQ Example],1.0.0,[[support@picotech.com]],[usbdrdaqCon])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(usbdrdaqcon.c)
+AC_CONFIG_SRCDIR(usbdrdaqCon.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])

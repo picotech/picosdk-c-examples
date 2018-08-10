@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- *	Filename: usbdrdaqcon.c
+ *	Filename: usbdrdaqCon.c
  *
  *	Description:
  *    This is a console-mode program that demonstrates how to use the
@@ -41,12 +41,12 @@
  *
  *		Place this file in the same folder as the files from the linux-build-files
  *		folder. In a terminal window, use the following commands to build
- *		the usbdrdaqcon application:
+ *		the usbdrdaqCon application:
  *
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- *	Copyright (C) 2010 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ *	Copyright (C) 2010-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 

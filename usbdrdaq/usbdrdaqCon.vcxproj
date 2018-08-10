@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="usbdrdaqcon.c" />
+    <ClCompile Include="usbdrdaqCon.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{868244DD-5410-48CE-9349-3807F97274F7}</ProjectGuid>
