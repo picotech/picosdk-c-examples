@@ -3,7 +3,7 @@
 * Example filename:
 * IDE/Compiler being used:
 * Pico Technology device model:
-* Driver name and version number:
+* Driver name, version number and platform (32/64-bit):
 * Operating system:
 * USB port type	(e.g. 2.0):
 
