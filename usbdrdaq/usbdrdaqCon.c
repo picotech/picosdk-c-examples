@@ -200,6 +200,8 @@ void channel_select()
 {
 	int32_t value;
 	PICO_STATUS status = PICO_OK;
+	int32_t readSuccess = 0;
+	int8_t c[10];
 
 	printf("\n");
 	printf("1:  External Sensor 1\n");
@@ -216,11 +218,18 @@ void channel_select()
 	
 	do
 	{
-		printf("Enter channel number: ");
-		scanf_s("%d", &value);
+		printf("Enter channel number: \n");
+
+		readSuccess = scanf_s("%d", &value);
+
+		if (readSuccess == 0)
+		{
+			scanf("%s", &c);
+		}
+
 	} while (value < USB_DRDAQ_CHANNEL_EXT1 || value > USB_DRDAQ_MAX_CHANNELS);
 
-	channel = (USB_DRDAQ_INPUTS)value;
+	channel = (USB_DRDAQ_INPUTS) value;
 
 	// Set temperature compensation if PH channel is enabled
 	if (channel == USB_DRDAQ_CHANNEL_PH)
