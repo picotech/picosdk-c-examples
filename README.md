@@ -17,7 +17,7 @@ Examples are provided as Microsoft Visual Studio Express 2015 for Windows Deskto
 * A suitable IDE such as [Eclipse](https://www.eclipse.org/downloads/?)
 * Alternatively, ensure that the `autoconf` and `libtool` packages are installed for your operating system if building applications from the terminal.
 
-#### Mac OS X
+#### macOS
 
 * A suitable IDE such as [XCode](https://developer.apple.com/xcode/)
 
@@ -33,7 +33,7 @@ Drivers are available for the following platforms. Refer to the subsections belo
 
 * Follow the instructions from our [Linux Software & Drivers for Oscilloscopes and Data Loggers page](https://www.picotech.com/downloads/linux) to install the required driver packages for your product.
 
-#### Mac OS X
+#### macOS
 
 * Visit our [Downloads page](https://www.picotech.com/downloads) and download the *PicoScope Beta for Mac OS X* application.
 
@@ -49,7 +49,7 @@ You can download Programmer's Guides providing a description of the API function
 * Select the required configuration and solution platform
 * Build the solution
 
-#### Linux and Mac OS X
+#### Linux and macOS
 
 * Copy the required source code C file (e.g. ps3000acon.c) into the corresponding `linux-build-files` sub-folder for the driver or copy the files to another folder 
 * Open a terminal window
@@ -73,7 +73,7 @@ See [LICENSE.md](LICENSE.md) for license terms.
 
 *Windows* and *Visual Studio* are registered trademarks of Microsoft Corporation. 
 
-*Mac* and *OS X* are registered trademarks of Apple, Inc. 
+*macOS* is a registered trademark of Apple Inc. 
 
 *Linux* is the registered trademark of Linus Torvalds in the U.S. and other countries.
 
