@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Filename: ps2000acon.c
+ * Filename: ps2000aCon.c
  *
  * Description:
  *   This is a console mode program that demonstrates how to perform 
@@ -60,7 +60,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- * Copyright (C) 2011 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2011-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 
