@@ -2,9 +2,9 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology Ltd. USB PT-104 Example],1.0.0,[[support@picotech.com]],[usbpt104con])
+AC_INIT([Pico Technology Ltd. USB PT-104 Example],1.0.0,[[support@picotech.com]],[usbpt104Con])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(usbpt104con.c)
+AC_CONFIG_SRCDIR(usbpt104Con.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])
