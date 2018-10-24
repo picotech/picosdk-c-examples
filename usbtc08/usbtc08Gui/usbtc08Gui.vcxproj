@@ -111,10 +111,10 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="usbtc08gui.c" />
+    <ClCompile Include="usbtc08Gui.c" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="usbtc08gui.rc" />
+    <ResourceCompile Include="usbtc08Gui.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

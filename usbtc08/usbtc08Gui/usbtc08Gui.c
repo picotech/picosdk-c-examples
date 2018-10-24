@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Filename: usbtc08gui.c
+* Filename: usbtc08Gui.c
 *
 * Description:
 *   This is a Windows application that demonstrates how to setup and

@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="usbtc08con.c" />
+    <ClCompile Include="usbtc08Con.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9A53D7E4-9FB1-485F-94E0-3F1445D6D557}</ProjectGuid>

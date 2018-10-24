@@ -2,9 +2,9 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology Ltd. USB TC-08 Example],1.0.0,[[support@picotech.com]],[usbtc08con])
+AC_INIT([Pico Technology Ltd. USB TC-08 Example],1.0.0,[[support@picotech.com]],[usbtc08Con])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(usbtc08con.c)
+AC_CONFIG_SRCDIR(usbtc08Con.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])
