@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Filename: ps3000acon.c
+ * Filename: ps3000aCon.c
  *
  * Description:
  *   This is a console mode program that demonstrates how to use the
@@ -8,13 +8,16 @@
  *
  *	Supported PicoScope models:
  *
+ *    PicoScope 3203A/B/D
  *		PicoScope 3204A/B/D
  *		PicoScope 3205A/B/D
  *		PicoScope 3206A/B/D
  *		PicoScope 3207A/B
+ *		PicoScope 3203D MSO
  *		PicoScope 3204 MSO & D MSO
  *		PicoScope 3205 MSO & D MSO
  *		PicoScope 3206 MSO & D MSO
+ *		PicoScope 3403D/D MSO
  *		PicoScope 3404A/B/D/D MSO
  *		PicoScope 3405A/B/D/D MSO
  *		PicoScope 3406A/B/D/D MSO
@@ -69,7 +72,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- * Copyright (C) 2011 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2011-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 

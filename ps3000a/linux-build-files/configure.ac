@@ -2,9 +2,9 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology PicoScope 3000 Series (A API) Example],1.1.0,[[support@picotech.com]],[ps3000acon])
+AC_INIT([Pico Technology PicoScope 3000 Series (A API) Example],1.1.0,[[support@picotech.com]],[ps3000aCon])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(ps3000acon.c)
+AC_CONFIG_SRCDIR(ps3000aCon.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])
