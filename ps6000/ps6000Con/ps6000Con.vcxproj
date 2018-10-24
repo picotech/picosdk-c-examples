@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ps6000con.c" />
+    <ClCompile Include="ps6000Con.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4514685F-75EF-47C1-95B1-7A77A45CACBE}</ProjectGuid>

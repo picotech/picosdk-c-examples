@@ -2,9 +2,9 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology Ltd. PicoScope 6000 Series Example],1.0.0,[[support@picotech.com]],[ps6000con])
+AC_INIT([Pico Technology Ltd. PicoScope 6000 Series Example],1.0.0,[[support@picotech.com]],[ps6000Con])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(ps6000con.c)
+AC_CONFIG_SRCDIR(ps6000Con.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])
