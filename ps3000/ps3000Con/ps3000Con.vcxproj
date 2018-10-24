@@ -19,12 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ps3000con.c" />
+    <ClCompile Include="ps3000Con.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9785C4B5-40F2-4826-B4D3-2E5087ECA36F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ps3000con</RootNamespace>
+    <RootNamespace>ps3000Con</RootNamespace>
     <ProjectName>ps3000Con</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

@@ -1,6 +1,6 @@
 /**************************************************************************
  * 
- * Filename: ps3000con.c
+ * Filename: ps3000Con.c
  *
  * Description:
  *   This is a console-mode program that demonstrates how to use the
@@ -52,7 +52,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- * Copyright (C) 2002 - 2017 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2002-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  **************************************************************************/
 #include <stdio.h>
