@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pl1000con.c" />
+    <ClCompile Include="pl1000Con.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DCBE4F87-974A-4A2D-8174-B2021648BE9D}</ProjectGuid>
