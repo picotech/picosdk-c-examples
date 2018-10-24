@@ -55,7 +55,7 @@
  *
  *		Place this file in the same folder as the files from the linux-build-files
  *		folder. In a terminal window, use the following commands to build
- *		the ps2000acon application:
+ *		the ps2000aCon application:
  *
  *			./autogen.sh <ENTER>
  *			make <ENTER>
