@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="picohrdlcon.c" />
+    <ClCompile Include="picohrdlCon.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CCB45F67-1892-4D30-9A30-462F7A8E517B}</ProjectGuid>

@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- *  Filename: picohrdlcon.c
+ *  Filename: picohrdlCon.c
  *
  *  Description:
  *		This is a console-mode program that demonstrates how to use the
@@ -36,7 +36,7 @@
  *
  *		Place this file in the same folder as the files from the linux-build-files
  *		folder. In a terminal window, use the following commands to build
- *		the picohrdl application:
+ *		the picohrdlCon application:
  *
  *			./autogen.sh <ENTER>
  *			make <ENTER>

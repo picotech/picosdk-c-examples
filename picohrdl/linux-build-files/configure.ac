@@ -2,9 +2,9 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology Ltd. picohrdl Example],1.0.0,[[support@picotech.com]],[picohrdl])
+AC_INIT([Pico Technology Ltd. PicoLog High Resolution Data Logger Example],1.0.0,[[support@picotech.com]],[picohrdlCon])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(picohrdlcon.c)
+AC_CONFIG_SRCDIR(picohrdlCon.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])

@@ -1,4 +1,4 @@
 ACLOCAL_AMFLAGS = -I m4
 
-bin_PROGRAMS = picohrdlcon
-picohrdlcon_SOURCES = picohrdlcon.c
+bin_PROGRAMS = picohrdlCon
+picohrdlCon_SOURCES = picohrdlCon.c
