@@ -2,9 +2,9 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology Ltd. PicoLog CM3 Example],1.0.0,[[support@picotech.com]],[plcm3con])
+AC_INIT([Pico Technology Ltd. PicoLog CM3 Example],1.0.0,[[support@picotech.com]],[plcm3Con])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(plcm3con.c)
+AC_CONFIG_SRCDIR(plcm3Con.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])
