@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ps4000con.c" />
+    <ClCompile Include="ps4000Con.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7326BD28-8F71-4B0B-9FFD-4E11ED17E72C}</ProjectGuid>

@@ -2,9 +2,9 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology PicoScope 4000 Series Example],1.1.0,[[support@picotech.com]],[ps4000con])
+AC_INIT([Pico Technology PicoScope 4000 Series Example],1.1.0,[[support@picotech.com]],[ps4000Con])
 AC_CONFIG_MACRO_DIR(m4)
-AC_CONFIG_SRCDIR(ps4000con.c)
+AC_CONFIG_SRCDIR(ps4000Con.c)
 AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE([foreign] [no-dist])
