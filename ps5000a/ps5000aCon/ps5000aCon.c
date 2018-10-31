@@ -63,7 +63,6 @@
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
-#include <math.h>
 #include "ps5000aApi.h"
 #else
 #include <sys/types.h>
@@ -1891,12 +1890,13 @@ void setTimebase(UNIT * unit)
 		}
 	}
 	
-	// Find the channels that are enabled
+	// Find the analogue channels that are enabled - if an MSO model is being used, this will need to be
+	// modified to add channel flags for enabled digital ports
 	for (ch = 0; ch < numValidChannels; ch++)
 	{
 		if (unit->channelSettings[ch].enabled)
 		{
-			enabledChannelOrPortFlags = enabledChannelOrPortFlags | (PS5000A_CHANNEL_FLAGS)pow(2, ch);
+			enabledChannelOrPortFlags = enabledChannelOrPortFlags | (PS5000A_CHANNEL_FLAGS)(1 << ch);
 		}
 	}
 	
