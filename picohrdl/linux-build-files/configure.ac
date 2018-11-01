@@ -93,8 +93,8 @@ AC_ARG_WITH([pico-headers],
         [location of picoscope libraries])],
     [pico_headers_path="$withval"],
     [pico_headers_path="/opt/picoscope/include"])
-CFLAGS=${CFLAGS}" -I$pico_headers_path"
-CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path"
+CFLAGS=${CFLAGS}" -I$pico_headers_path -lm"
+CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path -lm"
 
 AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libpicohrdl-1.0/HRDL.h])
 
