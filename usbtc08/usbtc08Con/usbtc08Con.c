@@ -145,6 +145,8 @@ int32_t main(void)
 	int32_t readingsCollected = 0;							/* Number of readings collected at a time in streaming mode */
 	uint32_t totalReadings[USBTC08_MAX_CHANNELS + 1] = {0};	/* Total readings collected in streaming mode */
 
+	int32_t minimumIntervalMs = 0; /* Minimum time interval between samples. */
+
 	/* Print header information */
 	printf ("Pico Technology USB TC-08 Console Example Program\n");
 	printf ("-------------------------------------------------\n\n");
@@ -276,8 +278,10 @@ int32_t main(void)
 				printf("Press any key to stop data collection.\n\n");
 				printf("Time    CJC    Ch1    Ch2    Ch3    Ch4    Ch5    Ch6    Ch7    Ch8\n");
 				
+				minimumIntervalMs = usb_tc08_get_minimum_interval_ms(handle);
+
 				/* Set the unit running */
-				usb_tc08_run(handle, usb_tc08_get_minimum_interval_ms(handle));
+				usb_tc08_run(handle, minimumIntervalMs);
 
 				while(totalReadings[USBTC08_CHANNEL_1] <= numberOfReadings && !_kbhit())
 				{
