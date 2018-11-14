@@ -18,11 +18,11 @@ Use one of two methods to describe the issue:
 
 #### Actual Result
 
-
+What happened.
 
 #### Expected Result
 
-
+What you expect to have happened.
 
 ### Notes
 
