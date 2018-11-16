@@ -917,51 +917,51 @@ void collect_block_ets (void)
 	int32_t 	time_indisposed_ms;
 	int16_t 	overflow;
 	int32_t  	ets_sampletime;
-	int16_t ok;
-	int16_t ch;
+	int16_t		ok;
+	int16_t		ch;
+	int16_t		ready = 0;
 
 	printf ( "Collect ETS block...\n" );
-	printf ( "Collects when value rises past 1500mV\n" );
+	printf ( "Collects when value rises past 1000 mV\n" );
 	printf ( "Press a key to start...\n" );
 	_getch ();
 
 	set_defaults ();
 
 	/* Trigger enabled
-	* Channel A - to trigger unsing this channel it needs to be enabled using ps2000_set_channel
+	* Channel A - to trigger using this channel it needs to be enabled using ps2000_set_channel()
 	* Rising edge
-	* Threshold = 1500mV
+	* Threshold = 1000 mV
 	* 10% pre-trigger  (negative is pre-, positive is post-)
 	*/
 	unitOpened.trigger.simple.channel = PS2000_CHANNEL_A;
 	unitOpened.trigger.simple.delay = -10.f;
 	unitOpened.trigger.simple.direction = PS2000_RISING;
-	unitOpened.trigger.simple.threshold = 1500.f;
+	unitOpened.trigger.simple.threshold = 1000.f;
 
 
-	ps2000_set_trigger ( unitOpened.handle,
-		(int16_t) unitOpened.trigger.simple.channel,
-		mv_to_adc (1500, unitOpened.channelSettings[(int16_t) unitOpened.trigger.simple.channel].range),
-		unitOpened.trigger.simple.direction ,
-		(int16_t) unitOpened.trigger.simple.delay,
-		auto_trigger_ms );
+	ok = ps2000_set_trigger ( unitOpened.handle,
+					(int16_t) unitOpened.trigger.simple.channel,
+					mv_to_adc (1500, unitOpened.channelSettings[(int16_t) unitOpened.trigger.simple.channel].range),
+					unitOpened.trigger.simple.direction ,
+					(int16_t) unitOpened.trigger.simple.delay,
+					auto_trigger_ms );
 
-	/* Enable ETS in fast mode,
-	* the computer will store 60 cycles
-	*  but interleave only 4
-	*/
-	ets_sampletime = ps2000_set_ets ( unitOpened.handle, PS2000_ETS_FAST, 60, 4 );
-	printf ( "ETS Sample Time is: %ld\n", ets_sampletime );
+	/* Enable ETS in fast mode, the computer will store 20 cycles but interleave only 4 */
+	ets_sampletime = ps2000_set_ets ( unitOpened.handle, PS2000_ETS_FAST, 20, 4 );
+	printf ( "ETS Sample Time is: %ld ps\n", ets_sampletime );
+
 	/* Start it collecting,
 	*  then wait for completion
 	*/
 	ok = ps2000_run_block ( unitOpened.handle, BUFFER_SIZE, timebase, 1, &time_indisposed_ms );
 
-	printf ( "Waiting for trigger..." );
+	printf ( "Waiting for trigger... " );
 	printf ( "Press a key to abort\n" );
 
-	while ( (!ps2000_ready (unitOpened.handle)) && (!_kbhit ()) )
+	while ( !ready && (!_kbhit ()) )
 	{
+		ready = ps2000_ready(unitOpened.handle);
 		Sleep (100);
 	}
 
@@ -972,7 +972,6 @@ void collect_block_ets (void)
 	}
 	else
 	{
-		ps2000_stop ( unitOpened.handle );
 		/* Get the times (in microseconds)
 		*  and the values (in ADC counts)
 		*/
@@ -990,7 +989,7 @@ void collect_block_ets (void)
 		*  converting the readings to mV if required
 		*/
 
-		printf ( "Ten readings around trigger\n" );
+		printf ( "Ten readings around trigger\n\n" );
 		printf ( "(ps)\t(mv)\n");
 
 		/* This calculation is correct for 10% pre-trigger
@@ -1000,11 +999,12 @@ void collect_block_ets (void)
 		for ( i = trigger_sample - 5; i < trigger_sample + 5; i++ )
 		{
 			printf ( "%ld\t", times [i]);
+
 			for (ch = 0; ch < unitOpened.noOfChannels; ch++)
 			{
 				if (unitOpened.channelSettings[ch].enabled)
 				{
-					printf ( "%d\t\n", adc_to_mv (unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range));
+					printf ( "%d\t", adc_to_mv (unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range));
 				}
 			}
 			printf ("\n");
@@ -1029,6 +1029,9 @@ void collect_block_ets (void)
 		}
 		fclose( fp );
 	}
+
+	ps2000_stop(unitOpened.handle);
+
 }
 
 /****************************************************************************
