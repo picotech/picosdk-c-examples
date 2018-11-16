@@ -1518,6 +1518,7 @@ void setResolution(UNIT * unit)
 	int16_t i;
 	int16_t numEnabledChannels = 0;
 	int16_t retry;
+	int32_t resolutionInput;
 
 	PICO_STATUS status;
 	PS4000A_DEVICE_RESOLUTION resolution;
@@ -1565,7 +1566,9 @@ void setResolution(UNIT * unit)
 		printf("Resolution [1...2]: ");
 		
 		fflush(stdin);
-		scanf_s("%lud", &newResolution);
+		scanf_s("%lud", &resolutionInput);
+
+		newResolution = (PS4000A_DEVICE_RESOLUTION)resolutionInput;
 
 		// Verify if resolution can be selected for number of channels enabled
 

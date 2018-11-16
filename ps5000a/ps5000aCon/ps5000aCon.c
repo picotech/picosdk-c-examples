@@ -1992,6 +1992,7 @@ void setResolution(UNIT * unit)
 	int16_t i;
 	int16_t numEnabledChannels = 0;
 	int16_t retry;
+	int32_t resolutionInput;
 
 	PICO_STATUS status;
 	PS5000A_DEVICE_RESOLUTION resolution;
@@ -2060,7 +2061,9 @@ void setResolution(UNIT * unit)
 		}
 	
 		fflush(stdin);
-		scanf_s("%lud", &newResolution);
+		scanf_s("%lud", &resolutionInput);
+
+		newResolution = (PS5000A_DEVICE_RESOLUTION)resolutionInput;
 
 		// Verify if resolution can be selected for number of channels enabled
 
