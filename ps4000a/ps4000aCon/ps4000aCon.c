@@ -1484,9 +1484,9 @@ void SetTimebase(UNIT * unit)
 *
 * Outputs the resolution in text format to the console window
 ****************************************************************************/
-void printResolution(PS4000A_DEVICE_RESOLUTION * resolution)
+void printResolution(PS4000A_DEVICE_RESOLUTION resolution)
 {
-	switch (*resolution)
+	switch (resolution)
 	{
 		case PS4000A_DR_12BIT:
 
@@ -1543,7 +1543,7 @@ void setResolution(UNIT * unit)
 	if (status == PICO_OK)
 	{
 		printf("Current resolution: ");
-		printResolution(&resolution);
+		printResolution(resolution);
 	}
 	else
 	{
@@ -1588,7 +1588,7 @@ void setResolution(UNIT * unit)
 		unit->resolution = newResolution;
 
 		printf("Resolution selected: ");
-		printResolution(&newResolution);
+		printResolution(newResolution);
 	}
 	else
 	{
@@ -1902,7 +1902,7 @@ void DisplaySettings(UNIT *unit)
 	{
 		status = ps4000aGetDeviceResolution(unit->handle, &resolution);
 		printf("Device Resolution: ");
-		printResolution(&resolution);
+		printResolution(resolution);
 	}
 }
 
