@@ -1020,7 +1020,7 @@ void collect_block_ets (void)
 			{
 				if (unitOpened.channelSettings[ch].enabled)
 				{
-					fprintf ( fp, "%d, %d", times[i], unitOpened.channelSettings[ch].values[i], 
+					fprintf ( fp, "%d, %d,", unitOpened.channelSettings[ch].values[i], 
 						adc_to_mv (unitOpened.channelSettings[ch].values[i], unitOpened.channelSettings[ch].range) );
 				}
 			}
