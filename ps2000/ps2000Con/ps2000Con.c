@@ -162,8 +162,8 @@ int32_t fopen_s(FILE ** a, const char * b, const char * c)
 *
 * int8_t   - int8_t
 * int16_t  - 16-bit signed integer (int16_t)
-* int32_t  - 32-bit signed integer (int32_t or int32_t)
-* uint32_t - 32-bit unsigned integer (int32_t or int32_t)
+* int32_t  - 32-bit signed integer (int)
+* uint32_t - 32-bit unsigned integer (unsigned int)
 *******************************************************/
 
 int16_t values_a [BUFFER_SIZE]; // block mode buffer, Channel A
