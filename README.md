@@ -35,7 +35,7 @@ Drivers are available for the following platforms. Refer to the subsections belo
 
 #### macOS
 
-* Visit our [Downloads page](https://www.picotech.com/downloads) and download the *PicoScope Beta for Mac OS X* application.
+* Visit our [Downloads page](https://www.picotech.com/downloads) and download the *PicoScope Beta for macOS* application.
 
 ### Programmer's Guides
 
@@ -51,7 +51,7 @@ You can download Programmer's Guides providing a description of the API function
 
 #### Linux and macOS
 
-* Copy the required source code C file (e.g. ps3000acon.c) into the corresponding `linux-build-files` sub-folder for the driver or copy the files to another folder 
+* Copy the required source code C file (e.g. ps3000aCon.c) into the corresponding `linux-build-files` sub-folder for the driver or copy the files to another folder 
 * Open a terminal window
 * Run the following commands:
   * `./autogen.sh`
@@ -77,5 +77,5 @@ See [LICENSE.md](LICENSE.md) for license terms.
 
 *Linux* is the registered trademark of Linus Torvalds in the U.S. and other countries.
 
-Copyright © 2004-2018 Pico Technology Ltd. All rights reserved. 
+Copyright © 2004-2019 Pico Technology Ltd. All rights reserved. 
 
