@@ -241,7 +241,6 @@ int32_t main(void)
   int8_t	line[80];
   int32_t channelCount = 0;
   int32_t digitalPortCount = 0;
-  int32_t variant;
   int32_t i = 0;
 
   int8_t description[11][25] = { "Driver Version",
@@ -265,8 +264,6 @@ int32_t main(void)
     // info = 3 - PICO_VARIANT_INFO
     if (i == PICO_VARIANT_INFO)
     {
-      variant = atoi(line);
-
       channelCount = (int16_t)line[1];
       channelCount = channelCount - 48; // Subtract ASCII 0 (48)
 
@@ -309,7 +306,7 @@ int32_t main(void)
 
   // Find the current power source - to determine if the power supply is connected for 4-channel models
   //
-  // If power supply is not connected on a 4-channel device, only channels A and B can be used. 
+  // If the power supply is not connected on a 4-channel device, only channels A and B can be used. 
   // MSO digital ports will still be available.
   int32_t numAvailableChannels = channelCount;
 
