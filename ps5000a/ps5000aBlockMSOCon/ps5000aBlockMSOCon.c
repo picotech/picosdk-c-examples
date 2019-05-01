@@ -46,7 +46,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- * Copyright (C) 2018 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2018-2019 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 
@@ -224,7 +224,7 @@ int32_t main(void)
   // Handle power status codes
   if (status != PICO_OK)
   {
-    if (status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+    if (status == PICO_POWER_SUPPLY_NOT_CONNECTED || PICO_USB3_0_DEVICE_NON_USB3_0_PORT)
     {
       status = ps5000aChangePowerSource(handle, status);
     }
@@ -310,11 +310,14 @@ int32_t main(void)
   // MSO digital ports will still be available.
   int32_t numAvailableChannels = channelCount;
 
-  status = ps5000aCurrentPowerSource(handle);
-
-  if (status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+  if (channelCount == QUAD_SCOPE)
   {
-    numAvailableChannels = DUAL_SCOPE;
+    status = ps5000aCurrentPowerSource(handle);
+
+    if (status == PICO_POWER_SUPPLY_NOT_CONNECTED)
+    {
+      numAvailableChannels = DUAL_SCOPE;
+    }
   }
 
   for (ch = 0; ch < numAvailableChannels; ch++)
@@ -453,7 +456,7 @@ int32_t main(void)
     return -1;
   }
 
-  printf("\nTimebase: %d, time interval: %.1f (ns)\n\n", timebase, timeInterval);
+  printf("\nTimebase: %d, time interval: %.1f ns\n\n", timebase, timeInterval);
 
   // Data collection
   // ---------------
