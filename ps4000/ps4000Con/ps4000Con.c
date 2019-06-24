@@ -52,7 +52,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- * Copyright (C) 2009-2018 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2009-2019 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 
@@ -253,7 +253,7 @@ typedef struct tBufferInfo
 
 /****************************************************************************
 * Callback
-* used by ps4000 data streaimng collection calls, on receipt of data.
+* used by ps4000 data streaming collection calls, on receipt of data.
 * used to set global flags etc checked by user routines
 * This callback copies data into application buffers that are the same size
 * as the driver buffers. An alternative would be to specify application 
@@ -464,11 +464,11 @@ int32_t RapidBlockDataHandler(UNIT_MODEL * unit, char * text, int32_t offset)
 
 		for (segmentIndex = 80; segmentIndex < 90; segmentIndex ++)
 		{
-			printf("\nRapid Block Mode with aggregation: Reading Segement:-- %lu \n", segmentIndex);
+			printf("\nRapid Block Mode with aggregation: Reading Segment:-- %lu \n", segmentIndex);
 			// Get values of 
 			sampleCount = noOfSamples;
 			status = ps4000GetValues(unit->handle, 0, (uint32_t*) &sampleCount, 1, RATIO_MODE_NONE, segmentIndex, NULL);
-			printf("\nRapid Block Mode with aggregation: Reading Segement:-- ps4000GetValues: %i \n", status);
+			printf("\nRapid Block Mode with aggregation: Reading Segment:-- ps4000GetValues: %i \n", status);
 			/* Print out the first 10 readings, converting the readings to mV if required */
 			printf(text);
 			printf("Value (%s)\n", ( scaleVoltages ) ? ("mV") : ("ADC Counts"));
