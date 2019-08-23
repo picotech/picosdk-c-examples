@@ -360,7 +360,7 @@ int32_t main(void)
   // Trigger setup
   // -------------
 
-  // Set up trigger on digital channel 15, falling edge
+  // Set up trigger on digital channel 15, falling edge, with auto trigger of 1 second
 
   // Set the condition for the port to which the channel belongs
   struct tPS5000ACondition digitalCondition;
@@ -388,6 +388,15 @@ int32_t main(void)
     fprintf(stderr, "ps5000aSetTriggerDigitalPortProperties ------ 0x%08lx \n", status);
     return -1;
   }
+
+  status = ps5000aSetAutoTriggerMicroSeconds(handle, 1000000);
+  
+  if (status != PICO_OK)
+  {
+    fprintf(stderr, "ps5000aSetAutoTriggerMicroSeconds ------ 0x%08lx \n", status);
+    return -1;
+  }
+
 
   // Setup data buffers
   // ------------------
