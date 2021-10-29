@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 14 for Windows Desktop
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31613.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps5000aBlockMSOCon", "ps5000aBlockMSOCon\ps5000aBlockMSOCon.vcxproj", "{D96F17C0-A35F-408C-A1F1-2EEF05413F72}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps5000aCon", "ps5000aCon\ps5000aCon.vcxproj", "{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PS5000A_C_BlockMode_Example", "PS5000A_C_BlockMode_Example\PS5000A_C_BlockMode_Example.vcxproj", "{0A9C7592-F61D-4B04-B211-3298D503A115}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,8 +33,19 @@ Global
 		{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}.Release|x64.Build.0 = Release|x64
 		{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}.Release|x86.ActiveCfg = Release|Win32
 		{5D75EEAF-A22F-4B7B-9E38-28FB7001890C}.Release|x86.Build.0 = Release|Win32
+		{0A9C7592-F61D-4B04-B211-3298D503A115}.Debug|x64.ActiveCfg = Debug|x64
+		{0A9C7592-F61D-4B04-B211-3298D503A115}.Debug|x64.Build.0 = Debug|x64
+		{0A9C7592-F61D-4B04-B211-3298D503A115}.Debug|x86.ActiveCfg = Debug|Win32
+		{0A9C7592-F61D-4B04-B211-3298D503A115}.Debug|x86.Build.0 = Debug|Win32
+		{0A9C7592-F61D-4B04-B211-3298D503A115}.Release|x64.ActiveCfg = Release|x64
+		{0A9C7592-F61D-4B04-B211-3298D503A115}.Release|x64.Build.0 = Release|x64
+		{0A9C7592-F61D-4B04-B211-3298D503A115}.Release|x86.ActiveCfg = Release|Win32
+		{0A9C7592-F61D-4B04-B211-3298D503A115}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6EAAAD46-EC19-4E0A-97E2-DFBB058D5C61}
 	EndGlobalSection
 EndGlobal
