@@ -311,12 +311,12 @@ int32_t main(void)
   // Print the extracted samples
   std::cout << "Print Buffer A : " << std::endl;
   for (auto sampleIndex = 0; sampleIndex < noSamples; sampleIndex++)
-    std::cout << sampleIndex << ";" << bufferA[sampleIndex] << ";" << adc_to_mv(bufferA[sampleIndex], 7, 32767) << std::endl;
+    std::cout << sampleIndex << ";" << bufferA[sampleIndex] << ";" << adc_to_mv(bufferA[sampleIndex], PS5000A_RANGE::PS5000A_2V, 32767) << std::endl;
 
   std::cout << std::endl;
   std::cout << "Print Buffer B : " << std::endl;
   for (auto sampleIndex = 0; sampleIndex < noSamples; sampleIndex++)
-    std::cout << sampleIndex << ";" << bufferB[sampleIndex] << ";" << adc_to_mv(bufferB[sampleIndex], 7, 32767) << std::endl;
+    std::cout << sampleIndex << ";" << bufferB[sampleIndex] << ";" << adc_to_mv(bufferB[sampleIndex], PS5000A_RANGE::PS5000A_2V, 32767) << std::endl;
 
   // Close the unit.
   status = ps5000aCloseUnit(handle);
