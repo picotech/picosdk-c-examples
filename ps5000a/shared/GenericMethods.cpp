@@ -69,8 +69,8 @@ void getStatusCode() {
     // Read from the text file
     std::ifstream MyReadFile("C:\\Program\ Files\\Pico\ Technology\\SDK\\inc\\PicoStatus.h");
 
-    int i = 0;
-    int cat = -1;
+    auto i = 0;
+    auto cat = -1;
     std::string arr[2] = {
         "PICO_POINTER" ,
         "PICO_INFO   "
@@ -81,26 +81,26 @@ void getStatusCode() {
     std::cout << "    TYPE    |    HEX   |   DEC\t|      DESCRIPTION      |" << std::endl;
     while (getline(MyReadFile, myText)) {
         // Output the text from the file
-        int first = myText.find("0x");
-        int definePos = myText.find("#define");
+        auto first = myText.find("0x");
+        auto definePos = myText.find("#define");
         if (definePos != std::string::npos)
             if (first != std::string::npos) {
               std::string s = myText.substr(first, 10);
               std::string startText = myText.substr(8);
-                int endTextSpace = startText.find(" ");
-                int endTextTab = startText.find("\t");
-                std::string text;
-                if (endTextTab != std::string::npos)
-                    text = startText.substr(0, endTextTab);
-                else
-                    text = startText.substr(0, endTextSpace);
-                std::string num = s.substr(2);
-                int j = std::stoi(num, 0, 16);
-                if (j == 0) {
-                    cat++;
-                    std::cout << std::endl;
-                }
-                std::cout << arr[cat] << " " << s << " " << j << " \t  " << text << std::endl;
+              auto endTextSpace = startText.find(" ");
+              auto endTextTab = startText.find("\t");
+              std::string text;
+              if (endTextTab != std::string::npos)
+                startText.substr(0, endTextTab);
+              else
+                text = startText.substr(0, endTextSpace);
+              std::string num = s.substr(2);
+              auto j = std::stoi(num, 0, 16);
+              if (j == 0) {
+                  cat++;
+                  std::cout << std::endl;
+              }
+              std::cout << arr[cat] << " " << s << " " << j << " \t  " << text << std::endl;
             }
         i++;
     }
@@ -115,8 +115,8 @@ void getStatusCodeCSV() {
     // Read from the text file
     std::ifstream MyReadFile("C:\\Program\ Files\\Pico\ Technology\\SDK\\inc\\PicoStatus.h");
 
-    int i = 0;
-    int cat = -1;
+    auto i = 0;
+    auto cat = -1;
     std::string arr[2] = {
         "PICO_POINTER" ,
         "PICO_INFO"
@@ -126,12 +126,12 @@ void getStatusCodeCSV() {
     // Use a while loop together with the getline() function to read the file line by line
     std::cout << "    TYPE    |    HEX   |   DEC\t|      DESCRIPTION      |" << std::endl;
     std::string prevComment;
-    int commentCount = 0;
+    auto commentCount = 0;
     while (getline(MyReadFile, myText)) {
         // Output the text from the file
-        int first = myText.find("0x");
-        int definePos = myText.find("#define");
-        int commentPos = myText.find("//");
+        auto first = myText.find("0x");
+        auto definePos = myText.find("#define");
+        auto commentPos = myText.find("//");
         if (commentPos != std::string::npos) {
             if (myText.size() < 3)
                 continue;
@@ -139,7 +139,7 @@ void getStatusCodeCSV() {
                 prevComment.append("\n ");
 
             std::string myText2 = myText.substr(3);
-            int tabPos = myText2.find("\t");
+            auto tabPos = myText2.find("\t");
             if( tabPos != std::string::npos )
                 prevComment.append(myText2.substr(tabPos));
             else
@@ -150,17 +150,17 @@ void getStatusCodeCSV() {
         }
         if (definePos != std::string::npos)
             if (first != std::string::npos) {
-              std::string s = myText.substr(first, 10);
-              std::string startText = myText.substr(8);
-                int endTextSpace = startText.find(" ");
-                int endTextTab = startText.find("\t");
+                std::string s = myText.substr(first, 10);
+                std::string startText = myText.substr(8);
+                auto endTextSpace = startText.find(" ");
+                auto endTextTab = startText.find("\t");
                 std::string text;
                 if (endTextTab != std::string::npos)
                     text = startText.substr(0, endTextTab);
                 else
                     text = startText.substr(0, endTextSpace);
                 std::string num = s.substr(2);
-                int j = std::stoi(num, 0, 16);
+                auto j = std::stoi(num, 0, 16);
                 if (j == 0) {
                     cat++;
                     std::cout << std::endl;
@@ -184,42 +184,41 @@ void getStatusCodeCSV() {
 void getStatusCode(int Code) {
 
     std::cout << Code << std::endl;
-    using namespace std;
 
-    string myText;
+    std::string myText;
 
     // Read from the text file
     std::ifstream MyReadFile("C:\\Program\ Files\\Pico\ Technology\\SDK\\inc\\PicoStatus.h");
 
-    int i = 0;
-    int cat = -1;
-    string arr[2] = {
+    auto i = 0;
+    auto cat = -1;
+    std::string arr[2] = {
         "PICO_POINTER" ,
         "PICO_INFO   "
     };
-    cout << endl;
+    std::cout << std::endl;
 
     // Use a while loop together with the getline() function to read the file line by line
-    cout << "    TYPE    |    HEX   |   DEC\t|      DESCRIPTION      |" << endl;
+    std::cout << "    TYPE    |    HEX   |   DEC\t|      DESCRIPTION      |" << std::endl;
     while (getline(MyReadFile, myText)) {
         // Output the text from the file
-        int first = myText.find("0x");
-        int definePos = myText.find("#define");
-        if (definePos != string::npos)
-            if (first != string::npos) {
-                string s = myText.substr(first, 10);
-                string startText = myText.substr(8);
-                int endText = startText.find(" ");
-                string text = startText.substr(0, endText);
-                string num = s.substr(2);
-                int j = stoi(num, 0, 16);
+        auto first = myText.find("0x");
+        auto definePos = myText.find("#define");
+        if (definePos != std::string::npos)
+            if (first != std::string::npos) {
+                std::string s = myText.substr(first, 10);
+                std::string startText = myText.substr(8);
+                auto endText = startText.find(" ");
+                std::string text = startText.substr(0, endText);
+                std::string num = s.substr(2);
+                auto j = stoi(num, 0, 16);
                 if (j == 0)
                     cat++;
                 if (j == Code)
-                    cout << arr[cat] << " " << s << " " << j << " \t  " << text << endl;
+                  std::cout << arr[cat] << " " << s << " " << j << " \t  " << text << std::endl;
             }
         i++;
     }
-    cout << endl;
+    std::cout << std::endl;
 
 }

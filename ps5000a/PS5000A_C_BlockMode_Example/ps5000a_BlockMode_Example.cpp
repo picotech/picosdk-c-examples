@@ -160,20 +160,17 @@ int32_t cycles = 0;
 int32_t main(void)
 {
 
-  getStatusCode(67);
-  getStatusCode();
-
   // Set the Global Variables
   PICO_STATUS status = PICO_OK;
   int16_t handle = 0;
   bool usbPowered = 0;
 
-  const int32_t NO_OF_SAMPLES = 100;
+  constexpr int32_t NO_OF_SAMPLES = 100;
 
   // Open PS5XXX unit
-  status = ps5000aOpenUnit(&handle, NULL, PS5000A_DEVICE_RESOLUTION::PS5000A_DR_15BIT);
+  status = ps5000aOpenUnit(&handle, nullptr, PS5000A_DEVICE_RESOLUTION::PS5000A_DR_15BIT);
   if (PICO_OK != status) {
-    std::cout << "ERROR : Open Unit : " << status << std::endl;
+    std::cout << "ERROR : Open Unit : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
   }
 
@@ -184,72 +181,72 @@ int32_t main(void)
   }
 
   if (PICO_OK != status) {
-    std::cout << "ERROR : Open Unit : " << status << std::endl;
+    std::cout << "ERROR : Change Power Source : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
 
   // Set the channels to be used
-  status = ps5000aSetChannel(handle, PS5000A_CHANNEL_A, 1, PS5000A_DC, PS5000A_1V, 0);
+  status = ps5000aSetChannel(handle, PS5000A_CHANNEL::PS5000A_CHANNEL_A, 1, PS5000A_COUPLING::PS5000A_DC, PS5000A_RANGE::PS5000A_1V, 0);
   if (PICO_OK != status) {
-    std::cout << "ERROR : Set Channel A : " << status << std::endl;
+    std::cout << "ERROR : Set Channel A : " << status << " ; " << std::hex << status << std::dec << std::endl;
     return -1;
   }
 
-  status = ps5000aSetChannel(handle, PS5000A_CHANNEL_B, 1, PS5000A_DC, PS5000A_1V, 0);
+  status = ps5000aSetChannel(handle, PS5000A_CHANNEL::PS5000A_CHANNEL_B, 1, PS5000A_COUPLING::PS5000A_DC, PS5000A_RANGE::PS5000A_1V, 0);
   if (PICO_OK != status) {
-    std::cout << "ERROR : Set Channel B : " << status << std::endl;
+    std::cout << "ERROR : Set Channel B : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
 
   if (0 == usbPowered) {
-    status = ps5000aSetChannel(handle, PS5000A_CHANNEL_C, 0, PS5000A_DC, PS5000A_1V, 0);
+    status = ps5000aSetChannel(handle, PS5000A_CHANNEL::PS5000A_CHANNEL_C, 0, PS5000A_COUPLING::PS5000A_DC, PS5000A_RANGE::PS5000A_1V, 0);
     if (PICO_OK != status) {
-      std::cout << "ERROR : Set Channel C : " << status << std::endl;
+      std::cout << "ERROR : Set Channel C : " << status << " ; " << std::hex << status << std::dec << std::endl;
       getStatusCode(status);
       return -1;
     }
 
-    status = ps5000aSetChannel(handle, PS5000A_CHANNEL_D, 0, PS5000A_DC, PS5000A_1V, 0);
+    status = ps5000aSetChannel(handle, PS5000A_CHANNEL::PS5000A_CHANNEL_D, 0, PS5000A_COUPLING::PS5000A_DC, PS5000A_RANGE::PS5000A_1V, 0);
     if (PICO_OK != status) {
-      std::cout << "ERROR : Set Channel D : " << status << std::endl;
+      std::cout << "ERROR : Set Channel D : " << status << " ; " << std::hex << status << std::dec << std::endl;
       getStatusCode(status);
       return -1;
     }
   }
 
   // Set the Data Buffers for each channels
-  int16_t* bufferA = (int16_t*)calloc(NO_OF_SAMPLES, sizeof(int16_t));
-  int16_t* bufferB = (int16_t*)calloc(NO_OF_SAMPLES, sizeof(int16_t));
-  status = ps5000aSetDataBuffer(handle, PS5000A_CHANNEL_A, bufferA, NO_OF_SAMPLES, 0, PS5000A_RATIO_MODE_NONE);
+  int16_t* bufferA = new int16_t[NO_OF_SAMPLES];
+  int16_t* bufferB = new int16_t[NO_OF_SAMPLES];
+  status = ps5000aSetDataBuffer(handle, PS5000A_CHANNEL::PS5000A_CHANNEL_A, bufferA, NO_OF_SAMPLES, 0, PS5000A_RATIO_MODE::PS5000A_RATIO_MODE_NONE);
   if (PICO_OK != status) {
-    std::cout << "ERROR : Set Buffer Channel A : " << status << std::endl;
+    std::cout << "ERROR : Set Buffer Channel A : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
-  status = ps5000aSetDataBuffer(handle, PS5000A_CHANNEL_B, bufferB, NO_OF_SAMPLES, 0, PS5000A_RATIO_MODE_NONE);
+  status = ps5000aSetDataBuffer(handle, PS5000A_CHANNEL::PS5000A_CHANNEL_B, bufferB, NO_OF_SAMPLES, 0, PS5000A_RATIO_MODE::PS5000A_RATIO_MODE_NONE);
   if (PICO_OK != status) {
-    std::cout << "ERROR : Set Buffer Channel B : " << status << std::endl;
+    std::cout << "ERROR : Set Buffer Channel B : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
 
   // Setup the timebase
-  int timeIntervalNS;
+  int32_t timeIntervalNS;
   int32_t maxSamples;
-  uint32_t TIMEBASE = 4;
+  constexpr uint32_t TIMEBASE = 4;
   status = ps5000aGetTimebase(handle, TIMEBASE, NO_OF_SAMPLES, &timeIntervalNS, &maxSamples, 0);
   if (PICO_OK != status) {
-    std::cout << "ERROR : Set Trigger : " << status << std::endl;
+    std::cout << "ERROR : Get Timebase : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
 
   // Set the Trugger
-  status = ps5000aSetSimpleTrigger(handle, 1, PS5000A_CHANNEL_A, 10000, PS5000A_THRESHOLD_DIRECTION::PS5000A_RISING, 0, 5000);
+  status = ps5000aSetSimpleTrigger(handle, 1, PS5000A_CHANNEL::PS5000A_CHANNEL_A, 10000, PS5000A_THRESHOLD_DIRECTION::PS5000A_RISING, 0, 5000);
   if (PICO_OK != status) {
-    std::cout << "ERROR : Set Trigger : " << status << std::endl;
+    std::cout << "ERROR : Set Trigger : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
@@ -271,17 +268,16 @@ int32_t main(void)
     PS5000A_SIGGEN_NONE,
     0);
   if (PICO_OK != status) {
-    std::cout << "ERROR : AWG Signal Genertion : " << status << std::endl;
+    std::cout << "ERROR : AWG Signal Genertion : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
 
-  // Execute the data acquisition.
-  constexpr int32_t NUMBER_OF_CHANNELS = 1;
-  auto* timeIndisposedMs = new int32_t(NUMBER_OF_CHANNELS);
-  status = ps5000aRunBlock(handle, 10, NO_OF_SAMPLES - 10, TIMEBASE, timeIndisposedMs, 0, NULL, NULL);
+  // Execute the data acquisition.=
+  int32_t timeIndisposedMs;
+  status = ps5000aRunBlock(handle, 10, NO_OF_SAMPLES - 11, TIMEBASE, &timeIndisposedMs, 0, nullptr, nullptr);
   if (PICO_OK != status) {
-    std::cout << "ERROR : RunBlock : " << status << std::endl;
+    std::cout << "ERROR : RunBlock : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
@@ -290,9 +286,9 @@ int32_t main(void)
   int16_t isReady = 0;
   while (0 == isReady && PICO_OK == status) {
     status = ps5000aIsReady(handle, &isReady);
-    std::cout << "PS3 IsReady : " << isReady << std::endl;
+    std::cout << "IsReady : " << isReady << std::endl;
     if (PICO_OK != status) {
-      std::cout << "Error : IsReady Issue : " << status << std::endl;
+      std::cout << "ERROR : IsReady Issue : " << status << " ; " << std::hex << status << std::dec << std::endl;
       getStatusCode(status);
       return -1;
     }
@@ -300,32 +296,36 @@ int32_t main(void)
   }
 
   // Extract the acquired samples
-  int noSamples;
-  status = ps5000aGetValues(handle, 0, (uint32_t*)&noSamples, 1, PS5000A_RATIO_MODE_NONE, 0, nullptr);
+  uint32_t noSamples = NO_OF_SAMPLES;
+  status = ps5000aGetValues(handle, 0, (uint32_t *)&noSamples, 1, PS5000A_RATIO_MODE::PS5000A_RATIO_MODE_NONE, 0, nullptr);
   if (PICO_OK != status) {
-    std::cout << "Error : Get Values Issue : " << status << std::endl;
+    std::cout << "ERROR : Get Values Issue : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
 
   // Print the extracted samples
+  constexpr int16_t MAX_ADC = 32767;
   std::cout << "Print Buffer A : " << std::endl;
   for (auto sampleIndex = 0; sampleIndex < noSamples; sampleIndex++)
-    std::cout << sampleIndex << ";" << bufferA[sampleIndex] << ";" << adc_to_mv(bufferA[sampleIndex], PS5000A_RANGE::PS5000A_2V, 32767) << std::endl;
+    std::cout << sampleIndex << " ; " << bufferA[sampleIndex] << " ; " << adc_to_mv(bufferA[sampleIndex], PS5000A_RANGE::PS5000A_2V, MAX_ADC) << std::endl;
 
   std::cout << std::endl;
   std::cout << "Print Buffer B : " << std::endl;
   for (auto sampleIndex = 0; sampleIndex < noSamples; sampleIndex++)
-    std::cout << sampleIndex << ";" << bufferB[sampleIndex] << ";" << adc_to_mv(bufferB[sampleIndex], PS5000A_RANGE::PS5000A_2V, 32767) << std::endl;
+    std::cout << sampleIndex << " ; " << bufferB[sampleIndex] << " ; " << adc_to_mv(bufferB[sampleIndex], PS5000A_RANGE::PS5000A_2V, MAX_ADC) << std::endl;
+
+  // Free the buffers
+  delete[] bufferA;
+  delete[] bufferB;
 
   // Close the unit.
   status = ps5000aCloseUnit(handle);
   if (PICO_OK != status) {
-    std::cout << "Error : Close Unit : " << status << std::endl;
+    std::cout << "ERROR : Close Unit : " << status << " ; " << std::hex << status << std::dec << std::endl;
     getStatusCode(status);
     return -1;
   }
-
 
   return 0;
 }
