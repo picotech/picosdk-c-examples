@@ -39,7 +39,8 @@ int main() {
   auto status2 = PICO_OK;
 
   // Openning
-  std::cout << "Openning" << std::endl;
+  int i = 4;
+  std::cout << "Openning " << ((i & 4) == 4) << std::endl;
   {
     for (int32_t deviceNumber = 0; deviceNumber < numberOfDevices; ++deviceNumber) {
       ParallelDevice& dev = parallelDevice[deviceNumber];
