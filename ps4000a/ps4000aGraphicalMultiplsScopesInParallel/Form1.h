@@ -365,6 +365,8 @@ namespace CppCLRWinformsProjekt {
       this->Controls->Add(this->label1);
       this->Controls->Add(this->textBox1);
       this->Controls->Add(this->Execute);
+      this->Controls["MinPulseWidthInput"]->Enabled = false;
+      this->Controls["MaxPulseWidthInput"]->Enabled = false;
       this->Name = L"Form1";
       this->Text = L"Form1";
       this->ResumeLayout(false);
@@ -580,10 +582,30 @@ namespace CppCLRWinformsProjekt {
               std::cout << "SETUP TRIGGER ERROR 3" << std::endl;
             }
 
+            PS4000A_PULSE_WIDTH_TYPE pulseType;
+            int32_t minPulse = 0;
+            int32_t maxPulse = 0;
+            int pulseFlags = 0;
+
             auto minPulseInput = (System::Windows::Forms::TextBox^)this->Controls["MinPulseWidthInput"];
-            int32_t minPulse = System::Int32::Parse(minPulseInput->Text);
+            if ("" != minPulseInput->Text) {
+              pulseFlags |= 1;
+              minPulse = System::Int32::Parse(minPulseInput->Text);
+            }
             auto maxPulseInput = (System::Windows::Forms::TextBox^)this->Controls["MaxPulseWidthInput"];
-            int32_t maxPulse = System::Int32::Parse(maxPulseInput->Text);
+            if ("" != maxPulseInput->Text) {
+              pulseFlags |= 2;
+              maxPulse = System::Int32::Parse(maxPulseInput->Text);
+            }
+          //  pulseType = (PS4000A_PULSE_WIDTH_TYPE)pulseFlags;
+            switch (pulseFlags) {
+            case 1:
+              pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_GREATER_THAN;
+            case 2:
+              pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_LESS_THAN;
+            case 3:
+              pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_IN_RANGE;
+            }
             uint32_t minPulseWidth = uint32_t(minPulse); // 647
             uint32_t maxPulseWidth = uint32_t(maxPulse); // 647
 
@@ -619,13 +641,12 @@ namespace CppCLRWinformsProjekt {
               std::cout << "Set pulse width qualifier Conditions failed: err = " << status2 << std::endl;
 
             }
-
             status2 = ps4000aSetPulseWidthQualifierProperties(
               dev.handle,              // device handle
               PS4000A_BELOW,
               minPulseWidth,           // pointer to condition structure
               maxPulseWidth,                           // number of structures
-              PS4000A_PW_TYPE_IN_RANGE             // N/A for window trigger
+              pulseType             // N/A for window trigger
             );
             if (status2 != PICO_OK)
             {
@@ -675,10 +696,30 @@ namespace CppCLRWinformsProjekt {
             //  std::cout << "SETUP TRIGGER ERROR 3" << std::endl;
             //}
 
+            PS4000A_PULSE_WIDTH_TYPE pulseType;
+            int32_t minPulse = 0;
+            int32_t maxPulse = 0;
+            int pulseFlags = 0;
+
             auto minPulseInput = (System::Windows::Forms::TextBox^)this->Controls["MinPulseWidthInput"];
-            int32_t minPulse = System::Int32::Parse(minPulseInput->Text);
+            if ("" != minPulseInput->Text) {
+              pulseFlags |= 1;
+              minPulse = System::Int32::Parse(minPulseInput->Text);
+            }
             auto maxPulseInput = (System::Windows::Forms::TextBox^)this->Controls["MaxPulseWidthInput"];
-            int32_t maxPulse = System::Int32::Parse(maxPulseInput->Text);
+            if ("" != maxPulseInput->Text) {
+              pulseFlags |= 2;
+              maxPulse = System::Int32::Parse(maxPulseInput->Text);
+            }
+            //  pulseType = (PS4000A_PULSE_WIDTH_TYPE)pulseFlags;
+            switch (pulseFlags) {
+            case 1:
+              pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_GREATER_THAN;
+            case 2:
+              pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_LESS_THAN;
+            case 3:
+              pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_IN_RANGE;
+            }
             uint32_t minPulseWidth = uint32_t(minPulse); // 647
             uint32_t maxPulseWidth = uint32_t(maxPulse); // 647
 
