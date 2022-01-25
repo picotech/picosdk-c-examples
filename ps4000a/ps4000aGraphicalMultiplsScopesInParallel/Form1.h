@@ -761,7 +761,7 @@ namespace CppCLRWinformsProjekt {
               PS4000A_BELOW,
               minPulseWidth,           // pointer to condition structure
               maxPulseWidth,                           // number of structures
-              PS4000A_PW_TYPE_IN_RANGE             // N/A for window trigger
+              pulseType             // N/A for window trigger
             );
             if (status2 != PICO_OK)
             {
@@ -822,10 +822,12 @@ namespace CppCLRWinformsProjekt {
         }
       }
 
+      int32_t handleNumber = 0;
       for (int32_t graphNumber = 0; graphNumber < this->count; graphNumber++) {
         this->Controls->RemoveByKey("chart " + graphNumber);
         if (-2 == this->handle[graphNumber])
           continue;
+
         auto localChart = (gcnew System::Windows::Forms::DataVisualization::Charting::Chart());
         auto chartArea = (gcnew System::Windows::Forms::DataVisualization::Charting::ChartArea());
         auto legend = (gcnew System::Windows::Forms::DataVisualization::Charting::Legend());
@@ -836,7 +838,7 @@ namespace CppCLRWinformsProjekt {
         localChart->ChartAreas->Add(chartArea);
         legend->Name = L"Legend " + graphNumber;
         localChart->Legends->Add(legend);
-        localChart->Location = System::Drawing::Point(-14, 156 + 150* graphNumber);
+        localChart->Location = System::Drawing::Point(-14, 156 + 150* handleNumber);
         localChart->Name = L"chart " + graphNumber;
         series->ChartArea = L"ChartArea " + graphNumber;
         series->Legend = L"Legend " + graphNumber;
@@ -849,12 +851,21 @@ namespace CppCLRWinformsProjekt {
           //	chart1->Series["chart"]->ChartArea = "ChartArea1";
           localChart->Series["Channel " + (devCount + 'A')]->ChartType = System::Windows::Forms::DataVisualization::Charting::SeriesChartType::Line;
         }
-      //  localChart->Series->Add(series);
+
         localChart->Size = System::Drawing::Size(668, 136);
         localChart->TabIndex = 1;
 
         localChart->Text = L"chart " + graphNumber;
         localChart->Click += gcnew System::EventHandler(this, &Form1::chart1_Click);
+
+        auto button = (System::Windows::Forms::Button^)this->Controls["Button " + graphNumber];
+
+        std::string str;
+        for (auto j = 0; j < button->Text->Length; ++j) {
+          str.push_back(button->Text[j]);
+        }
+
+        localChart->Titles->Add(gcnew String(str.c_str()));
 
         chartArea->AxisX->IntervalType = System::Windows::Forms::DataVisualization::Charting::DateTimeIntervalType::Number;
         chartArea->AxisX->Minimum = -PRE_TRIGGER;
@@ -871,6 +882,7 @@ namespace CppCLRWinformsProjekt {
         for (double i = -32999; i < 32999; i++)
           localChart->Series["Channel " + ('B')]->Points->AddXY(0, i);
         this->Controls->Add(localChart);
+        ++handleNumber;
       }
 
       // Free Buffers
@@ -883,27 +895,9 @@ namespace CppCLRWinformsProjekt {
           }
         }
       }
-
-      // Closing Units
-      //std::cout << "Closing Units" << std::endl;
-      //{
-      //  for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-      //    ParallelDevice& dev = parallelDevice[deviceNumber];
-      //    status2 = ps4000aCloseUnit(dev.handle);
-      //    if (PICO_OK != status2) {
-      //      std::cout << "PS" << deviceNumber << " has an issue on Closure" << std::endl;
-      //    //  return;
-      //    }
-      //  }
-      //}
-      //for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-      //  this->handle[deviceNumber] = 0;
-      //}
-      
     }
-    
-
 	}
+
 private: System::Void textBox1_TextChanged(System::Object^ sender, System::EventArgs^ e) {
 }
 private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e) {
@@ -968,29 +962,31 @@ private: System::Void FindDevices_Click(System::Object^ sender, System::EventArg
     button->Location = System::Drawing::Point(10, 20 * i);
     button->Name = "Button " + i;
     button->Text = gcnew System::String(serialsList[i].c_str());
-
     button->Size = System::Drawing::Size(70, 20);
+
     this->Controls->Add(label);
     this->Controls->Add(checkBox);
     this->Controls->Add(button);
   }
 }
 private: System::Void SelectDevices_Click(System::Object^ sender, System::EventArgs^ e) {
+
   this->handle = new int16_t[this->count];
   for (int i = 0; i < this->count; i++) {
     auto checkBox = (System::Windows::Forms::CheckBox^)this->Controls["Check " + i];
-    auto label = (System::Windows::Forms::Button^)this->Controls["Button " + i];
+    auto button = (System::Windows::Forms::Button^)this->Controls["Button " + i];
+    auto label = (System::Windows::Forms::Label^)this->Controls["Label " + i];
     if (false == checkBox->Checked) {
       this->handle[i] = -2;
       continue;
     }
 
     std::vector<int8_t> res; // new int8_t[10];
-    for (auto j = 0; j < label->Text->Length; ++j) {
-      res.push_back((int8_t)label->Text[j]);
+    for (auto j = 0; j < button->Text->Length; ++j) {
+      res.push_back((int8_t)button->Text[j]);
     }
-    
     res.push_back((int8_t)'\0');
+
     if (true == checkBox->Checked) {
       PICO_STATUS status = ps4000aOpenUnit(&this->handle[i], res.data());// /*res.data()*/);
       if (PICO_OK != status)
@@ -1000,6 +996,7 @@ private: System::Void SelectDevices_Click(System::Object^ sender, System::EventA
         std::cout << "PS" << i << " has an issue on OpenUnit : " << status << std::endl;
         //return;
       }
+      label->Text = button->Text;
       label->Text += " => handle : " + this->handle[i];
       if (PICO_OK != status)
         label->Text += " => Error : " + status;
