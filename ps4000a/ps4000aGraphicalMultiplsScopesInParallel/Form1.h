@@ -598,16 +598,28 @@ namespace CppCLRWinformsProjekt {
               maxPulse = System::Int32::Parse(maxPulseInput->Text);
             }
           //  pulseType = (PS4000A_PULSE_WIDTH_TYPE)pulseFlags;
+
+            uint32_t minPulseWidth; // = uint32_t(minPulse); // 647
+            uint32_t maxPulseWidth; // = uint32_t(maxPulse); // 647
             switch (pulseFlags) {
             case 1:
               pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_GREATER_THAN;
+              minPulseWidth = minPulse;
+              break;
             case 2:
               pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_LESS_THAN;
+              minPulseWidth = maxPulse;
+              break;
             case 3:
               pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_IN_RANGE;
+              minPulseWidth = minPulse;
+              maxPulseWidth = maxPulse;
+              break;
             }
-            uint32_t minPulseWidth = uint32_t(minPulse); // 647
-            uint32_t maxPulseWidth = uint32_t(maxPulse); // 647
+            if (PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_IN_RANGE == pulseType) {
+              minPulseWidth = minPulse;
+              maxPulseWidth = maxPulse;
+            }
 
 #pragma pack(1)
 
@@ -711,17 +723,24 @@ namespace CppCLRWinformsProjekt {
               pulseFlags |= 2;
               maxPulse = System::Int32::Parse(maxPulseInput->Text);
             }
-            //  pulseType = (PS4000A_PULSE_WIDTH_TYPE)pulseFlags;
+
+            uint32_t minPulseWidth; // = uint32_t(minPulse); // 647
+            uint32_t maxPulseWidth; // = uint32_t(maxPulse); // 647
             switch (pulseFlags) {
             case 1:
               pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_GREATER_THAN;
+              minPulseWidth = minPulse;
+              break;
             case 2:
               pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_LESS_THAN;
+              minPulseWidth = maxPulse;
+              break;
             case 3:
               pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_IN_RANGE;
+              minPulseWidth = minPulse;
+              maxPulseWidth = maxPulse;
+              break;
             }
-            uint32_t minPulseWidth = uint32_t(minPulse); // 647
-            uint32_t maxPulseWidth = uint32_t(maxPulse); // 647
 
   #pragma pack(1)
 
