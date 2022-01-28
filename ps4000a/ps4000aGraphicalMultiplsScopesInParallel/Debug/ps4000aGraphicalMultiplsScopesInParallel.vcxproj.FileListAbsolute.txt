@@ -1,0 +1,2 @@
+C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Debug\ps4000aGraphicalMultiplsScopesInParallel.vcxproj.AssemblyReference.cache
+C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Debug\ps4000aGraphicalMultiplsScopesInParallel.exe
