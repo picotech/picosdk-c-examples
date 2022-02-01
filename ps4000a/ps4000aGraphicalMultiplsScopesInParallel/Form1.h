@@ -54,8 +54,7 @@ namespace CppCLRWinformsProjekt {
 				delete components;
 			}
       delete handle_;
-    //  delete[] handle;
-      delete[] parallelDevice;
+      delete parallelDeviceVec;
 		}
   private: System::Windows::Forms::Button^ Execute;
   protected:
@@ -64,10 +63,8 @@ namespace CppCLRWinformsProjekt {
 
   private: int32_t count = 0;
 
-  // Cannot use the standard library since it is used in a managed class.
- // private: int16_t* handle;
+  // Cannot use the standard library directly since it is used in a managed class.
   private: std::vector<int16_t>* handle_;
-  private: ParallelDevice* parallelDevice;
   private: std::vector<ParallelDevice>* parallelDeviceVec;
 
 	private: System::Windows::Forms::TextBox^ textBox1;
@@ -411,9 +408,9 @@ namespace CppCLRWinformsProjekt {
     
       {
 
-        parallelDevice = new ParallelDevice[noOfDevices];
+        parallelDeviceVec = new std::vector<ParallelDevice>(noOfDevices);
         for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-          ParallelDevice& dev = parallelDevice[deviceNumber];
+          ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
           dev.handle = (*handle_)[deviceNumber];
         }
         constexpr auto NUMBER_OF_CHANNELS = 8;
@@ -430,7 +427,7 @@ namespace CppCLRWinformsProjekt {
             if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
-            ParallelDevice& dev = parallelDevice[deviceNumber];
+            ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
 
             dev.maxADCValue = INIT_MAX_ADC_VALUE;
             status = ps4000aMaximumValue(dev.handle,
@@ -453,7 +450,7 @@ namespace CppCLRWinformsProjekt {
               continue;
 
             for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
-              ParallelDevice& dev = parallelDevice[deviceNumber];
+              ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
               status = ps4000aSetChannel(dev.handle, static_cast<PS4000A_CHANNEL>(ch), 1, PS4000A_DC, PICO_X1_PROBE_1V, 0);
               if (PICO_OK != status) {
                 std::cout << "PS" << deviceNumber << " Set Channel : " << status << std::endl;
@@ -486,7 +483,7 @@ namespace CppCLRWinformsProjekt {
             if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
-            ParallelDevice& dev = parallelDevice[deviceNumber];
+            ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
             dev.timebase = timebase;
             dev.noSamples = static_cast<int32_t>(TEN_MEGA_SAMPLES);
             status = ps4000aGetTimebase2(
@@ -513,14 +510,14 @@ namespace CppCLRWinformsProjekt {
               if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
                 continue;
 
-              ParallelDevice& dev = parallelDevice[deviceNumber];
-              dev.buffer2.resize(NUMBER_OF_CHANNELS , std::vector<int16_t>(numOfSamples , 0));
+              ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
+              dev.buffer.resize(NUMBER_OF_CHANNELS , std::vector<int16_t>(numOfSamples , 0));
            //   dev.buffer[ch] = (int16_t*)calloc(dev.noSamples, sizeof(int16_t));
 
               status = ps4000aSetDataBuffer(
                 dev.handle,
                 static_cast<PS4000A_CHANNEL>(ch),
-                dev.buffer2[ch].data(),
+                dev.buffer[ch].data(),
                 dev.noSamples,
                 0,
                 PS4000A_RATIO_MODE_NONE);
@@ -542,7 +539,7 @@ namespace CppCLRWinformsProjekt {
             if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
-            ParallelDevice& dev = parallelDevice[deviceNumber];
+            ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
 
             if (triggerType == "Simple") {
               auto minThresholdsInput = (System::Windows::Forms::TextBox^)this->Controls["minThreshold"];
@@ -842,7 +839,7 @@ namespace CppCLRWinformsProjekt {
             if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
-            ParallelDevice& dev = parallelDevice[deviceNumber];
+            ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
             dev.timeIndisposed = new int32_t(NUMBER_OF_CHANNELS);
             status = ps4000aRunBlock(dev.handle, PRE_TRIGGER, TEN_MEGA_SAMPLES - PRE_TRIGGER, dev.timebase, dev.timeIndisposed, 0, nullptr, nullptr);
             if (PICO_OK != status) {
@@ -861,7 +858,7 @@ namespace CppCLRWinformsProjekt {
             if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
-            ParallelDevice& dev = parallelDevice[deviceNumber];
+            ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
 
             dev.isReady = 0;
             status = PICO_OK;
@@ -888,7 +885,7 @@ namespace CppCLRWinformsProjekt {
             if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
-            ParallelDevice& dev = parallelDevice[deviceNumber];
+            ParallelDevice& dev = (*parallelDeviceVec)[deviceNumber];
 
             status = ps4000aGetValues(dev.handle, 0, (uint32_t*)&dev.noSamples, 1, PS4000A_RATIO_MODE_NONE, 0, nullptr);
             if (PICO_OK != status) {
@@ -903,6 +900,24 @@ namespace CppCLRWinformsProjekt {
         int32_t handleNumber = 0;
         for (int32_t graphNumber = 0; graphNumber < this->count; graphNumber++) {
           this->Controls->RemoveByKey("chart " + graphNumber);
+          this->Controls->RemoveByKey("ChartArea " + graphNumber);
+          this->Controls->RemoveByKey("Legend " + graphNumber);
+          this->Controls->RemoveByKey("Series " + graphNumber);
+          this->Controls->RemoveByKey("Channel " + graphNumber);
+
+          auto removeChart = (System::Windows::Forms::CheckBox^)this->Controls["chart " + graphNumber];
+          for (char channel = 0; channel < NUMBER_OF_CHANNELS; channel++) {
+            ParallelDevice& dev = (*parallelDeviceVec)[graphNumber];
+            System::String^ res = gcnew System::String(strArr[channel]);
+            System::String^ strName = "Channel ";
+
+            strName = strName + res;
+
+            for (int i = 0; i < TEN_MEGA_SAMPLES; i++) {
+              if()
+              removeChart->Series[strName]->Points->remove(i);
+            }
+          }
 
           // Check if the device is selected and is not failed
           if (PICO_OK != statusList[graphNumber] || !(*handle_)[graphNumber])
@@ -927,12 +942,14 @@ namespace CppCLRWinformsProjekt {
           char strArr[8][2] = { "A", "B", "C", "D", "E", "F", "G", "H" };
           for (int devCount = 0; devCount < NUMBER_OF_CHANNELS; devCount++) {
             System::String^ res = gcnew System::String(strArr[devCount]);
+            System::String^ graphNumberIndex = gcnew System::String(graphNumber + " ");
             System::String^ strName = "Channel ";
 
-            strName = strName + res;
-            localChart->Series->Add(strName);
-            localChart->Series[strName]->Color = Color::FromArgb((((devCount & 1) == 1) * 200), (((devCount & 2) == 2) * 200), (((devCount & 4) == 4) * 200));
-            localChart->Series[strName]->ChartType = System::Windows::Forms::DataVisualization::Charting::SeriesChartType::Line;
+            System::String^ strCompName = strName + graphNumberIndex + res;
+            localChart->Series->Add(strCompName);
+            localChart->Series[strCompName]->Color = Color::FromArgb((((devCount & 1) == 1) * 200), (((devCount & 2) == 2) * 200), (((devCount & 4) == 4) * 200));
+            localChart->Series[strCompName]->ChartType = System::Windows::Forms::DataVisualization::Charting::SeriesChartType::Line;
+            localChart->Series[strCompName]->LegendText = strName + res;
           }
 
           localChart->Size = System::Drawing::Size(668, 136);
@@ -957,37 +974,28 @@ namespace CppCLRWinformsProjekt {
           chartArea->AxisY->IntervalType = System::Windows::Forms::DataVisualization::Charting::DateTimeIntervalType::Number;
           chartArea->AxisY->Minimum = -32999;
           chartArea->AxisY->Maximum = 32999;
+
+          System::String^ strName;
+          System::String^ res;
+          System::String^ graphNumberIndex;
           for (char channel = 0; channel < NUMBER_OF_CHANNELS; channel++) {
-            ParallelDevice& dev = parallelDevice[graphNumber];
-            System::String^ res = gcnew System::String(strArr[channel]);
-            System::String^ strName = "Channel ";
+            ParallelDevice& dev = (*parallelDeviceVec)[graphNumber];
+            res = gcnew System::String(strArr[channel]);
+            graphNumberIndex = gcnew System::String(graphNumber + " ");
+            strName = "Channel ";
 
-            strName = strName + res;
-
-            for (int i = 0; i < TEN_MEGA_SAMPLES; i++)
-              localChart->Series[strName]->Points->AddXY(-PRE_TRIGGER + i, dev.buffer2[channel][i]);
+            for (int i = 0; i < TEN_MEGA_SAMPLES; i++) {
+              localChart->Series[strName + graphNumberIndex + res]->Points->AddXY(-PRE_TRIGGER + i, dev.buffer[channel][i]);
+            }
           }
           for (double i = -32999; i < 32999; i++)
-            localChart->Series["Channel B"]->Points->AddXY(0, i);
+            localChart->Series[strName + graphNumberIndex + "B"]->Points->AddXY(0, i);
           this->Controls->Add(localChart);
           ++handleNumber;
         }
 
-        //// Free Buffers
-        //std::cout << "Free Buffers" << std::endl;
-        //{
-        //  for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
-        //    for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-        //      // Check if the device is selected and is not failed
-        //      if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
-        //        continue;
-
-        //      ParallelDevice& dev = parallelDevice[deviceNumber];
-        //      free(dev.buffer[ch]);
-        //    }
-        //  }
-        //}
       }
+      delete parallelDeviceVec;
 	  }
 
     private: System::Void textBox1_TextChanged(System::Object^ sender, System::EventArgs^ e) {

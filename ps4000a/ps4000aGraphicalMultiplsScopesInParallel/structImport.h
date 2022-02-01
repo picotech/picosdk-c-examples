@@ -60,8 +60,7 @@ struct ParallelDevice {
   int32_t maxSamples = 0;
 
 
-  std::vector<std::vector<int16_t>> buffer2;
-//  int16_t* buffer[NUMBER_OF_CHANNELS];
+  std::vector<std::vector<int16_t>> buffer;
 
   int32_t AdcTrigger = 500;
   int32_t AutoTrigger = 5000;
