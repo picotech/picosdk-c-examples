@@ -54,7 +54,7 @@ namespace CppCLRWinformsProjekt {
 				delete components;
 			}
       delete handle_;
-      delete[] handle;
+    //  delete[] handle;
       delete[] parallelDevice;
 		}
   private: System::Windows::Forms::Button^ Execute;
@@ -65,7 +65,7 @@ namespace CppCLRWinformsProjekt {
   private: int32_t count = 0;
 
   // Cannot use the standard library since it is used in a managed class.
-  private: int16_t* handle;
+ // private: int16_t* handle;
   private: std::vector<int16_t>* handle_;
   private: ParallelDevice* parallelDevice;
   private: std::vector<ParallelDevice>* parallelDeviceVec;
@@ -414,7 +414,7 @@ namespace CppCLRWinformsProjekt {
         parallelDevice = new ParallelDevice[noOfDevices];
         for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
           ParallelDevice& dev = parallelDevice[deviceNumber];
-          dev.handle = this->handle[deviceNumber];
+          dev.handle = (*handle_)[deviceNumber];
         }
         constexpr auto NUMBER_OF_CHANNELS = 8;
 
@@ -427,7 +427,7 @@ namespace CppCLRWinformsProjekt {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
 
             // Check if the device is selected and is not failed
-            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
             ParallelDevice& dev = parallelDevice[deviceNumber];
@@ -449,7 +449,7 @@ namespace CppCLRWinformsProjekt {
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
             // Check if the device is selected and is not failed
-            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
             for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
@@ -483,7 +483,7 @@ namespace CppCLRWinformsProjekt {
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
             // Check if the device is selected and is not failed
-            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
             ParallelDevice& dev = parallelDevice[deviceNumber];
@@ -510,7 +510,7 @@ namespace CppCLRWinformsProjekt {
           for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
             for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
               // Check if the device is selected and is not failed
-              if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+              if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
                 continue;
 
               ParallelDevice& dev = parallelDevice[deviceNumber];
@@ -539,7 +539,7 @@ namespace CppCLRWinformsProjekt {
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
             // Check if the device is selected and is not failed
-            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
             ParallelDevice& dev = parallelDevice[deviceNumber];
@@ -839,7 +839,7 @@ namespace CppCLRWinformsProjekt {
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
             // Check if the device is selected and is not failed
-            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
             ParallelDevice& dev = parallelDevice[deviceNumber];
@@ -858,7 +858,7 @@ namespace CppCLRWinformsProjekt {
 
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
             // Check if the device is selected and is not failed
-            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
             ParallelDevice& dev = parallelDevice[deviceNumber];
@@ -885,7 +885,7 @@ namespace CppCLRWinformsProjekt {
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
             // Check if the device is selected and is not failed
-            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber] || !(*handle_)[deviceNumber])
               continue;
 
             ParallelDevice& dev = parallelDevice[deviceNumber];
@@ -905,7 +905,7 @@ namespace CppCLRWinformsProjekt {
           this->Controls->RemoveByKey("chart " + graphNumber);
 
           // Check if the device is selected and is not failed
-          if (PICO_OK != statusList[graphNumber] || !this->handle[graphNumber])
+          if (PICO_OK != statusList[graphNumber] || !(*handle_)[graphNumber])
             continue;
 
           auto localChart = (gcnew System::Windows::Forms::DataVisualization::Charting::Chart());
@@ -1030,7 +1030,8 @@ namespace CppCLRWinformsProjekt {
         this->Controls->RemoveByKey("Button " + i);
       }
       this->count = count;
-      this->handle = new int16_t[this->count];
+      handle_ = new std::vector<int16_t>(this->count, 0);
+    //  this->handle = new int16_t[this->count];
       this->Controls["ListAllDevices"]->Text = "Device Count : " + count;
       std::string str;
 
@@ -1040,7 +1041,7 @@ namespace CppCLRWinformsProjekt {
         stuff += "o";
       }
       for (int i = 0; i < count; i++) {
-        this->handle[i] = 0;
+        (*handle_)[i] = 0;//        this->handle[i] = 0;
         System::Windows::Forms::Label^ label = (gcnew System::Windows::Forms::Label());
         System::Windows::Forms::CheckBox^ checkBox = (gcnew System::Windows::Forms::CheckBox());
         System::Windows::Forms::Button^ button = (gcnew System::Windows::Forms::Button());
@@ -1066,7 +1067,6 @@ namespace CppCLRWinformsProjekt {
       if (nullptr != handle_)
         delete handle_;
 
-      handle_ = new std::vector<int16_t>(this->count, 0);
 
     }
     private: System::Void SelectDevices_Click(System::Object^ sender, System::EventArgs^ e) {
@@ -1076,12 +1076,12 @@ namespace CppCLRWinformsProjekt {
         auto button = (System::Windows::Forms::Button^)this->Controls["Button " + i];
         auto label = (System::Windows::Forms::Label^)this->Controls["Label " + i];
         if (false == checkBox->Checked) {
-          if (this->handle > 0)
-            ps4000aCloseUnit(this->handle[i]);
-          this->handle[i] = 0;
+          if ((*handle_)[i] > 0)
+            ps4000aCloseUnit((*handle_)[i]);
+          (*handle_)[i] = 0;
           continue;
         }
-        if (this->handle[i] > 0)
+        if ((*handle_)[i] > 0)
           continue;
 
         std::vector<int8_t> res;
@@ -1091,15 +1091,15 @@ namespace CppCLRWinformsProjekt {
         res.push_back((int8_t)'\0');
 
         if (true == checkBox->Checked) {
-          PICO_STATUS status = ps4000aOpenUnit(&this->handle[i], res.data());// &((*handle_)[i])
+          PICO_STATUS status = ps4000aOpenUnit(&((*handle_)[i]), res.data());// &((*handle_)[i])
           if (PICO_OK != status)
             if (PICO_POWER_SUPPLY_NOT_CONNECTED == status || PICO_USB3_0_DEVICE_NON_USB3_0_PORT == status)
-              status = ps4000aChangePowerSource(this->handle[i], status);
+              status = ps4000aChangePowerSource(((*handle_)[i]), status);
           if (PICO_OK != status) {
             std::cout << "PS" << i << " has an issue on OpenUnit : " << status << std::endl;
           }
           label->Text = button->Text;
-          label->Text += " => handle : " + this->handle[i];
+          label->Text += " => handle : " + (*handle_)[i];
           if (PICO_OK != status)
             label->Text += " => Error : " + status;
         }
@@ -1131,14 +1131,14 @@ namespace CppCLRWinformsProjekt {
       std::cout << "Closing Units" << std::endl;
       {
         for (int32_t deviceNumber = 0; deviceNumber < this->count; ++deviceNumber) {
-          PICO_STATUS status = ps4000aCloseUnit(this->handle[deviceNumber]);
+          PICO_STATUS status = ps4000aCloseUnit((*handle_)[deviceNumber]);
           if (PICO_OK != status) {
             std::cout << "PS" << deviceNumber << " has an issue on Closure" << std::endl;
           }
         }
       }
       for (int32_t deviceNumber = 0; deviceNumber < this->count; ++deviceNumber) {
-        this->handle[deviceNumber] = 0;
+        (*handle_)[deviceNumber] = 0;
       }
     }
     private: System::Void comboBox1_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
