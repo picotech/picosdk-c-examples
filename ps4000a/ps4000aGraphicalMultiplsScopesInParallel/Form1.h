@@ -828,7 +828,7 @@ namespace CppCLRWinformsProjekt {
         int32_t handleNumber = 0;
         for (int32_t graphNumber = 0; graphNumber < this->count; graphNumber++) {
           this->Controls->RemoveByKey("chart " + graphNumber);
-          if (-2 == this->handle[graphNumber])
+          if (0 == this->handle[graphNumber])
             continue;
 
           auto localChart = (gcnew System::Windows::Forms::DataVisualization::Charting::Chart());
