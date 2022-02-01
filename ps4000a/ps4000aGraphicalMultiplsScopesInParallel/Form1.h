@@ -2,6 +2,7 @@
 
 #include "structImport.h"
 #include "ps4000aApi.h"
+
 #include <iostream>
 #include <fstream>
 #include <cstdio>
@@ -64,6 +65,7 @@ namespace CppCLRWinformsProjekt {
 
   // Cannot use the standard library since it is used in a managed class.
   private: int16_t* handle;
+//  private: std::vector<int16_t> handle_;
   private: ParallelDevice* parallelDevice;
 
 	private: System::Windows::Forms::TextBox^ textBox1;
@@ -624,12 +626,12 @@ namespace CppCLRWinformsProjekt {
 
               auto minPulseInput = (System::Windows::Forms::TextBox^)this->Controls["MinPulseWidthInput"];
               if ("" != minPulseInput->Text) {
-                pulseFlags |= 1;
+                pulseFlags |= 1 << 0;
                 minPulse = System::Int32::Parse(minPulseInput->Text);
               }
               auto maxPulseInput = (System::Windows::Forms::TextBox^)this->Controls["MaxPulseWidthInput"];
               if ("" != maxPulseInput->Text) {
-                pulseFlags |= 2;
+                pulseFlags |= 1 << 1;
                 maxPulse = System::Int32::Parse(maxPulseInput->Text);
               }
 
@@ -728,17 +730,17 @@ namespace CppCLRWinformsProjekt {
 
               auto minPulseInput = (System::Windows::Forms::TextBox^)this->Controls["MinPulseWidthInput"];
               if ("" != minPulseInput->Text) {
-                pulseFlags |= 1;
+                pulseFlags |= 1 << 0;
                 minPulse = System::Int32::Parse(minPulseInput->Text);
               }
               auto maxPulseInput = (System::Windows::Forms::TextBox^)this->Controls["MaxPulseWidthInput"];
               if ("" != maxPulseInput->Text) {
-                pulseFlags |= 2;
+                pulseFlags |= 1 << 1;
                 maxPulse = System::Int32::Parse(maxPulseInput->Text);
               }
 
-              uint32_t minPulseWidth;
-              uint32_t maxPulseWidth;
+              uint32_t minPulseWidth = 0;
+              uint32_t maxPulseWidth = 0;
               switch (pulseFlags) {
               case 1:
                 pulseType = PS4000A_PULSE_WIDTH_TYPE::PS4000A_PW_TYPE_GREATER_THAN;
@@ -792,7 +794,7 @@ namespace CppCLRWinformsProjekt {
 
               status = ps4000aSetPulseWidthQualifierProperties(
                 dev.handle,              // device handle
-                PS4000A_BELOW,
+                PS4000A_BELOW_LOWER,
                 minPulseWidth,           // pointer to condition structure
                 maxPulseWidth,           // number of structures
                 pulseType                // N/A for window trigger

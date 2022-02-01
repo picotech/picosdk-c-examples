@@ -1,9 +1,9 @@
 ﻿  CppCLR_WinformsProjekt.cpp
-C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Form1.h(875,33): warning C4244: 'argument': conversion from 'wchar_t' to 'const _Elem', possible loss of data
+C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Form1.h(927,33): warning C4244: 'argument': conversion from 'wchar_t' to 'const _Elem', possible loss of data
           with
           [
               _Elem=char
           ]
-C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Form1.h(925,1): warning C4267: 'initializing': conversion from 'size_t' to 'int16_t', possible loss of data
+C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Form1.h(981,1): warning C4267: 'initializing': conversion from 'size_t' to 'int16_t', possible loss of data
   AssemblyInfo.obj : MSIL module encountered; incremental linking is disabled for MSIL; performing full link
   ps4000aGraphicalMultiplsScopesInParallel.vcxproj -> C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\x64\Debug\ps4000aGraphicalMultiplsScopesInParallel.exe
