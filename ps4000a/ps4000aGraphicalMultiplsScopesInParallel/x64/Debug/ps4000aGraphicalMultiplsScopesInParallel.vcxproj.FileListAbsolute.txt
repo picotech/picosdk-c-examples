@@ -3,4 +3,3 @@ C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultip
 C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\x64\Debug\ps4000aGraphicalMultiplsScopesInParallel.vcxproj.GenerateResource.cache
 C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\x64\Debug\ps4000aGraphicalMultiplsScopesInParallel.vcxproj.SuggestedBindingRedirects.cache
 C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\x64\Debug\ps4000aGraphicalMultiplsScopesInParallel.exe
-C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\x64\Debug\ps4000aGraphicalMultiplsScopesInParallel.vcxproj.SuggestedBindingRedirects.cache
