@@ -905,17 +905,20 @@ namespace CppCLRWinformsProjekt {
           this->Controls->RemoveByKey("Series " + graphNumber);
           this->Controls->RemoveByKey("Channel " + graphNumber);
 
+          char strArr[8][2] = { "A", "B", "C", "D", "E", "F", "G", "H" };
           auto removeChart = (System::Windows::Forms::CheckBox^)this->Controls["chart " + graphNumber];
           for (char channel = 0; channel < NUMBER_OF_CHANNELS; channel++) {
             ParallelDevice& dev = (*parallelDeviceVec)[graphNumber];
             System::String^ res = gcnew System::String(strArr[channel]);
             System::String^ strName = "Channel ";
 
-            strName = strName + res;
+            strName = strName + res + " " + channel;
 
             for (int i = 0; i < TEN_MEGA_SAMPLES; i++) {
-              if()
-              removeChart->Series[strName]->Points->remove(i);
+              auto series = (System::Windows::Forms::DataVisualization::Charting::Series^)this->Controls[strName];
+            //  series->Points->Remove(i);
+              if( nullptr != series )
+                series->Points->Clear();
             }
           }
 
@@ -939,7 +942,6 @@ namespace CppCLRWinformsProjekt {
           series->Legend = L"Legend " + graphNumber;
           series->Name = L"Series " + graphNumber;
           localChart->Series->Clear();
-          char strArr[8][2] = { "A", "B", "C", "D", "E", "F", "G", "H" };
           for (int devCount = 0; devCount < NUMBER_OF_CHANNELS; devCount++) {
             System::String^ res = gcnew System::String(strArr[devCount]);
             System::String^ graphNumberIndex = gcnew System::String(graphNumber + " ");
