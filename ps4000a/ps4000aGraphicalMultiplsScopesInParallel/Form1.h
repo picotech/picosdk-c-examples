@@ -52,21 +52,24 @@ namespace CppCLRWinformsProjekt {
 			{
 				delete components;
 			}
+      delete[] handle;
+      delete[] parallelDevice;
 		}
   private: System::Windows::Forms::Button^ Execute;
   protected:
 
 	protected:
 
+  private: int32_t count = 0;
+
+  // Cannot use the standard library since it is used in a managed class.
+  private: int16_t* handle;
+  private: ParallelDevice* parallelDevice;
 
 	private: System::Windows::Forms::TextBox^ textBox1;
 	private: System::Windows::Forms::Label^ label1;
   private: System::Windows::Forms::Button^ ListAllDevices;
   private: System::Windows::Forms::Button^ SelectDevices;
-  private: int32_t count = 0;
-  private: int16_t* handle;
-  private: std::vector<int16_t>* handle_;
-  private: ParallelDevice* parallelDevice;
   private: System::Windows::Forms::DataVisualization::Charting::Chart^ chart1;
   private: System::Windows::Forms::TextBox^ TimebaseInput;
   private: System::Windows::Forms::Label^ TimebaseText;
@@ -404,7 +407,7 @@ namespace CppCLRWinformsProjekt {
     
       {
 
-        RAII raii = RAII();
+       /* RAII raii = RAII();
         parallelDevice = new ParallelDevice[noOfDevices];
 
         for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
@@ -412,8 +415,12 @@ namespace CppCLRWinformsProjekt {
           dev.handle = this->handle[deviceNumber];
           if (dev.handle == -2)
             raii.Add(dev.handle);
+        }*/
+        parallelDevice = new ParallelDevice[noOfDevices];
+        for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
+          ParallelDevice& dev = parallelDevice[deviceNumber];
+          dev.handle = this->handle[deviceNumber];
         }
-
         constexpr auto NUMBER_OF_CHANNELS = 8;
 
         auto status = PICO_OK;
@@ -844,7 +851,7 @@ namespace CppCLRWinformsProjekt {
                 label->Text += " => IsReady Error : " + status;
                 statusList[deviceNumber] = status;
               }
-              // Sleep(1);
+              std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
           }
         }

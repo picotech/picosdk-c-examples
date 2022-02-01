@@ -84,6 +84,7 @@ public:
 };
 
 class RAII2 {
+//  std::vector<int16_t> vec;
   int16_t handleList[8];
   int handleCount = 0;
 public:
