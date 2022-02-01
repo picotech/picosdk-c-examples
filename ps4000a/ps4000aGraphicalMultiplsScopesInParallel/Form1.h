@@ -53,6 +53,7 @@ namespace CppCLRWinformsProjekt {
 			{
 				delete components;
 			}
+      delete handle_;
       delete[] handle;
       delete[] parallelDevice;
 		}
@@ -65,8 +66,9 @@ namespace CppCLRWinformsProjekt {
 
   // Cannot use the standard library since it is used in a managed class.
   private: int16_t* handle;
-//  private: std::vector<int16_t> handle_;
+  private: std::vector<int16_t>* handle_;
   private: ParallelDevice* parallelDevice;
+  private: std::vector<ParallelDevice>* parallelDeviceVec;
 
 	private: System::Windows::Forms::TextBox^ textBox1;
 	private: System::Windows::Forms::Label^ label1;
@@ -409,15 +411,6 @@ namespace CppCLRWinformsProjekt {
     
       {
 
-       /* RAII raii = RAII();
-        parallelDevice = new ParallelDevice[noOfDevices];
-
-        for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-          ParallelDevice& dev = parallelDevice[deviceNumber];
-          dev.handle = this->handle[deviceNumber];
-          if (dev.handle == -2)
-            raii.Add(dev.handle);
-        }*/
         parallelDevice = new ParallelDevice[noOfDevices];
         for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
           ParallelDevice& dev = parallelDevice[deviceNumber];
@@ -432,11 +425,13 @@ namespace CppCLRWinformsProjekt {
         constexpr auto INIT_MAX_ADC_VALUE = 32000;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
+
+            // Check if the device is selected and is not failed
+            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+              continue;
+
             ParallelDevice& dev = parallelDevice[deviceNumber];
-            if (PICO_OK != statusList[deviceNumber])
-              continue;
-            if (0 == this->handle[deviceNumber])
-              continue;
+
             dev.maxADCValue = INIT_MAX_ADC_VALUE;
             status = ps4000aMaximumValue(dev.handle,
               &dev.maxADCValue);
@@ -453,10 +448,10 @@ namespace CppCLRWinformsProjekt {
         std::cout << "Set Channels" << std::endl;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (PICO_OK != statusList[deviceNumber])
+            // Check if the device is selected and is not failed
+            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
               continue;
-            if (0 == this->handle[deviceNumber])
-              continue;
+
             for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
               ParallelDevice& dev = parallelDevice[deviceNumber];
               status = ps4000aSetChannel(dev.handle, static_cast<PS4000A_CHANNEL>(ch), 1, PS4000A_DC, PICO_X1_PROBE_1V, 0);
@@ -487,10 +482,10 @@ namespace CppCLRWinformsProjekt {
         // 2    32–1 ~54 s    ~18.6 mHz
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (PICO_OK != statusList[deviceNumber])
+            // Check if the device is selected and is not failed
+            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
               continue;
-            if (0 == this->handle[deviceNumber])
-              continue;
+
             ParallelDevice& dev = parallelDevice[deviceNumber];
             dev.timebase = timebase;
             dev.noSamples = static_cast<int32_t>(TEN_MEGA_SAMPLES);
@@ -514,17 +509,18 @@ namespace CppCLRWinformsProjekt {
         {
           for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
             for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-              if (PICO_OK != statusList[deviceNumber])
+              // Check if the device is selected and is not failed
+              if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
                 continue;
-              if (0 == this->handle[deviceNumber])
-                continue;
+
               ParallelDevice& dev = parallelDevice[deviceNumber];
-              dev.buffer[ch] = (int16_t*)calloc(dev.noSamples, sizeof(int16_t));
+              dev.buffer2.resize(NUMBER_OF_CHANNELS , std::vector<int16_t>(numOfSamples , 0));
+           //   dev.buffer[ch] = (int16_t*)calloc(dev.noSamples, sizeof(int16_t));
 
               status = ps4000aSetDataBuffer(
                 dev.handle,
                 static_cast<PS4000A_CHANNEL>(ch),
-                dev.buffer[ch],
+                dev.buffer2[ch].data(),
                 dev.noSamples,
                 0,
                 PS4000A_RATIO_MODE_NONE);
@@ -542,14 +538,13 @@ namespace CppCLRWinformsProjekt {
         std::cout << "Set Simple Trigger" << std::endl;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (PICO_OK != statusList[deviceNumber])
+            // Check if the device is selected and is not failed
+            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
               continue;
-            if (0 == this->handle[deviceNumber])
-              continue;
+
             ParallelDevice& dev = parallelDevice[deviceNumber];
 
             if (triggerType == "Simple") {
-
               auto minThresholdsInput = (System::Windows::Forms::TextBox^)this->Controls["minThreshold"];
               int32_t minThresholds = System::Int32::Parse(minThresholdsInput->Text);
               dev.AdcTrigger = minThresholds;
@@ -563,7 +558,22 @@ namespace CppCLRWinformsProjekt {
               }
             }
             else if (triggerType == "Pulse Width") {
+              /*
+               * HOW THIS TRIGGER WORKS :
+               * The trigger is performed on an 'AND' operation of Timing and Trigger Status.
+               *  - PULSE_WIDTH functions set the conditions for reseting the timer to '0'
+               *  - The timer is incremented by '1' at each sample count.
+               *  - At the moment that the Triggering Condition occurs , the timer is checked if it is in the set boundaries
+               *    Hence the 'AND' operation ( Is the Trigger condition valid ? Is the Timer within the set boundaries ? If both are right , then perform a trigger. )
+               * Result : The trigger would only be performed if a timer reset has has been performed at the latest within the set range AND the triggering conditions have happened.
+               * 
+               * Procedure : 
+               *  1) Set the Triggering Conditions
+               *  2) Set the Timer Reset Conditions
+               */
 
+
+              // 1) Set the Triggering Conditions
               auto minThresholdsInput = (System::Windows::Forms::TextBox^)this->Controls["minThreshold"];
               int32_t minThresholds = System::Int32::Parse(minThresholdsInput->Text);
               dev.AdcTrigger = minThresholds;
@@ -603,9 +613,9 @@ namespace CppCLRWinformsProjekt {
               PS4000A_TRIGGER_CHANNEL_PROPERTIES tProp;
               tProp.channel = PS4000A_CHANNEL_A;
               tProp.thresholdMode = PS4000A_LEVEL;
-              tProp.thresholdUpper = dev.AdcTrigger; // 1000
+              tProp.thresholdUpper = dev.AdcTrigger;
               tProp.thresholdUpperHysteresis = maxHysteresis;
-              tProp.thresholdLower = dev.AdcTrigger; // -this->handle[deviceNumber]000
+              tProp.thresholdLower = dev.AdcTrigger;
               tProp.thresholdLowerHysteresis = minHysteresis;
 
               PS4000A_TRIGGER_CHANNEL_PROPERTIES tProp2[1];
@@ -670,6 +680,8 @@ namespace CppCLRWinformsProjekt {
                   PS4000A_CONDITION_DONT_CARE  // aux
                 }
               };
+
+              // 2) Set the Timer Reset Conditions
               PS4000A_CONDITION pwqCond[10];
               pwqCond[0].source = PS4000A_CHANNEL_A;
               pwqCond[0].condition = PS4000A_CONDITION_TRUE;
@@ -707,9 +719,31 @@ namespace CppCLRWinformsProjekt {
               }
             }
             else if (triggerType == "Drop Out") {
+              /*
+               * HOW THIS TRIGGER WORKS :
+               * The trigger is performed only based on a timer.
+               *  - PULSE_WIDTH functions set the conditions for reseting the timer to '0'
+               *  - The timer is incremented by '1' and checked at each sample count.
+               *  - Whenever the timer is checked within the set boudaries , then perform a trigger.
+               * Result : The trigger would only be performed if a timer reset has been performed at the latest within of the set range.
+               * 
+               * Procedure : 
+               *  1) Set the Triggering Conditions
+               *  2) Set the Timer Reset Conditions
+               */
+
+              // 1) Set the Triggering Conditions
               auto minThresholdsInput = (System::Windows::Forms::TextBox^)this->Controls["minThreshold"];
               int32_t minThresholds = System::Int32::Parse(minThresholdsInput->Text);
               dev.AdcTrigger = minThresholds;
+
+              status = ps4000aSetSimpleTrigger(dev.handle, 1, PS4000A_CHANNEL_A, dev.AdcTrigger, PS4000A_RISING, 0, dev.AutoTrigger);
+              if (PICO_OK != status) {
+                std::cout << "PS" << deviceNumber << " Trigger set Issue : " << status << std::endl;
+                auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
+                label->Text += " => Simple Trigger Error : " + status;
+                statusList[deviceNumber] = status;
+              }
 
               PS4000A_CONDITION tCond[1];
               tCond[0].source = PS4000A_PULSE_WIDTH_SOURCE;
@@ -759,17 +793,7 @@ namespace CppCLRWinformsProjekt {
 
 #pragma pack(1)
 
-              PS4000A_PWQ_CONDITIONS  pwqConditions[] =
-              {
-                {
-                  PS4000A_CONDITION_TRUE,      // enable pulse width trigger on channel A
-                  PS4000A_CONDITION_DONT_CARE, // channel B
-                  PS4000A_CONDITION_DONT_CARE, // channel C
-                  PS4000A_CONDITION_DONT_CARE, // channel D
-                  PS4000A_CONDITION_DONT_CARE, // external
-                  PS4000A_CONDITION_DONT_CARE  // aux
-                }
-              };
+              // 2) Set the Timer Reset Conditions
               PS4000A_CONDITION pwqCond[10];
               pwqCond[0].source = PS4000A_CHANNEL_A;
               pwqCond[0].condition = PS4000A_CONDITION_TRUE;
@@ -807,9 +831,6 @@ namespace CppCLRWinformsProjekt {
                 statusList[deviceNumber] = status;
               }
             }
-            else {
-
-            }
           }
         }
 
@@ -817,10 +838,10 @@ namespace CppCLRWinformsProjekt {
         std::cout << "Run Block" << std::endl;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (PICO_OK != statusList[deviceNumber])
+            // Check if the device is selected and is not failed
+            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
               continue;
-            if (0 == this->handle[deviceNumber])
-              continue;
+
             ParallelDevice& dev = parallelDevice[deviceNumber];
             dev.timeIndisposed = new int32_t(NUMBER_OF_CHANNELS);
             status = ps4000aRunBlock(dev.handle, PRE_TRIGGER, TEN_MEGA_SAMPLES - PRE_TRIGGER, dev.timebase, dev.timeIndisposed, 0, nullptr, nullptr);
@@ -836,10 +857,10 @@ namespace CppCLRWinformsProjekt {
           status = PICO_OK;
 
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (PICO_OK != statusList[deviceNumber])
+            // Check if the device is selected and is not failed
+            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
               continue;
-            if (0 == this->handle[deviceNumber])
-              continue;
+
             ParallelDevice& dev = parallelDevice[deviceNumber];
 
             dev.isReady = 0;
@@ -863,10 +884,10 @@ namespace CppCLRWinformsProjekt {
         std::cout << "Get Values" << std::endl;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (PICO_OK != statusList[deviceNumber])
+            // Check if the device is selected and is not failed
+            if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
               continue;
-            if (0 == this->handle[deviceNumber])
-              continue;
+
             ParallelDevice& dev = parallelDevice[deviceNumber];
 
             status = ps4000aGetValues(dev.handle, 0, (uint32_t*)&dev.noSamples, 1, PS4000A_RATIO_MODE_NONE, 0, nullptr);
@@ -882,9 +903,9 @@ namespace CppCLRWinformsProjekt {
         int32_t handleNumber = 0;
         for (int32_t graphNumber = 0; graphNumber < this->count; graphNumber++) {
           this->Controls->RemoveByKey("chart " + graphNumber);
-          if (0 != statusList[graphNumber])
-            continue;
-          if (this->handle[graphNumber] <= 0)
+
+          // Check if the device is selected and is not failed
+          if (PICO_OK != statusList[graphNumber] || !this->handle[graphNumber])
             continue;
 
           auto localChart = (gcnew System::Windows::Forms::DataVisualization::Charting::Chart());
@@ -944,7 +965,7 @@ namespace CppCLRWinformsProjekt {
             strName = strName + res;
 
             for (int i = 0; i < TEN_MEGA_SAMPLES; i++)
-              localChart->Series[strName]->Points->AddXY(-PRE_TRIGGER + i, dev.buffer[channel][i]);
+              localChart->Series[strName]->Points->AddXY(-PRE_TRIGGER + i, dev.buffer2[channel][i]);
           }
           for (double i = -32999; i < 32999; i++)
             localChart->Series["Channel B"]->Points->AddXY(0, i);
@@ -952,20 +973,20 @@ namespace CppCLRWinformsProjekt {
           ++handleNumber;
         }
 
-        // Free Buffers
-        std::cout << "Free Buffers" << std::endl;
-        {
-          for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
-            for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-              if (PICO_OK != statusList[deviceNumber])
-                continue;
-              if (0 == this->handle[deviceNumber])
-                continue;
-              ParallelDevice& dev = parallelDevice[deviceNumber];
-              free(dev.buffer[ch]);
-            }
-          }
-        }
+        //// Free Buffers
+        //std::cout << "Free Buffers" << std::endl;
+        //{
+        //  for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
+        //    for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
+        //      // Check if the device is selected and is not failed
+        //      if (PICO_OK != statusList[deviceNumber] || !this->handle[deviceNumber])
+        //        continue;
+
+        //      ParallelDevice& dev = parallelDevice[deviceNumber];
+        //      free(dev.buffer[ch]);
+        //    }
+        //  }
+        //}
       }
 	  }
 
@@ -1042,9 +1063,13 @@ namespace CppCLRWinformsProjekt {
         this->Controls->Add(checkBox);
         this->Controls->Add(button);
       }
+      if (nullptr != handle_)
+        delete handle_;
+
+      handle_ = new std::vector<int16_t>(this->count, 0);
+
     }
     private: System::Void SelectDevices_Click(System::Object^ sender, System::EventArgs^ e) {
-    //  *handle_ = std::vector<int16_t>(this->count , 0);
       for (int i = 0; i < this->count; i++) {
 
         auto checkBox = (System::Windows::Forms::CheckBox^)this->Controls["Check " + i];

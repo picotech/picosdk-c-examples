@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <string>
 #include <map>
+#include <vector>
 
 const int32_t NUMBER_OF_CHANNELS = 8;
 
@@ -59,7 +60,8 @@ struct ParallelDevice {
   int32_t maxSamples = 0;
 
 
-  int16_t* buffer[NUMBER_OF_CHANNELS];
+  std::vector<std::vector<int16_t>> buffer2;
+//  int16_t* buffer[NUMBER_OF_CHANNELS];
 
   int32_t AdcTrigger = 500;
   int32_t AutoTrigger = 5000;
