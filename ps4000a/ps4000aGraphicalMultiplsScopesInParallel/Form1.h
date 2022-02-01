@@ -1031,7 +1031,7 @@ namespace CppCLRWinformsProjekt {
       }
       this->count = count;
       handle_ = new std::vector<int16_t>(this->count, 0);
-    //  this->handle = new int16_t[this->count];
+
       this->Controls["ListAllDevices"]->Text = "Device Count : " + count;
       std::string str;
 
@@ -1041,7 +1041,7 @@ namespace CppCLRWinformsProjekt {
         stuff += "o";
       }
       for (int i = 0; i < count; i++) {
-        (*handle_)[i] = 0;//        this->handle[i] = 0;
+        (*handle_)[i] = 0;
         System::Windows::Forms::Label^ label = (gcnew System::Windows::Forms::Label());
         System::Windows::Forms::CheckBox^ checkBox = (gcnew System::Windows::Forms::CheckBox());
         System::Windows::Forms::Button^ button = (gcnew System::Windows::Forms::Button());
@@ -1064,8 +1064,6 @@ namespace CppCLRWinformsProjekt {
         this->Controls->Add(checkBox);
         this->Controls->Add(button);
       }
-      if (nullptr != handle_)
-        delete handle_;
 
 
     }
