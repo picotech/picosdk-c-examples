@@ -900,7 +900,7 @@ namespace CppCLRWinformsProjekt {
         int32_t handleNumber = 0;
         for (int32_t graphNumber = 0; graphNumber < this->count; graphNumber++) {
           char strArr[8][2] = { "A", "B", "C", "D", "E", "F", "G", "H" };
-          auto removeChart = (System::Windows::Forms::CheckBox^)this->Controls["chart " + graphNumber];
+          auto removeChart = (System::Windows::Forms::DataVisualization::Charting::Chart^)this->Controls["chart " + graphNumber];
           for (char channel = 0; channel < NUMBER_OF_CHANNELS; channel++) {
             ParallelDevice& dev = (*parallelDeviceVec)[graphNumber];
             System::String^ res = gcnew System::String(strArr[channel]);
