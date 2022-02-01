@@ -1,2 +1,6 @@
+<<<<<<< HEAD
 PlatformToolSet=v142:VCToolArchitecture=Native64Bit:VCToolsVersion=14.29.30133:TargetPlatformVersion=10.0.22000.0:TargetFrameworkVersion=v4.7.2::EnableManagedIncrementalBuild=true:
+=======
+PlatformToolSet=v143:VCToolArchitecture=Native64Bit:VCToolsVersion=14.30.30705:TargetPlatformVersion=10.0.22000.0:TargetFrameworkVersion=v4.7.2::EnableManagedIncrementalBuild=true:
+>>>>>>> TSP-279_PS4000A_RunningSeveralScopesInParallel
 Debug|x64|C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\|

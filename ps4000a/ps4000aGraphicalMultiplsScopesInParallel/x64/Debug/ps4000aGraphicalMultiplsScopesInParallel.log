@@ -1,14 +1,23 @@
+<<<<<<< HEAD
 ﻿  pch.cpp
   AssemblyInfo.cpp
   CppCLR_WinformsProjekt.cpp
 C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Form1.h(865,31): warning C4244: 'argument': conversion from 'wchar_t' to 'const _Elem', possible loss of data
+=======
+﻿  CppCLR_WinformsProjekt.cpp
+C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Form1.h(875,33): warning C4244: 'argument': conversion from 'wchar_t' to 'const _Elem', possible loss of data
+>>>>>>> TSP-279_PS4000A_RunningSeveralScopesInParallel
           with
           [
               _Elem=char
           ]
+<<<<<<< HEAD
 C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Form1.h(909,1): warning C4267: 'initializing': conversion from 'size_t' to 'int16_t', possible loss of data
   Form1.cpp
   Generating Code...
   .NETFramework,Version=v4.7.2.AssemblyAttributes.cpp
+=======
+C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\Form1.h(925,1): warning C4267: 'initializing': conversion from 'size_t' to 'int16_t', possible loss of data
+>>>>>>> TSP-279_PS4000A_RunningSeveralScopesInParallel
   AssemblyInfo.obj : MSIL module encountered; incremental linking is disabled for MSIL; performing full link
   ps4000aGraphicalMultiplsScopesInParallel.vcxproj -> C:\Users\cedric.carteron\Repos\picosdk-c-examples\ps4000a\ps4000aGraphicalMultiplsScopesInParallel\x64\Debug\ps4000aGraphicalMultiplsScopesInParallel.exe
