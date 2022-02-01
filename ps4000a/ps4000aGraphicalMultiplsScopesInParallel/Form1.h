@@ -899,12 +899,6 @@ namespace CppCLRWinformsProjekt {
 
         int32_t handleNumber = 0;
         for (int32_t graphNumber = 0; graphNumber < this->count; graphNumber++) {
-          this->Controls->RemoveByKey("chart " + graphNumber);
-          this->Controls->RemoveByKey("ChartArea " + graphNumber);
-          this->Controls->RemoveByKey("Legend " + graphNumber);
-          this->Controls->RemoveByKey("Series " + graphNumber);
-          this->Controls->RemoveByKey("Channel " + graphNumber);
-
           char strArr[8][2] = { "A", "B", "C", "D", "E", "F", "G", "H" };
           auto removeChart = (System::Windows::Forms::CheckBox^)this->Controls["chart " + graphNumber];
           for (char channel = 0; channel < NUMBER_OF_CHANNELS; channel++) {
@@ -916,11 +910,18 @@ namespace CppCLRWinformsProjekt {
 
             for (int i = 0; i < TEN_MEGA_SAMPLES; i++) {
               auto series = (System::Windows::Forms::DataVisualization::Charting::Series^)this->Controls[strName];
-            //  series->Points->Remove(i);
-              if( nullptr != series )
+              //  series->Points->Remove(i);
+              if (nullptr != series)
                 series->Points->Clear();
             }
           }
+
+          this->Controls->RemoveByKey("chart " + graphNumber);
+          this->Controls->RemoveByKey("ChartArea " + graphNumber);
+          this->Controls->RemoveByKey("Legend " + graphNumber);
+          this->Controls->RemoveByKey("Series " + graphNumber);
+          this->Controls->RemoveByKey("Channel " + graphNumber);
+
 
           // Check if the device is selected and is not failed
           if (PICO_OK != statusList[graphNumber] || !(*handle_)[graphNumber])
