@@ -1064,8 +1064,6 @@ namespace CppCLRWinformsProjekt {
         this->Controls->Add(checkBox);
         this->Controls->Add(button);
       }
-      if (nullptr != handle_)
-        delete handle_;
 
 
     }
