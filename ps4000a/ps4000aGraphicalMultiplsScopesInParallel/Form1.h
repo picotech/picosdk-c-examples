@@ -64,7 +64,8 @@ namespace CppCLRWinformsProjekt {
   private: System::Windows::Forms::Button^ ListAllDevices;
   private: System::Windows::Forms::Button^ SelectDevices;
   private: int32_t count = 0;
-  private: int16_t* handle; 
+  private: int16_t* handle;
+  private: std::vector<int16_t>* handle_;
   private: ParallelDevice* parallelDevice;
   private: System::Windows::Forms::DataVisualization::Charting::Chart^ chart1;
   private: System::Windows::Forms::TextBox^ TimebaseInput;
@@ -129,7 +130,7 @@ namespace CppCLRWinformsProjekt {
       // Execute
       // 
       this->Execute->Location = System::Drawing::Point(641, 16);
-      this->Execute->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->Execute->Margin = System::Windows::Forms::Padding(2);
       this->Execute->Name = L"Execute";
       this->Execute->Size = System::Drawing::Size(58, 31);
       this->Execute->TabIndex = 2;
@@ -140,7 +141,7 @@ namespace CppCLRWinformsProjekt {
       // textBox1
       // 
       this->textBox1->Location = System::Drawing::Point(641, 51);
-      this->textBox1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->textBox1->Margin = System::Windows::Forms::Padding(2);
       this->textBox1->Name = L"textBox1";
       this->textBox1->Size = System::Drawing::Size(68, 20);
       this->textBox1->TabIndex = 3;
@@ -159,8 +160,8 @@ namespace CppCLRWinformsProjekt {
       // 
       // ListAllDevices
       // 
-      this->ListAllDevices->Location = System::Drawing::Point(11, 5);
-      this->ListAllDevices->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->ListAllDevices->Location = System::Drawing::Point(11, 23);
+      this->ListAllDevices->Margin = System::Windows::Forms::Padding(2);
       this->ListAllDevices->Name = L"ListAllDevices";
       this->ListAllDevices->Size = System::Drawing::Size(99, 21);
       this->ListAllDevices->TabIndex = 5;
@@ -170,8 +171,8 @@ namespace CppCLRWinformsProjekt {
       // 
       // SelectDevices
       // 
-      this->SelectDevices->Location = System::Drawing::Point(11, 30);
-      this->SelectDevices->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->SelectDevices->Location = System::Drawing::Point(114, 23);
+      this->SelectDevices->Margin = System::Windows::Forms::Padding(2);
       this->SelectDevices->Name = L"SelectDevices";
       this->SelectDevices->Size = System::Drawing::Size(99, 20);
       this->SelectDevices->TabIndex = 6;
@@ -182,7 +183,7 @@ namespace CppCLRWinformsProjekt {
       // TimebaseInput
       // 
       this->TimebaseInput->Location = System::Drawing::Point(500, 9);
-      this->TimebaseInput->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->TimebaseInput->Margin = System::Windows::Forms::Padding(2);
       this->TimebaseInput->Name = L"TimebaseInput";
       this->TimebaseInput->Size = System::Drawing::Size(49, 20);
       this->TimebaseInput->TabIndex = 7;
@@ -213,7 +214,7 @@ namespace CppCLRWinformsProjekt {
       // BufferSizeInput
       // 
       this->BufferSizeInput->Location = System::Drawing::Point(500, 30);
-      this->BufferSizeInput->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->BufferSizeInput->Margin = System::Windows::Forms::Padding(2);
       this->BufferSizeInput->Name = L"BufferSizeInput";
       this->BufferSizeInput->Size = System::Drawing::Size(49, 20);
       this->BufferSizeInput->TabIndex = 9;
@@ -246,7 +247,7 @@ namespace CppCLRWinformsProjekt {
       // 
       this->MinPulseWidthInput->Enabled = false;
       this->MinPulseWidthInput->Location = System::Drawing::Point(500, 72);
-      this->MinPulseWidthInput->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->MinPulseWidthInput->Margin = System::Windows::Forms::Padding(2);
       this->MinPulseWidthInput->Name = L"MinPulseWidthInput";
       this->MinPulseWidthInput->Size = System::Drawing::Size(49, 20);
       this->MinPulseWidthInput->TabIndex = 13;
@@ -266,7 +267,7 @@ namespace CppCLRWinformsProjekt {
       // minThreshold
       // 
       this->minThreshold->Location = System::Drawing::Point(500, 94);
-      this->minThreshold->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->minThreshold->Margin = System::Windows::Forms::Padding(2);
       this->minThreshold->Name = L"minThreshold";
       this->minThreshold->Size = System::Drawing::Size(49, 20);
       this->minThreshold->TabIndex = 15;
@@ -277,7 +278,7 @@ namespace CppCLRWinformsProjekt {
       // 
       this->MaxPulseWidthInput->Enabled = false;
       this->MaxPulseWidthInput->Location = System::Drawing::Point(552, 72);
-      this->MaxPulseWidthInput->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->MaxPulseWidthInput->Margin = System::Windows::Forms::Padding(2);
       this->MaxPulseWidthInput->Name = L"MaxPulseWidthInput";
       this->MaxPulseWidthInput->Size = System::Drawing::Size(49, 20);
       this->MaxPulseWidthInput->TabIndex = 17;
@@ -286,7 +287,7 @@ namespace CppCLRWinformsProjekt {
       // maxThreshold
       // 
       this->maxThreshold->Location = System::Drawing::Point(552, 93);
-      this->maxThreshold->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->maxThreshold->Margin = System::Windows::Forms::Padding(2);
       this->maxThreshold->Name = L"maxThreshold";
       this->maxThreshold->Size = System::Drawing::Size(49, 20);
       this->maxThreshold->TabIndex = 18;
@@ -294,7 +295,7 @@ namespace CppCLRWinformsProjekt {
       // MaxHysteresisInput
       // 
       this->MaxHysteresisInput->Location = System::Drawing::Point(552, 114);
-      this->MaxHysteresisInput->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->MaxHysteresisInput->Margin = System::Windows::Forms::Padding(2);
       this->MaxHysteresisInput->Name = L"MaxHysteresisInput";
       this->MaxHysteresisInput->Size = System::Drawing::Size(49, 20);
       this->MaxHysteresisInput->TabIndex = 21;
@@ -315,7 +316,7 @@ namespace CppCLRWinformsProjekt {
       // MinHysteresisInput
       // 
       this->MinHysteresisInput->Location = System::Drawing::Point(500, 116);
-      this->MinHysteresisInput->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->MinHysteresisInput->Margin = System::Windows::Forms::Padding(2);
       this->MinHysteresisInput->Name = L"MinHysteresisInput";
       this->MinHysteresisInput->Size = System::Drawing::Size(49, 20);
       this->MinHysteresisInput->TabIndex = 19;
@@ -325,7 +326,7 @@ namespace CppCLRWinformsProjekt {
       // Stop
       // 
       this->Stop->Location = System::Drawing::Point(641, 76);
-      this->Stop->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->Stop->Margin = System::Windows::Forms::Padding(2);
       this->Stop->Name = L"Stop";
       this->Stop->Size = System::Drawing::Size(58, 31);
       this->Stop->TabIndex = 22;
@@ -338,7 +339,7 @@ namespace CppCLRWinformsProjekt {
       this->TriggerTypeInput->FormattingEnabled = true;
       this->TriggerTypeInput->Items->AddRange(gcnew cli::array< System::Object^  >(4) { L"None", L"Simple", L"Pulse Width", L"Drop Out" });
       this->TriggerTypeInput->Location = System::Drawing::Point(500, 50);
-      this->TriggerTypeInput->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->TriggerTypeInput->Margin = System::Windows::Forms::Padding(2);
       this->TriggerTypeInput->Name = L"TriggerTypeInput";
       this->TriggerTypeInput->Size = System::Drawing::Size(82, 21);
       this->TriggerTypeInput->TabIndex = 23;
@@ -371,7 +372,7 @@ namespace CppCLRWinformsProjekt {
       this->Controls->Add(this->label1);
       this->Controls->Add(this->textBox1);
       this->Controls->Add(this->Execute);
-      this->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+      this->Margin = System::Windows::Forms::Padding(2);
       this->Name = L"Form1";
       this->Text = L"Form1";
       this->Load += gcnew System::EventHandler(this, &Form1::Form1_Load);
@@ -386,8 +387,8 @@ namespace CppCLRWinformsProjekt {
 	  }
 	  private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e) {
     
-	    //	int16_t handle;
       int32_t noOfDevices = this->count;
+      std::vector<PICO_STATUS> statusList(this->count , 0);
 
       auto timebaseInput = (System::Windows::Forms::TextBox^)this->Controls["TimebaseInput"];
       int32_t timebase = System::Int32::Parse(timebaseInput->Text);
@@ -397,27 +398,25 @@ namespace CppCLRWinformsProjekt {
 
       auto triggerTypeInput = (System::Windows::Forms::ComboBox^)this->Controls["TriggerTypeInput"];
       std::string triggerType;
-      //  std::vector<char> triggerType; // new int8_t[10];
       for (auto j = 0; j < triggerTypeInput->Text->Length; ++j) {
         triggerType.push_back((char)triggerTypeInput->Text[j]);
       }
-      // triggerType.push_back('\0');
     
       {
-      
+
         RAII raii = RAII();
         parallelDevice = new ParallelDevice[noOfDevices];
 
         for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
           ParallelDevice& dev = parallelDevice[deviceNumber];
           dev.handle = this->handle[deviceNumber];
-          if(dev.handle == -2)
+          if (dev.handle == -2)
             raii.Add(dev.handle);
         }
-      
+
         constexpr auto NUMBER_OF_CHANNELS = 8;
 
-        auto status2 = PICO_OK;
+        auto status = PICO_OK;
 
         // Get Max
         std::cout << "Get Max" << std::endl;
@@ -425,16 +424,18 @@ namespace CppCLRWinformsProjekt {
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
             ParallelDevice& dev = parallelDevice[deviceNumber];
-            if (0 <= this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber])
+              continue;
+            if (0 == this->handle[deviceNumber])
               continue;
             dev.maxADCValue = INIT_MAX_ADC_VALUE;
-            status2 = ps4000aMaximumValue(dev.handle,
+            status = ps4000aMaximumValue(dev.handle,
               &dev.maxADCValue);
-            if (PICO_OK != status2) {
-              std::cout << "PS" << deviceNumber << " has an issue on Max Value : " << status2 << std::endl;
+            if (PICO_OK != status) {
+              std::cout << "PS" << deviceNumber << " has an issue on Max Value : " << status << std::endl;
               auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-              label->Text += " => MaxValue Error : " + status2;
-              this->handle[deviceNumber] = -1;
+              label->Text += " => MaxValue Error : " + status;
+              statusList[deviceNumber] = status;
             }
           }
         }
@@ -443,16 +444,18 @@ namespace CppCLRWinformsProjekt {
         std::cout << "Set Channels" << std::endl;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (0 <= this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber])
+              continue;
+            if (0 == this->handle[deviceNumber])
               continue;
             for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
               ParallelDevice& dev = parallelDevice[deviceNumber];
-              status2 = ps4000aSetChannel(dev.handle, static_cast<PS4000A_CHANNEL>(ch), 1, PS4000A_DC, PICO_X1_PROBE_1V, 0);
-              if (PICO_OK != status2) {
-                std::cout << "PS" << deviceNumber << " Set Channel : " << status2 << std::endl;
+              status = ps4000aSetChannel(dev.handle, static_cast<PS4000A_CHANNEL>(ch), 1, PS4000A_DC, PICO_X1_PROBE_1V, 0);
+              if (PICO_OK != status) {
+                std::cout << "PS" << deviceNumber << " Set Channel : " << status << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => Set Channel Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => Set Channel Error : " + status;
+                statusList[deviceNumber] = status;
               }
             }
           }
@@ -460,7 +463,7 @@ namespace CppCLRWinformsProjekt {
 
         // Get Timebase
         std::cout << "Get Timebase" << std::endl;
-        const int TEN_MEGA_SAMPLES = bufferSize; //  pow(10, 7);
+        const int TEN_MEGA_SAMPLES = bufferSize;
         const int PRE_TRIGGER = TEN_MEGA_SAMPLES / 2;
         auto numOfSamples = TEN_MEGA_SAMPLES;
         // 12.5 ns × (n+1)
@@ -475,22 +478,24 @@ namespace CppCLRWinformsProjekt {
         // 2    32–1 ~54 s    ~18.6 mHz
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (0 <= this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber])
+              continue;
+            if (0 == this->handle[deviceNumber])
               continue;
             ParallelDevice& dev = parallelDevice[deviceNumber];
-            dev.timebase = timebase; // 7
+            dev.timebase = timebase;
             dev.noSamples = static_cast<int32_t>(TEN_MEGA_SAMPLES);
-            status2 = ps4000aGetTimebase2(
+            status = ps4000aGetTimebase2(
               dev.handle,
               dev.timebase,
               dev.noSamples,
               &dev.timeInterval,
               &dev.maxSamples, 0);
-            if (PICO_OK != status2) {
-              std::cout << "PS" << deviceNumber << " Get Timebase : " << status2 << " Issue." << std::endl;
+            if (PICO_OK != status) {
+              std::cout << "PS" << deviceNumber << " Get Timebase : " << status << " Issue." << std::endl;
               auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-              label->Text += " => Timebase Error : " + status2;
-              this->handle[deviceNumber] = -1;
+              label->Text += " => Timebase Error : " + status;
+              statusList[deviceNumber] = status;
             }
           }
         }
@@ -500,23 +505,25 @@ namespace CppCLRWinformsProjekt {
         {
           for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
             for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-              if (0 <= this->handle[deviceNumber])
+              if (PICO_OK != statusList[deviceNumber])
+                continue;
+              if (0 == this->handle[deviceNumber])
                 continue;
               ParallelDevice& dev = parallelDevice[deviceNumber];
               dev.buffer[ch] = (int16_t*)calloc(dev.noSamples, sizeof(int16_t));
 
-              status2 = ps4000aSetDataBuffer(
+              status = ps4000aSetDataBuffer(
                 dev.handle,
                 static_cast<PS4000A_CHANNEL>(ch),
                 dev.buffer[ch],
                 dev.noSamples,
                 0,
                 PS4000A_RATIO_MODE_NONE);
-              if (PICO_OK != status2) {
-                std::cout << "PS" << deviceNumber << " Set Data Buffer : " << status2 << std::endl;
+              if (PICO_OK != status) {
+                std::cout << "PS" << deviceNumber << " Set Data Buffer : " << status << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => Set Buffer Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => Set Buffer Error : " + status;
+                statusList[deviceNumber] = status;
               }
             }
           }
@@ -526,22 +533,24 @@ namespace CppCLRWinformsProjekt {
         std::cout << "Set Simple Trigger" << std::endl;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (0 <= this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber])
+              continue;
+            if (0 == this->handle[deviceNumber])
               continue;
             ParallelDevice& dev = parallelDevice[deviceNumber];
 
-            if(triggerType == "Simple") {
+            if (triggerType == "Simple") {
 
               auto minThresholdsInput = (System::Windows::Forms::TextBox^)this->Controls["minThreshold"];
               int32_t minThresholds = System::Int32::Parse(minThresholdsInput->Text);
               dev.AdcTrigger = minThresholds;
 
-              status2 = ps4000aSetSimpleTrigger(dev.handle, 1, PS4000A_CHANNEL_A, dev.AdcTrigger, PS4000A_RISING, 0, dev.AutoTrigger);
-              if (PICO_OK != status2) {
-                std::cout << "PS" << deviceNumber << " Trigger set Issue : " << status2 << std::endl;
+              status = ps4000aSetSimpleTrigger(dev.handle, 1, PS4000A_CHANNEL_A, dev.AdcTrigger, PS4000A_RISING, 0, dev.AutoTrigger);
+              if (PICO_OK != status) {
+                std::cout << "PS" << deviceNumber << " Trigger set Issue : " << status << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => Simple Trigger Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => Simple Trigger Error : " + status;
+                statusList[deviceNumber] = status;
               }
             }
             else if (triggerType == "Pulse Width") {
@@ -556,24 +565,24 @@ namespace CppCLRWinformsProjekt {
               tCond[1].source = PS4000A_PULSE_WIDTH_SOURCE;
               tCond[1].condition = PS4000A_CONDITION_TRUE;
               int input = PS4000A_CLEAR | PS4000A_ADD;
-              status2 = ps4000aSetTriggerChannelConditions(dev.handle, &tCond[0], 2, (PS4000A_CONDITIONS_INFO)input);
-              if (status2 != PICO_OK) {
+              status = ps4000aSetTriggerChannelConditions(dev.handle, &tCond[0], 2, (PS4000A_CONDITIONS_INFO)input);
+              if (status != PICO_OK) {
                 std::cout << "SETUP TRIGGER ERROR 1" << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => Trigger Condition Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => Trigger Condition Error : " + status;
+                statusList[deviceNumber] = status;
               }
 
               PS4000A_DIRECTION tDir;
               tDir.direction = PS4000A_FALLING;
               tDir.channel = PS4000A_CHANNEL_A;
-              status2 = ps4000aSetTriggerChannelDirections(dev.handle,
+              status = ps4000aSetTriggerChannelDirections(dev.handle,
                 &tDir, 1);
-              if (status2 != PICO_OK) {
+              if (status != PICO_OK) {
                 std::cout << "SETUP TRIGGER ERROR 2" << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => Trigger Direction Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => Trigger Direction Error : " + status;
+                statusList[deviceNumber] = status;
               }
 
 
@@ -587,18 +596,18 @@ namespace CppCLRWinformsProjekt {
               tProp.thresholdMode = PS4000A_LEVEL;
               tProp.thresholdUpper = dev.AdcTrigger; // 1000
               tProp.thresholdUpperHysteresis = maxHysteresis;
-              tProp.thresholdLower = dev.AdcTrigger; // -1000
+              tProp.thresholdLower = dev.AdcTrigger; // -this->handle[deviceNumber]000
               tProp.thresholdLowerHysteresis = minHysteresis;
 
               PS4000A_TRIGGER_CHANNEL_PROPERTIES tProp2[1];
               tProp2[0] = tProp;
 
-              status2 = ps4000aSetTriggerChannelProperties(dev.handle, &tProp2[0], 1, 0, 5000);
-              if (status2 != PICO_OK) {
+              status = ps4000aSetTriggerChannelProperties(dev.handle, &tProp2[0], 1, 0, 5000);
+              if (status != PICO_OK) {
                 std::cout << "SETUP TRIGGER ERROR 3" << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => Trigger Properties Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => Trigger Properties Error : " + status;
+                statusList[deviceNumber] = status;
               }
 
               PS4000A_PULSE_WIDTH_TYPE pulseType;
@@ -639,7 +648,7 @@ namespace CppCLRWinformsProjekt {
                 maxPulseWidth = maxPulse;
               }
 
-  #pragma pack(1)
+#pragma pack(1)
 
               PS4000A_PWQ_CONDITIONS  pwqConditions[] =
               {
@@ -660,33 +669,32 @@ namespace CppCLRWinformsProjekt {
                 pwqCond[i].condition = PS4000A_CONDITION_DONT_CARE;
               }
               std::cout << "Handle : " << dev.handle << std::endl;
-              status2 = ps4000aSetPulseWidthQualifierConditions(
+              status = ps4000aSetPulseWidthQualifierConditions(
                 dev.handle,              // device handle
-                pwqCond,           // pointer to condition structure
-                10,                           // number of structures
-                (PS4000A_CONDITIONS_INFO)input                  // N/A for window trigger
+                pwqCond,                 // pointer to condition structure
+                10,                      // number of structures
+                (PS4000A_CONDITIONS_INFO)input     // N/A for window trigger
               );
-              if (status2 != PICO_OK)
+              if (status != PICO_OK)
               {
-                std::cout << "Set pulse width qualifier Conditions failed: err = " << status2 << std::endl;
+                std::cout << "Set pulse width qualifier Conditions failed: err = " << status << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => PWQ Condition Error : " + status2;
-                this->handle[deviceNumber] = -1;
-
+                label->Text += " => PWQ Condition Error : " + status;
+                statusList[deviceNumber] = status;
               }
-              status2 = ps4000aSetPulseWidthQualifierProperties(
-                dev.handle,              // device handle
+              status = ps4000aSetPulseWidthQualifierProperties(
+                dev.handle,      // device handle
                 PS4000A_BELOW,
-                minPulseWidth,           // pointer to condition structure
-                maxPulseWidth,                           // number of structures
-                pulseType             // N/A for window trigger
+                minPulseWidth,   // pointer to condition structure
+                maxPulseWidth,   // number of structures
+                pulseType        // N/A for window trigger
               );
-              if (status2 != PICO_OK)
+              if (status != PICO_OK)
               {
-                std::cout << "Set pulse width qualifier Properties failed: err = " << status2 << std::endl;
+                std::cout << "Set pulse width qualifier Properties failed: err = " << status << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => PWQ Properties Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => PWQ Properties Error : " + status;
+                statusList[deviceNumber] = status;
               }
             }
             else if (triggerType == "Drop Out") {
@@ -698,12 +706,12 @@ namespace CppCLRWinformsProjekt {
               tCond[0].source = PS4000A_PULSE_WIDTH_SOURCE;
               tCond[0].condition = PS4000A_CONDITION_TRUE;
               int input = PS4000A_CLEAR | PS4000A_ADD;
-              status2 = ps4000aSetTriggerChannelConditions(dev.handle, &tCond[0], 1, (PS4000A_CONDITIONS_INFO)input);
-              if (status2 != PICO_OK) {
+              status = ps4000aSetTriggerChannelConditions(dev.handle, &tCond[0], 1, (PS4000A_CONDITIONS_INFO)input);
+              if (status != PICO_OK) {
                 std::cout << "SETUP TRIGGER ERROR 1" << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => Trigger Conditions Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => Trigger Conditions Error : " + status;
+                statusList[deviceNumber] = status;
               }
 
               PS4000A_PULSE_WIDTH_TYPE pulseType;
@@ -740,7 +748,7 @@ namespace CppCLRWinformsProjekt {
                 break;
               }
 
-    #pragma pack(1)
+#pragma pack(1)
 
               PS4000A_PWQ_CONDITIONS  pwqConditions[] =
               {
@@ -761,34 +769,33 @@ namespace CppCLRWinformsProjekt {
                 pwqCond[i].condition = PS4000A_CONDITION_DONT_CARE;
               }
               std::cout << "Handle : " << dev.handle << std::endl;
-              status2 = ps4000aSetPulseWidthQualifierConditions(
+              status = ps4000aSetPulseWidthQualifierConditions(
                 dev.handle,              // device handle
                 pwqCond,                 // pointer to condition structure
                 10,                      // number of structures
                 (PS4000A_CONDITIONS_INFO)input       // N/A for window trigger
               );
-              if (status2 != PICO_OK)
+              if (status != PICO_OK)
               {
-                std::cout << "Set pulse width qualifier Conditions failed: err = " << status2 << std::endl;
+                std::cout << "Set pulse width qualifier Conditions failed: err = " << status << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => PWQ Conditions Error : " + status2;
-                this->handle[deviceNumber] = -1;
-
+                label->Text += " => PWQ Conditions Error : " + status;
+                statusList[deviceNumber] = status;
               }
 
-              status2 = ps4000aSetPulseWidthQualifierProperties(
+              status = ps4000aSetPulseWidthQualifierProperties(
                 dev.handle,              // device handle
                 PS4000A_BELOW,
                 minPulseWidth,           // pointer to condition structure
                 maxPulseWidth,           // number of structures
                 pulseType                // N/A for window trigger
               );
-              if (status2 != PICO_OK)
+              if (status != PICO_OK)
               {
-                std::cout << "Set pulse width qualifier Properties failed: err = " << status2 << std::endl;
+                std::cout << "Set pulse width qualifier Properties failed: err = " << status << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => PWQ Properties Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => PWQ Properties Error : " + status;
+                statusList[deviceNumber] = status;
               }
             }
             else {
@@ -801,58 +808,64 @@ namespace CppCLRWinformsProjekt {
         std::cout << "Run Block" << std::endl;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (0 <= this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber])
+              continue;
+            if (0 == this->handle[deviceNumber])
               continue;
             ParallelDevice& dev = parallelDevice[deviceNumber];
             dev.timeIndisposed = new int32_t(NUMBER_OF_CHANNELS);
-            status2 = ps4000aRunBlock(dev.handle, PRE_TRIGGER, TEN_MEGA_SAMPLES - PRE_TRIGGER, dev.timebase, dev.timeIndisposed, 0, nullptr, nullptr);
-            if (PICO_OK != status2) {
-              std::cout << "PS" << deviceNumber << " Run Block : " << status2 << std::endl;
+            status = ps4000aRunBlock(dev.handle, PRE_TRIGGER, TEN_MEGA_SAMPLES - PRE_TRIGGER, dev.timebase, dev.timeIndisposed, 0, nullptr, nullptr);
+            if (PICO_OK != status) {
+              std::cout << "PS" << deviceNumber << " Run Block : " << status << std::endl;
               auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-              label->Text += " => RunBlock Error : " + status2;
-              this->handle[deviceNumber] = -1;
+              label->Text += " => RunBlock Error : " + status;
+              statusList[deviceNumber] = status;
             }
           }
 
 
-          status2 = PICO_OK;
+          status = PICO_OK;
 
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (0 <= this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber])
+              continue;
+            if (0 == this->handle[deviceNumber])
               continue;
             ParallelDevice& dev = parallelDevice[deviceNumber];
 
             dev.isReady = 0;
-            status2 = PICO_OK;
-            while (0 == dev.isReady && PICO_OK == status2) {
-              status2 = ps4000aIsReady(dev.handle, &dev.isReady);
+            status = PICO_OK;
+            while (0 == dev.isReady && PICO_OK == status) {
+              status = ps4000aIsReady(dev.handle, &dev.isReady);
               std::cout << "PS" << deviceNumber << " IsReady : " << dev.isReady << std::endl;
-              if (PICO_OK != status2) {
-                std::cout << "PS" << deviceNumber << " IsReady Issue : " << status2 << std::endl;
+              if (PICO_OK != status) {
+                std::cout << "PS" << deviceNumber << " IsReady Issue : " << status << std::endl;
                 auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-                label->Text += " => IsReady Error : " + status2;
-                this->handle[deviceNumber] = -1;
+                label->Text += " => IsReady Error : " + status;
+                statusList[deviceNumber] = status;
               }
               // Sleep(1);
             }
           }
         }
 
-        status2 = PICO_OK;
+        status = PICO_OK;
         // Get Values
         std::cout << "Get Values" << std::endl;
         {
           for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-            if (0 <= this->handle[deviceNumber])
+            if (PICO_OK != statusList[deviceNumber])
+              continue;
+            if (0 == this->handle[deviceNumber])
               continue;
             ParallelDevice& dev = parallelDevice[deviceNumber];
 
-            status2 = ps4000aGetValues(dev.handle, 0, (uint32_t*)&dev.noSamples, 1, PS4000A_RATIO_MODE_NONE, 0, nullptr);
-            if (PICO_OK != status2) {
-              std::cout << "PS" << deviceNumber << " Get Values Issue : " << status2 << std::endl;
+            status = ps4000aGetValues(dev.handle, 0, (uint32_t*)&dev.noSamples, 1, PS4000A_RATIO_MODE_NONE, 0, nullptr);
+            if (PICO_OK != status) {
+              std::cout << "PS" << deviceNumber << " Get Values Issue : " << status << std::endl;
               auto label = (System::Windows::Forms::Label^)this->Controls["Label " + deviceNumber];
-              label->Text += " => GetValues Error : " + status2;
-              this->handle[deviceNumber] = -1;
+              label->Text += " => GetValues Error : " + status;
+              statusList[deviceNumber] = status;
             }
           }
         }
@@ -860,7 +873,9 @@ namespace CppCLRWinformsProjekt {
         int32_t handleNumber = 0;
         for (int32_t graphNumber = 0; graphNumber < this->count; graphNumber++) {
           this->Controls->RemoveByKey("chart " + graphNumber);
-          if (0 <= this->handle[graphNumber])
+          if (0 != statusList[graphNumber])
+            continue;
+          if (this->handle[graphNumber] <= 0)
             continue;
 
           auto localChart = (gcnew System::Windows::Forms::DataVisualization::Charting::Chart());
@@ -873,24 +888,20 @@ namespace CppCLRWinformsProjekt {
           localChart->ChartAreas->Add(chartArea);
           legend->Name = L"Legend " + graphNumber;
           localChart->Legends->Add(legend);
-          localChart->Location = System::Drawing::Point(-14, 156 + 150* handleNumber);
+          localChart->Location = System::Drawing::Point(-14, 156 + 150 * handleNumber);
           localChart->Name = L"chart " + graphNumber;
           series->ChartArea = L"ChartArea " + graphNumber;
           series->Legend = L"Legend " + graphNumber;
           series->Name = L"Series " + graphNumber;
           localChart->Series->Clear();
-          char strArr[8][2] = {"A", "B", "C", "D", "E", "F", "G", "H"};
+          char strArr[8][2] = { "A", "B", "C", "D", "E", "F", "G", "H" };
           for (int devCount = 0; devCount < NUMBER_OF_CHANNELS; devCount++) {
             System::String^ res = gcnew System::String(strArr[devCount]);
             System::String^ strName = "Channel ";
 
             strName = strName + res;
-           // std::string strName = "Channel ";
-          //  strName.push_back(devCount + 'A');
             localChart->Series->Add(strName);
             localChart->Series[strName]->Color = Color::FromArgb((((devCount & 1) == 1) * 200), (((devCount & 2) == 2) * 200), (((devCount & 4) == 4) * 200));
-            //	chart1->Series["chart"]->Legend = "chart1";
-            //	chart1->Series["chart"]->ChartArea = "ChartArea1";
             localChart->Series[strName]->ChartType = System::Windows::Forms::DataVisualization::Charting::SeriesChartType::Line;
           }
 
@@ -918,13 +929,13 @@ namespace CppCLRWinformsProjekt {
           chartArea->AxisY->Maximum = 32999;
           for (char channel = 0; channel < NUMBER_OF_CHANNELS; channel++) {
             ParallelDevice& dev = parallelDevice[graphNumber];
-            System::String^ res = gcnew System::String(strArr[graphNumber]);
+            System::String^ res = gcnew System::String(strArr[channel]);
             System::String^ strName = "Channel ";
 
             strName = strName + res;
 
-            for (int i = 0; i < TEN_MEGA_SAMPLES ; i++)
-              localChart->Series[strName]->Points->AddXY(-PRE_TRIGGER + i , dev.buffer[channel][i]);
+            for (int i = 0; i < TEN_MEGA_SAMPLES; i++)
+              localChart->Series[strName]->Points->AddXY(-PRE_TRIGGER + i, dev.buffer[channel][i]);
           }
           for (double i = -32999; i < 32999; i++)
             localChart->Series["Channel B"]->Points->AddXY(0, i);
@@ -937,15 +948,14 @@ namespace CppCLRWinformsProjekt {
         {
           for (auto ch = 0; ch < NUMBER_OF_CHANNELS; ch++) {
             for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-              if (0 <= this->handle[deviceNumber])
+              if (PICO_OK != statusList[deviceNumber])
+                continue;
+              if (0 == this->handle[deviceNumber])
                 continue;
               ParallelDevice& dev = parallelDevice[deviceNumber];
               free(dev.buffer[ch]);
             }
           }
-        }
-        for (int32_t deviceNumber = 0; deviceNumber < noOfDevices; ++deviceNumber) {
-          this->handle[deviceNumber] = 0;
         }
       }
 	  }
@@ -957,7 +967,7 @@ namespace CppCLRWinformsProjekt {
     private: System::Void FindDevices_Click(System::Object^ sender, System::EventArgs^ e) {
 
       int16_t count = 0;
-      std::array<int8_t,900> serials; // new int8_t[10];
+      std::array<int8_t,900> serials;
   
       int16_t serialLth = serials.size();
       PICO_STATUS status = ps4000aEnumerateUnits(&count, serials.data(), &serialLth);
@@ -1025,8 +1035,9 @@ namespace CppCLRWinformsProjekt {
       }
     }
     private: System::Void SelectDevices_Click(System::Object^ sender, System::EventArgs^ e) {
-  
+    //  *handle_ = std::vector<int16_t>(this->count , 0);
       for (int i = 0; i < this->count; i++) {
+
         auto checkBox = (System::Windows::Forms::CheckBox^)this->Controls["Check " + i];
         auto button = (System::Windows::Forms::Button^)this->Controls["Button " + i];
         auto label = (System::Windows::Forms::Label^)this->Controls["Label " + i];
@@ -1039,20 +1050,19 @@ namespace CppCLRWinformsProjekt {
         if (this->handle[i] > 0)
           continue;
 
-        std::vector<int8_t> res; // new int8_t[10];
+        std::vector<int8_t> res;
         for (auto j = 0; j < button->Text->Length; ++j) {
           res.push_back((int8_t)button->Text[j]);
         }
         res.push_back((int8_t)'\0');
 
         if (true == checkBox->Checked) {
-          PICO_STATUS status = ps4000aOpenUnit(&this->handle[i], res.data());// /*res.data()*/);
+          PICO_STATUS status = ps4000aOpenUnit(&this->handle[i], res.data());// &((*handle_)[i])
           if (PICO_OK != status)
             if (PICO_POWER_SUPPLY_NOT_CONNECTED == status || PICO_USB3_0_DEVICE_NON_USB3_0_PORT == status)
               status = ps4000aChangePowerSource(this->handle[i], status);
           if (PICO_OK != status) {
             std::cout << "PS" << i << " has an issue on OpenUnit : " << status << std::endl;
-            //return;
           }
           label->Text = button->Text;
           label->Text += " => handle : " + this->handle[i];
@@ -1087,11 +1097,9 @@ namespace CppCLRWinformsProjekt {
       std::cout << "Closing Units" << std::endl;
       {
         for (int32_t deviceNumber = 0; deviceNumber < this->count; ++deviceNumber) {
-          //  ParallelDevice& dev = parallelDevice[deviceNumber];
-          PICO_STATUS status2 = ps4000aCloseUnit(this->handle[deviceNumber]);
-          if (PICO_OK != status2) {
+          PICO_STATUS status = ps4000aCloseUnit(this->handle[deviceNumber]);
+          if (PICO_OK != status) {
             std::cout << "PS" << deviceNumber << " has an issue on Closure" << std::endl;
-            //  return;
           }
         }
       }
@@ -1106,7 +1114,6 @@ namespace CppCLRWinformsProjekt {
 
       auto triggerTypeInput = (System::Windows::Forms::ComboBox^)this->Controls["TriggerTypeInput"];
       std::string triggerType;
-      //  std::vector<char> triggerType; // new int8_t[10];
       for (auto j = 0; j < triggerTypeInput->Text->Length; ++j) {
         triggerType.push_back((char)triggerTypeInput->Text[j]);
       }

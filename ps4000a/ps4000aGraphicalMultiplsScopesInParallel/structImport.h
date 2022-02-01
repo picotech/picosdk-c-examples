@@ -100,3 +100,8 @@ public:
 class Flyweight {
   std::map<std::string , RAII> mp;
 };
+
+enum class encHandleStatus {
+  ERROR_OCCURANCE = -1 ,
+  NOT_SELECTED = 0
+};
