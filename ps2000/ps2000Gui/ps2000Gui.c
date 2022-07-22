@@ -660,6 +660,7 @@ int32_t CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
   				ps2000_run_block ( unitOpened.handle, no_of_samples, timebase, oversample, &time_indisposed_ms );
 
 				while ( ( !ps2000_ready ( unitOpened.handle ) ) && !kbhit() );
+				running = FALSE;
 
   				ps2000_stop ( unitOpened.handle );
 
