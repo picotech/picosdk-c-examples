@@ -96,16 +96,16 @@ AC_ARG_WITH([pico-headers],
 CFLAGS=${CFLAGS}" -I$pico_headers_path"
 CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path"
 
-AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libps4000-1.2/ps4000Api.h libps4000-1.2/PicoStatus.h])
+AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libps4000/ps4000Api.h libps4000/PicoStatus.h])
 
 if test "$ac_cv_header_libps4000_1_2_ps4000Api_h" == no
 then
-    AC_MSG_ERROR([libps4000-1.2/ps4000Api.h missing!])
+    AC_MSG_ERROR([libps4000/ps4000Api.h missing!])
 fi
 
 if test "$ac_cv_header_libps4000_1_2_PicoStatus_h" == no
 then
-    AC_MSG_ERROR([libps4000-1.2/PicoStatus.h missing!])
+    AC_MSG_ERROR([libps4000/PicoStatus.h missing!])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.

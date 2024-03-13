@@ -73,9 +73,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <libps5000a-1.1/ps5000aApi.h>
+#include <libps5000a/ps5000aApi.h>
 #ifndef PICO_STATUS
-#include <libps5000a-1.1/PicoStatus.h>
+#include <libps5000a/PicoStatus.h>
 #endif
 
 #define Sleep(a) usleep(1000*a)
@@ -1295,7 +1295,7 @@ void collectBlockTriggered(UNIT * unit)
 	}
 
 	// If the trigger voltage level is greater than the range selected, set the threshold to half
-	// of the range selected e.g. for ±200 mV, set the threshold to 10 0mV
+	// of the range selected e.g. for ï¿½200 mV, set the threshold to 10 0mV
 	if (triggerVoltage > voltageRange)
 	{
 		triggerVoltage = (voltageRange / 2);
@@ -1394,7 +1394,7 @@ void collectRapidBlock(UNIT * unit)
 	}
 
 	// If the trigger voltage level is greater than the range selected, set the threshold to half
-	// of the range selected e.g. for ±200 mV, set the threshold to 10 0mV
+	// of the range selected e.g. for ï¿½200 mV, set the threshold to 10 0mV
 	if (triggerVoltage > voltageRange)
 	{
 		triggerVoltage = (voltageRange / 2);
@@ -2124,7 +2124,7 @@ void setSignalGenerator(UNIT * unit)
 	FILE * fp = NULL;
 	int16_t * arbitraryWaveform;
 	int32_t waveformSize = 0;
-	uint32_t pkpk = 4000000;	// ±2 V
+	uint32_t pkpk = 4000000;	// ï¿½2 V
 	int32_t offset = 0;
 	int8_t ch;
 	int16_t choice;
@@ -2363,7 +2363,7 @@ void collectStreamingTriggered(UNIT * unit)
 	}
 
 	// If the trigger voltage level is greater than the range selected, set the threshold to half
-	// of the range selected e.g. for ±200 mV, set the threshold to 100 mV
+	// of the range selected e.g. for ï¿½200 mV, set the threshold to 100 mV
 	if (triggerVoltage > voltageRange)
 	{
 		triggerVoltage = (voltageRange / 2);

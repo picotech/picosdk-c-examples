@@ -71,9 +71,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <libps6000-1.4/ps6000Api.h>
+#include <libps6000/ps6000Api.h>
 #ifndef PICO_STATUS
-#include <libps6000-1.4/PicoStatus.h>
+#include <libps6000/PicoStatus.h>
 #endif
 
 #define Sleep(a) usleep(1000*a)

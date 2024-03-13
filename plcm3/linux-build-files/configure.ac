@@ -96,11 +96,11 @@ AC_ARG_WITH([pico-headers],
 CFLAGS=${CFLAGS}" -I$pico_headers_path"
 CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path"
 
-AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libplcm3-1.0/PLCM3Api.h])
+AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libplcm3/PLCM3Api.h])
 
 if test "$ac_cv_header_libplcm3_1_0_PLCM3Api_h" == no
 then
-    AC_MSG_ERROR([libplcm3-1.0/PLCM3Api.h missing!])
+    AC_MSG_ERROR([libplcm3/PLCM3Api.h missing!])
 fi
 
 

@@ -96,11 +96,11 @@ AC_ARG_WITH([pico-headers],
 CFLAGS=${CFLAGS}" -I$pico_headers_path -lm"
 CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path -lm"
 
-AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libpicohrdl-1.0/HRDL.h])
+AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libpicohrdl/HRDL.h])
 
 if test "$ac_cv_header_libpicohrdl_1_0_HRDL_h" == no
 then
-    AC_MSG_ERROR([libpicohrdl-1.0/HRDL.h missing!])
+    AC_MSG_ERROR([libpicohrdl/HRDL.h missing!])
 fi
 
 

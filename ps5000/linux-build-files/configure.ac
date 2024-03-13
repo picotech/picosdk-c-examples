@@ -100,10 +100,10 @@ AC_CHECK_HEADER([stdio.h])
 AC_CHECK_HEADER([sys/types.h])
 AC_CHECK_HEADER([termios.h])
 AC_CHECK_HEADER([sys/ioctl.h])
-AC_CHECK_HEADER([libps5000-1.5/ps5000Api.h], [],
-  AC_MSG_ERROR([libps5000-1.5/ps5000Api.h missing!]))
-AC_CHECK_HEADER([libps5000-1.5/PicoStatus.h], [],
-  AC_MSG_ERROR([libps5000-1.5/PicoStatus.h missing!]))
+AC_CHECK_HEADER([libps5000/ps5000Api.h], [],
+  AC_MSG_ERROR([libps5000/ps5000Api.h missing!]))
+AC_CHECK_HEADER([libps5000/PicoStatus.h], [],
+  AC_MSG_ERROR([libps5000/PicoStatus.h missing!]))
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

@@ -60,7 +60,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "libusbpt104-1.0/UsbPT104Api.h"
+#include "libusbpt104/UsbPT104Api.h"
 
 #define Sleep(a) usleep(1000*a)
 #define scanf_s scanf

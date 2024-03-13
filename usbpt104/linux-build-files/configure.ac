@@ -96,11 +96,11 @@ AC_ARG_WITH([pico-headers],
 CFLAGS=${CFLAGS}" -I$pico_headers_path"
 CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path"
 
-AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libusbpt104-1.0/UsbPT104Api.h])
+AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libusbpt104/UsbPT104Api.h])
 
 if test "$ac_cv_header_libusbpt104_1_0_UsbPT104Api_h" == no
 then
-    AC_MSG_ERROR([libusbpt104-1.0/UsbPT104Api.h missing!])
+    AC_MSG_ERROR([libusbpt104/UsbPT104Api.h missing!])
 fi
 
 

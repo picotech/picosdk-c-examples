@@ -2,7 +2,7 @@
 
 # Initialize autotools
 AC_PREREQ(2.59)
-AC_INIT([Pico Technology PicoScope 4000 Series (A API) Example],1.1.0,[[support@picotech.com]],[ps4000aCon])
+AC_INIT([Pico Technology Ltd. PicoScope 4000 Series (A API) Example],1.0.0,[[support@picotech.com]],[ps4000acon])
 AC_CONFIG_MACRO_DIR(m4)
 AC_CONFIG_SRCDIR(ps4000aCon.c)
 AC_CONFIG_HEADERS(config.h)
@@ -57,8 +57,8 @@ AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug],
         [debug_enabled=$enableval],
         [debug_enabled='no'])
 if test "x$debug_enabled" != "xno"; then
-        AC_SUBST([CXXFLAGS],["-Wall -g3 -O0 -DDEBUG"])
-        AC_SUBST([CFLAGS],["-Wall -g3 -O0 -DDEBUG"])
+        AC_SUBST([CXXFLAGS],["-g3 -O0 -DDEBUG"])
+        AC_SUBST([CFLAGS],["-g3 -O0 -DDEBUG"])
 fi
 
 AC_ARG_ENABLE([silent-rules],[],
@@ -72,8 +72,8 @@ AC_CHECK_LIB([pthread],[pthread_atfork],[])
 
 if test "x$backend" == "xlinux"
 then
-	# tell ld to not strip this object from static links
-	LDFLAGS=${LDFLAGS}" -Wl,-u,pthread_atfork"
+# tell ld to not strip this object from static links
+LDFLAGS=${LDFLAGS}" -Wl,-u,pthread_atfork"
 fi
 
 AC_ARG_WITH([pico-libs],
@@ -96,16 +96,17 @@ AC_ARG_WITH([pico-headers],
 CFLAGS=${CFLAGS}" -I$pico_headers_path"
 CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path"
 
-AC_CHECK_HEADER([stdio.h])
-AC_CHECK_HEADER([sys/types.h])
-AC_CHECK_HEADER([termios.h])
-AC_CHECK_HEADER([sys/ioctl.h])
-AC_CHECK_HEADER([stdint.h])
-AC_CHECK_HEADER([libps4000a-1.0/ps4000aApi.h], [],
-  AC_MSG_ERROR([libps4000a-1.0/ps4000aApi.h missing!],[]))
-AC_CHECK_HEADER([libps4000a-1.0/PicoStatus.h], [],
-  AC_MSG_ERROR([libps4000a-1.0/PicoStatus.h missing!],[]))
+AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libps4000a/ps4000aApi.h libps4000a/PicoStatus.h])
 
+if test "$ac_cv_header_libps4000a_1_1_ps4000aApi_h" == no
+then
+    AC_MSG_ERROR([libps4000a/ps4000aApi.h missing!])
+fi
+
+if test "$ac_cv_header_libps4000a_1_1_PicoStatus_h" == no
+then
+    AC_MSG_ERROR([libps4000a/PicoStatus.h missing!])
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

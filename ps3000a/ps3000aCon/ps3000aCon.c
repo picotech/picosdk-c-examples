@@ -92,9 +92,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <libps3000a-1.1/ps3000aApi.h>
+#include <libps3000a/ps3000aApi.h>
 #ifndef PICO_STATUS
-#include <libps3000a-1.1/PicoStatus.h>
+#include <libps3000a/PicoStatus.h>
 #endif
 
 #define Sleep(a) usleep(1000*a)
@@ -2072,7 +2072,7 @@ void setSignalGenerator(UNIT unit)
 
 			status = ps3000aSetSigGenArbitrary(	unit.handle, 
 				0,				// offset voltage
-				pkpk,			// PkToPk in microvolts. Max = 4000000 uV  (±2 V)
+				pkpk,			// PkToPk in microvolts. Max = 4000000 uV  (\B12 V)
 				delta,			// start delta
 				delta,			// stop delta
 				0, 

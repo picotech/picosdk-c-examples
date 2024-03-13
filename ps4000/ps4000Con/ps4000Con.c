@@ -82,9 +82,9 @@
 #include <sys/ioctl.h>
 
 /* Definition of ps4000 driver routines on Linux */
-#include <libps4000-1.2/ps4000Api.h>
+#include <libps4000/ps4000Api.h>
 #ifndef PICO_STATUS
-#include <libps4000-1.2/PicoStatus.h>
+#include <libps4000/PicoStatus.h>
 #endif
 
 typedef enum enBOOL
@@ -1656,7 +1656,7 @@ void SetSignalGenerator(UNIT_MODEL unit)
 
     status = ps4000SetSigGenArbitrary(unit.handle,
       0,						// offset voltage
-      pkpk,					// PkToPk in microvolts. Max = 4000000uV  (± 2V)
+      pkpk,					// PkToPk in microvolts. Max = 4000000uV  (ï¿½ 2V)
       (uint32_t)delta,		// start delta
       (uint32_t)delta,		// stop delta
       0,

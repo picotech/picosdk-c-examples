@@ -80,7 +80,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "libps2000-2.1/ps2000.h"
+#include "libps2000/ps2000.h"
 #define PREF4
 
 #define Sleep(a) usleep(1000*a)

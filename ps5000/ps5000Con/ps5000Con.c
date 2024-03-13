@@ -68,9 +68,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <libps5000-1.5/ps5000Api.h>
+#include <libps5000/ps5000Api.h>
 #ifndef PICO_STATUS
-#include <libps5000-1.5/PicoStatus.h>
+#include <libps5000/PicoStatus.h>
 #define PREF4
 #endif
 

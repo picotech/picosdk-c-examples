@@ -96,16 +96,16 @@ AC_ARG_WITH([pico-headers],
 CFLAGS=${CFLAGS}" -I$pico_headers_path"
 CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path"
 
-AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libusbdrdaq-1.0/usbDrDaqApi.h libusbdrdaq-1.0/PicoStatus.h])
+AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libusbdrdaq/usbDrDaqApi.h libusbdrdaq/PicoStatus.h])
 
 if test "$ac_cv_header_libusbdrdaq_1_0_usbDrDaqApi_h" == no
 then
-    AC_MSG_ERROR([libusbdrdaq-1.0/usbDrDaqApi.h missing!])
+    AC_MSG_ERROR([libusbdrdaq/usbDrDaqApi.h missing!])
 fi
 
 if test "$ac_cv_header_libusbdrdaq_1_0_PicoStatus_h" == no
 then
-    AC_MSG_ERROR([libusbdrdaq-1.0/PicoStatus.h missing!])
+    AC_MSG_ERROR([libusbdrdaq/PicoStatus.h missing!])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.

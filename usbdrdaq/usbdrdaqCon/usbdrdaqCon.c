@@ -77,9 +77,9 @@ typedef enum enBOOL
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <libusbdrdaq-1.0/usbDrDaqApi.h>
+#include <libusbdrdaq/usbDrDaqApi.h>
 #ifndef PICO_STATUS
-#include <libusbdrdaq-1.0/PicoStatus.h>
+#include <libusbdrdaq/PicoStatus.h>
 
 #define PREF4
 #endif

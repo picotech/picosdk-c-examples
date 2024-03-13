@@ -68,9 +68,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <libpl1000-1.0/pl1000Api.h>
+#include <libpl1000/pl1000Api.h>
 #ifndef PICO_STATUS
-#include <libpl1000-1.0/PicoStatus.h>
+#include <libpl1000/PicoStatus.h>
 
 #define PREF4
 #endif

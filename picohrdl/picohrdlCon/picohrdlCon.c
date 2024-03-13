@@ -41,7 +41,7 @@
  *			./autogen.sh <ENTER>
  *			make <ENTER>
  *
- *  Copyright © 2004-2018 Pico Technology Ltd. See LICENSE file for terms.
+ *  Copyright ï¿½ 2004-2018 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 #include <stdio.h>
@@ -62,7 +62,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "libpicohrdl-1.0/HRDL.h"
+#include "libpicohrdl/HRDL.h"
 
 #define Sleep(a) usleep(1000*a)
 #define scanf_s scanf

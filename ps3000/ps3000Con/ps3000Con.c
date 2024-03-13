@@ -70,7 +70,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "libps3000-3.7/ps3000.h"
+#include "libps3000/ps3000.h"
 #define PREF4
 
 #define Sleep(a) usleep(1000*a)

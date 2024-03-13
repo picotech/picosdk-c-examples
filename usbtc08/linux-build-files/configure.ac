@@ -96,11 +96,11 @@ AC_ARG_WITH([pico-headers],
 CFLAGS=${CFLAGS}" -I$pico_headers_path"
 CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path"
 
-AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libusbtc08-1.8/usbtc08.h])
+AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libusbtc08/usbtc08.h])
 
 if test "$ac_cv_header_libusbtc08_1_8_usbtc08_h" == no
 then
-    AC_MSG_ERROR([libusbtc08-1.8/usbtc08.h missing!])
+    AC_MSG_ERROR([libusbtc08/usbtc08.h missing!])
 fi
 
 

@@ -47,7 +47,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "libplcm3-1.0/PLCM3Api.h"
+#include "libplcm3/PLCM3Api.h"
 
 #define Sleep(a) usleep(1000*a)
 #define scanf_s scanf

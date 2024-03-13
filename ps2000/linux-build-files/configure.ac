@@ -100,8 +100,8 @@ AC_CHECK_HEADER([stdio.h])
 AC_CHECK_HEADER([sys/types.h])
 AC_CHECK_HEADER([termios.h])
 AC_CHECK_HEADER([sys/ioctl.h])
-AC_CHECK_HEADER([libps2000-2.1/ps2000.h], [],
-	AC_MSG_ERROR([libps2000-2.1/ps2000.h missing!]))
+AC_CHECK_HEADER([libps2000/ps2000.h], [],
+	AC_MSG_ERROR([libps2000/ps2000.h missing!]))
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

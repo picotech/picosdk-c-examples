@@ -59,7 +59,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include <libusbtc08-1.8/usbtc08.h>
+#include <libusbtc08/usbtc08.h>
 
 #define Sleep(a) usleep(1000*a)
 #define scanf_s scanf

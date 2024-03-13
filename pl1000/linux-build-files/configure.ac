@@ -96,16 +96,16 @@ AC_ARG_WITH([pico-headers],
 CFLAGS=${CFLAGS}" -I$pico_headers_path"
 CPPFLAGS=${CXXFLAGS}" -I$pico_headers_path"
 
-AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libpl1000-1.0/pl1000Api.h libpl1000-1.0/PicoStatus.h])
+AC_CHECK_HEADERS([stdio.h sys/types.h string.h termios.h sys/ioctl.h sys/types.h unistd.h stdlib.h libpl1000/pl1000Api.h libpl1000/PicoStatus.h])
 
 if test "$ac_cv_header_libpl1000_1_0_libpl1000Api_h" == no
 then
-    AC_MSG_ERROR([libpl1000-1.0/libpl1000Api.h missing!])
+    AC_MSG_ERROR([libpl1000/libpl1000Api.h missing!])
 fi
 
 if test "$ac_cv_header_libpl1000_1_0_PicoStatus_h" == no
 then
-    AC_MSG_ERROR([libpl1000-1.0/PicoStatus.h missing!])
+    AC_MSG_ERROR([libpl1000/PicoStatus.h missing!])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.

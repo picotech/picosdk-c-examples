@@ -80,9 +80,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <libps2000a-1.1/ps2000aApi.h>
+#include <libps2000a/ps2000aApi.h>
 #ifndef PICO_STATUS
-#include <libps2000a-1.1/PicoStatus.h>
+#include <libps2000a/PicoStatus.h>
 #endif
 
 #define Sleep(a) usleep(1000*a)
