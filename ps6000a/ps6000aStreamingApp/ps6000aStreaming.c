@@ -1,6 +1,7 @@
 /*****************************************************************************
  * A simple streaming application to capture data on a single channel
  *
+ * Copyright (C) 2023-2024 Pico Technology Ltd. See LICENSE file for terms.
  ****************************************************************************/
 #include <stdio.h>
 #include "windows.h"
