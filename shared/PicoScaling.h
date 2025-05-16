@@ -137,7 +137,10 @@ static const PICO_PROBE_SCALING PicoProbeScaling[] = {
 {PICO_X1_PROBE_2V,			"2V",									 -2,    2,    "V"},
 {PICO_X1_PROBE_5V,			"5V",									 -5,    5,    "V"},
 {PICO_X1_PROBE_10V,			"10V",									 -10,   10,   "V"},
+{PICO_X1_PROBE_20V,			"20V",									 -20,   20,   "V"},
 {PICO_X1_PROBE_50V,			"50V",									 -50,   50,   "V"},
+{PICO_X1_PROBE_100V,		"100V",									-100,   100,   "V"},
+{PICO_X1_PROBE_200V,		"200V",									-200,   200,   "V"},
 // x10
 {PICO_X10_PROBE_100MV,		"x10_v100mV",								 -0.1,	0.1,  "V"},
 {PICO_X10_PROBE_200MV,		"x10_200mV",								 -0.2,  0.2,  "V"},
@@ -146,6 +149,7 @@ static const PICO_PROBE_SCALING PicoProbeScaling[] = {
 {PICO_X10_PROBE_2V,			"x10_2V",									 -2,    2,    "V"},
 {PICO_X10_PROBE_5V,			"x10_5V",									 -5,    5,    "V"},
 {PICO_X10_PROBE_10V,		"x10_10V",									 -10,   10,   "V"},
+{PICO_X10_PROBE_20V,		"x10_20V",									 -20,   20,   "V"},
 {PICO_X10_PROBE_50V,		"x10_50V",									 -50,   50,   "V"},
 {PICO_X10_PROBE_100V,		"x10_100V",									 -100,   100,   "V"},
 {PICO_X10_PROBE_200V,		"x10_200V",									 -200,   200,   "V"},
