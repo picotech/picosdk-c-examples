@@ -165,9 +165,9 @@ double adc_to_mv(int16_t raw, PICO_CONNECT_PROBE_RANGE ChannelRange, int16_t max
     if (0 < ChannelRange < PICO_X10_PROBE_RANGES)
     {
         if (0 < ChannelRange < PICO_X1_PROBE_RANGES) //PICO_X1_PROBE_RANGES
-            return(double)((raw * inputRanges[ChannelRange]) / maxADCValue);
+            return(double)(((double)raw * (double)inputRanges[ChannelRange]) / (double)maxADCValue);
         else // PICO_X10_PROBE_RANGES
-            return(double)((raw * inputRangesx10[ChannelRange]) / maxADCValue);
+            return(double)(((double)raw * (double)inputRangesx10[ChannelRange]) / (double)maxADCValue);
     }
     else
     {
@@ -187,5 +187,5 @@ double adc_to_mv(int16_t raw, PICO_CONNECT_PROBE_RANGE ChannelRange, int16_t max
 
 int16_t mv_to_adc(double scaled, PICO_CONNECT_PROBE_RANGE ChannelRange, int16_t maxADCValue)
 {
-    return (int16_t)((scaled / (double)(inputRanges[ChannelRange])) * maxADCValue);
+    return (int16_t)((scaled / (double)(inputRanges[ChannelRange])) * (double)maxADCValue);
 }
