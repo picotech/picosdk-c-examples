@@ -31,9 +31,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include <libps6000a-1.0/ps6000aApi.h>
+#include <libps6000a/ps6000aApi.h>
 #ifndef PICO_STATUS
-#include <libps6000a-1.0/PicoStatus.h>
+#include <libps6000a/PicoStatus.h>
 #endif
 
 #define Sleep(a) usleep(1000*a)
