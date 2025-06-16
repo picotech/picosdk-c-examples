@@ -96,7 +96,7 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #endif
 
 // Function prototypes
-void blockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset);
+void blockDataHandler(GENERICUNIT* unit);
 void collectBlockImmediate(GENERICUNIT* unit);
 void collectBlockTriggered(GENERICUNIT* unit);
 
