@@ -12,12 +12,13 @@
 #ifndef __LIBPSOSPA_H__
 #define __LIBPSOSPA_H__
 
+#include "../../shared/PicoUnit.h"
+
  /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
 #include "psospaApi.h"
-#include "../../shared/PicoUnit.h"
 #else
 #include <sys/types.h>
 #include <string.h>
@@ -95,7 +96,6 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #define DUAL_SCOPE		2
 
 #define MAX_PICO_DEVICES 64
-#define TIMED_LOOP_STEP 500
 
 //Max channels for this API/series of models
 #define PSOSPA_MAX_CHANNELS 4 //analog chs only
@@ -142,6 +142,7 @@ void closeDevice(GENERICUNIT* unit);
 PICO_STATUS handleDevice(GENERICUNIT* unit);
 
 void setVoltages(GENERICUNIT* unit);
+void setDigitalPorts(GENERICUNIT* unit);
 void setTimebase(GENERICUNIT* unit);
 
 void setResolution(GENERICUNIT* unit);
