@@ -12,9 +12,9 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+
 #include "../../shared/PicoUnit.h"
 #include "../../shared/PicoScaling.h"
-
 #include "./Libps60000a.h"
 
 /* Headers for Windows */
@@ -176,6 +176,35 @@ void setDefaults(GENERICUNIT* unit)
 			printf(status ? "SetDefaults:ps6000aSetChannelOff------ 0x%08lx \n" : "", status);
 		}
 	}
+
+
+	for (i = 0; i < unit->digitalPortCount; i++) // reset channels to most recent settings
+	{
+		int16_t temp_threshold[8];
+		for (int16_t b = 0; b < 8; b++)
+		{
+			temp_threshold[b] = mv_to_adc(
+				unit->digitalChannelSettings[i].threshold[b] * 1000,//pass mV
+				PICO_X1_PROBE_5V, //fixed 5v range for digital ports
+				unit->maxADCValue);
+		}
+		
+		if (unit->digitalChannelSettings[i].enabled == TRUE)
+		{
+			status = ps6000aSetDigitalPortOn(unit->handle,
+				(PICO_CHANNEL)(PICO_PORT0 + i),
+				&temp_threshold[i], //(unit->digitalChannelSettings[i].threshold),
+				(sizeof(unit->digitalChannelSettings[i].threshold) / sizeof(unit->digitalChannelSettings[i].threshold[0])),
+				PICO_NORMAL_100MV);
+
+			printf(status ? "SetDefaults:ps6000aSetDigitalPortOn------ 0x%08lx \n" : "", status);
+		}
+		else
+		{
+			status = ps6000aSetDigitalPortOff(unit->handle, (PICO_CHANNEL)(PICO_PORT0 + i));
+			printf(status ? "SetDefaults:ps6000aSetDigitalPortOff------ 0x%08lx \n" : "", status);
+		}
+	}
 }
 
 /****************************************************************************
@@ -208,7 +237,7 @@ PICO_STATUS clearDataBuffers(GENERICUNIT* unit)
 PICO_STATUS SetTrigger(GENERICUNIT* unit,
 	PICO_TRIGGER_CHANNEL_PROPERTIES* channelProperties,
 	int16_t nChannelProperties,
-	int16_t auxOutputEnable,
+	PICO_AUXIO_MODE auxOutputMode,
 	PICO_CONDITION* triggerConditions,
 	int16_t nTriggerConditions,
 	PICO_DIRECTION* directions,
@@ -224,7 +253,7 @@ PICO_STATUS SetTrigger(GENERICUNIT* unit,
 	if ((status = ps6000aSetTriggerChannelProperties(unit->handle,
 		channelProperties,
 		nChannelProperties,
-		auxOutputEnable,
+		0,		//No longer used, set to 0, set by ps6000aSetAuxIoMode()
 		autoTrigger_us)) != PICO_OK)
 	{
 		printf("SetTrigger:ps6000aSetTriggerChannelProperties ------ Ox%08x \n", status);
@@ -280,7 +309,12 @@ PICO_STATUS SetTrigger(GENERICUNIT* unit,
 		printf("SetTrigger:ps6000aSetPulseWidthQualifierConditions ------ 0x%08x \n", status);
 		return status;
 	}
-
+	if ((status = ps6000aSetAuxIoMode(unit->handle,
+		auxOutputMode)) != PICO_OK)
+	{
+		printf("SetTrigger:ps6000aSetAuxIoMode ------ Ox%08x \n", status);
+		return status;
+	}
 	return status;
 }
 
@@ -375,7 +409,6 @@ void setVoltages(GENERICUNIT* unit)
 	int32_t i, ch;
 	int32_t count = 0;
 	int16_t numValidChannels = unit->channelCount; // Dependent on power setting - i.e. channel A & B if USB powered on 4-channel device
-	int16_t numEnabledChannels = 0;
 	int16_t retry = FALSE;
 
 	// See what ranges are available... 
@@ -463,6 +496,77 @@ void setVoltages(GENERICUNIT* unit)
 			retry = FALSE;
 			break;
 		}
+
+		printf("\n");
+	} while (retry == TRUE);
+
+	setDefaults(unit);	// Put these changes into effect
+}
+
+/****************************************************************************
+* Set digital ports (PORT1, PORT1) and voltage threshold
+****************************************************************************/
+void setDigitalPorts(GENERICUNIT* unit)
+{
+	PICO_STATUS status = PICO_OK;
+	PICO_DEVICE_RESOLUTION resolution = PICO_DR_8BIT;
+
+	int32_t ch, i = 0;
+	int32_t count = 0;
+	int16_t numValidChannels = unit->digitalPortCount;
+	int16_t retry = FALSE;
+
+	do
+	{
+		//do
+		//{
+			// Ask the user to select a range
+		printf("Please connect MSO pods before setting port and pins!\n");
+		printf("Specify voltage pin threshold -5V to +5V\n");
+		printf("99 - switches pin off\n");
+
+		for (ch = 0; ch < numValidChannels; ch++)
+		{
+			count = 0; 
+			printf("Digital Port%d: ", ch);
+			for (i = 0; i < 8; i++)
+			{
+				printf("\n");
+				do
+				{
+					printf("Digital Pin%d: ", i);
+					fflush(stdin);
+					scanf_s("%lf", &unit->digitalChannelSettings[ch].threshold[i]);
+					// Set the threshold for the digital channel
+
+				} while (((unit->digitalChannelSettings[ch].threshold[i] > 99.1f) || (unit->digitalChannelSettings[ch].threshold[i] < 98.9f)) &&
+					((unit->digitalChannelSettings[ch].threshold[i] > 5.0f) ||
+						(unit->digitalChannelSettings[ch].threshold[i] < -5.0f))
+					);
+
+				if ((unit->digitalChannelSettings[ch].threshold[i] > 99.1f) || (unit->digitalChannelSettings[ch].threshold[i] < 98.9f))
+				{
+					printf("Port threshold: %+3.3e V\n", unit->digitalChannelSettings[ch].threshold[i]);
+					unit->digitalChannelSettings[ch].enabled = TRUE;
+					count++;
+				}
+				else
+				{
+					printf("Entered '99' - Setting Pin threshold to 0V\n");
+					unit->digitalChannelSettings[ch].threshold[i] = 0.0f;	// Set threshold to 0V
+				}
+			}
+			if (count == 0)
+			{
+				printf("No pins used on Port%d - Channel Switched off\n", ch);
+				unit->digitalChannelSettings[ch].enabled = FALSE;	// Set digital channel off
+				unit->digitalChannelSettings[ch].threshold[i] = 0.0f;	// Set threshold to 0V
+			}
+		}
+		//printf(count == 0 ? "\n** At least 1 channel must be enabled **\n\n" : "");
+	//} while (count == 0);	// must have at least one channel enabled
+
+		status = ps6000aGetDeviceResolution(unit->handle, &resolution);
 
 		printf("\n");
 	} while (retry == TRUE);
@@ -751,6 +855,21 @@ void displaySettings(GENERICUNIT* unit)
 			printf("analogueOffset: %g\n", unit->channelSettings[ch].analogueOffset);
 		}
 	}
+		printf("\nDigital Ports:\n");
+		for (ch = 0; ch < unit->digitalPortCount; ch++)
+		{
+			if (!(unit->digitalChannelSettings[ch].enabled))
+			{
+				printf("Digital Port %d: Off\n", ch);
+			}
+			else
+			{
+				printf("Digital Port %d:\n", ch);
+				for(int16_t i= 0; i < 8; i++)
+					printf("\tPin%d: Threshold: %.3fV\n",i, unit->digitalChannelSettings[ch].threshold[i]);
+			}
+		}
+
 	printf("\n");
 
 	status = ps6000aGetDeviceResolution(unit->handle, &resolution);
@@ -821,18 +940,6 @@ PICO_STATUS handleDevice(GENERICUNIT* unit)
 		set_info(unit);
 	}
 
-	// Turn off any digital ports (MSO models only)
-	if (unit->digitalPortCount > 0)
-	{
-		printf("Turning off digital ports.\n");
-
-		for (i = 0; i < unit->digitalPortCount; i++)
-		{
-			status = ps6000aSetDigitalPortOff(unit->handle, (PICO_CHANNEL)(i + PICO_PORT0));
-		}
-	}
-
-	//timebase = 10;
 	double temp_timeIntervalns;
 	do
 	{
@@ -867,7 +974,16 @@ PICO_STATUS handleDevice(GENERICUNIT* unit)
 	}
 	if(TURN_ON_EVERY_N_CH != 1)
 		printf("Turning on every %d Channels\n", TURN_ON_EVERY_N_CH);
+	// Turn off any digital ports (MSO models only)
+	if (unit->digitalPortCount > 0)
+	{
+		printf("Turning off digital ports.\n");
 
+		for (i = 0; i < unit->digitalPortCount; i++)
+		{
+			status = ps6000aSetDigitalPortOff(unit->handle, (PICO_CHANNEL)(i + PICO_PORT0));
+		}
+	}
 	for (i = 0; i < unit->channelCount; i++)
 	{
 		//define "TURN_ON_EVERY_N_CH" to either 2 or 4 (2 = Every odd Ch is enabled, 4 = Every 4th Ch enabled), set 1 to disable.
@@ -880,6 +996,11 @@ PICO_STATUS handleDevice(GENERICUNIT* unit)
 		unit->channelSettings[i].range = PICO_X1_PROBE_2V;
 		unit->channelSettings[i].analogueOffset = 0.0f;
 		unit->channelSettings[i].bandwithLimit = PICO_BW_FULL; // PICO_BW_FULL, PICO_BW_20MHZ, PICO_BW_200MHZ
+	}
+	for (i = 0; i < unit->digitalPortCount; i++) // reset channels to most recent settings
+	{
+		unit->digitalChannelSettings[i].enabled = FALSE;		//turn off digital channels
+		unit->digitalChannelSettings[i].threshold[0] = 0.0f;	// Set threshold to 0V
 	}
 
 	//memset(&pulseWidth, 0, sizeof(struct tPwq));

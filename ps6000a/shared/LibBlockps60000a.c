@@ -93,7 +93,7 @@ return (fp>0)?0:-1;
 
 int16_t   		g_ready = FALSE;
 
-int8_t BlockFile[20] = "block.txt";
+int8_t BlockFile[20] = "Block_Mode";
 
 /****************************************************************************
 * Refernce Global Variables
@@ -125,10 +125,8 @@ static void PREF4 CallBackBlock(int16_t handle, PICO_STATUS status, void* pParam
 *   and saves all to block.txt
 * Input :
 * - unit : the unit to use.
-* - text : the text to display before the display of data slice
-* - offset : the offset into the data buffer to start the display's slice.
 ****************************************************************************/
-void blockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
+void blockDataHandler(GENERICUNIT* unit)
 {
 	int16_t retry;
 	int16_t triggerEnabled = 0;
@@ -149,7 +147,7 @@ void blockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 
 	//Buffers settings (Set DownSampling mode and ratio)
 	//Use scope acquisition settings for first data download
-	struct tbuffer_settings bufferSettings;
+	struct tbuffer_settings bufferSettings = { 0 };
 	bufferSettings.startIndex = 0;
 	bufferSettings.downSampleRatioMode = ratioMode;
 	bufferSettings.downSampleRatio = downSampleRatio;
@@ -181,6 +179,27 @@ void blockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 			if (status != PICO_OK)
 			{
 				printf(status ? "blockDataHandler:ps6000aSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", i, status);
+			}
+		}
+	}
+	//digital channels
+	for (i = 0; i < unit->digitalPortCount; i++)
+	{
+		if (unit->digitalChannelSettings[i].enabled)
+		{
+			status = ps6000aSetDataBuffers(unit->handle,
+				PICO_PORT0 + (PICO_CHANNEL)i,
+				maxBuffers[0][i + unit->channelCount], // 1 waveform buffer only
+				minBuffers[0][i + unit->channelCount], // 1 waveform buffer only
+				(int32_t)bufferSettings.nSamples,
+				PICO_INT16_T,
+				0,			//waveform number
+				bufferSettings.downSampleRatioMode,
+				action_flag);
+			action_flag = PICO_ADD;//all subsequent calls use ADD!
+			if (status != PICO_OK)
+			{
+				printf(status ? "blockDataHandler:ps6000aSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", PICO_PORT0 + i, status);
 			}
 		}
 	}
@@ -247,14 +266,14 @@ void blockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 		printf("Press any key to abort\n");
 	}
 
+	//wait for capture to complete or for user to abort
 	while (!g_ready && !_kbhit())
 	{
-		Sleep(0);
+		Sleep(1);
 	}
 
 	if (g_ready)
 	{
-
 		// Can retrieve data using different ratios and ratio modes from driver
 		int16_t overflow = 0;
 
@@ -266,47 +285,8 @@ void blockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 		}
 		else
 		{
-			printf("blockDataHandler:ps6000aGetValues Channel Over Range flags (Ch. order- HGFEDCBA bit0) ------ 0x%08lx \n", overflow);
-			/* Print out the first 10 readings, converting the readings to mV if required */
-			printf("%s ", text);
-
-			// Print first 10 samples from the first 2 captures
-			printf("(Max. Values)\n\n");
-			int16_t channel;
-			for (channel = 0; channel < unit->channelCount; channel++)
-			{
-				printf("Channel %c:\t", 'A' + channel);
-
-			}
-			printf("\n");
-
-			for (i = 0; i < 10; i++)
-			{
-				for (channel = 0; channel < unit->channelCount; channel++)
-				{
-					if (unit->channelSettings[channel].enabled)
-					{
-						if (maxBuffers[0][channel])//Check buffer is not NULL
-						{//3.3e //6d
-							printf("%+3.3e\t", scaleVoltages ?
-								adc_to_mv(maxBuffers[0][channel][i],
-									unit->channelSettings[PICO_CHANNEL_A + channel].range,
-									unit->maxADCValue)			// If scaleVoltages, print mV value
-								: maxBuffers[0][channel][i]);
-						}// else print ADC Count
-					}
-					else
-					{
-						printf("   ---  \t");
-					}
-				}
-				printf("\n");
-			}
-			
-			nSamples = min(nSamples, constBufferSize);
-
 			//Get scaling Info for each channel
-			PICO_PROBE_SCALING enabledChannelsScaling[PS6000A_MAX_CHANNELS] = {0}; //[unit->channelCount]; //Move to global/golobal struture
+			PICO_PROBE_SCALING enabledChannelsScaling[PS6000A_MAX_CHANNELS] = { 0 }; //[unit->channelCount]; //Move to global/golobal struture
 			PICO_PROBE_SCALING channelRangeInfoTemp;
 			for (i = 0; i < unit->channelCount; i++)
 			{
@@ -316,18 +296,31 @@ void blockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 					enabledChannelsScaling[i] = channelRangeInfoTemp;
 				}
 			}
+			//Write to console
+			WriteArrayToStdoutGeneric(
+				unit,
+				minBuffers,
+				maxBuffers,
+				multiBufferSizes,
+				enabledChannelsScaling,
+				(CAPTURE_MODE)BLOCK,
+				1,						// Number of buffers to write, 1 for block mode
+				10,						// Number of samples to write
+				0,						// Triggersample
+				&overflow);
 
 			//Write one segment to a file as captured
 			printf("\nWriting Capture of enabled channels to file.\n");
-			WriteArrayToFileGeneric(
+			WriteArrayToFilesGeneric(
 				unit,
-				minBuffers[0],
-				maxBuffers[0],
+				minBuffers,
+				maxBuffers,
 				multiBufferSizes,
 				enabledChannelsScaling,
 				BlockFile,
 				0,						// Triggersample
-				&overflow);
+				&overflow,
+				NULL);
 		}
 	}
 	else
@@ -340,8 +333,8 @@ void blockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	{
 		printf("blockDataHandler:ps6000aStop ------ 0x%08lx \n", status);
 	}
-
 	clearDataBuffers(unit);
+	pico_release_multibuffers(unit, &minBuffers, &maxBuffers, &multiBufferSizes);
 }
 
 /****************************************************************************
@@ -362,7 +355,7 @@ void collectBlockImmediate(GENERICUNIT* unit)
 	/* Trigger disabled	*/
 	status = ps6000aSetSimpleTrigger(unit->handle, 0, PICO_CHANNEL_A, 0, PICO_RISING, 0, 0);
 
-	blockDataHandler(unit, (int8_t*)"First 10 readings\n", 0);
+	blockDataHandler(unit);
 }
 
 /****************************************************************************
@@ -415,11 +408,11 @@ void collectBlockTriggered(GENERICUNIT* unit)
 
 	status = SetTrigger(unit,
 		&sourceDetails, 1,	//channelProperties //nChannelProperties
-		1,					//auxOutputEnable
-		&conditions, 1,
-		&directions, 1,
+		PICO_AUXIO_INPUT,	//auxIoMode
+		&conditions, 1,		//conditions		//nConditions
+		&directions, 1,		//directions		//nDirections
 		&pulseWidth,		//PWQ
 		0, 0);				//TrigDelay //AutoTrigger_us
 
-	blockDataHandler(unit, (int8_t*)"First 10 readings after trigger\n", 0);
+	blockDataHandler(unit);
 }

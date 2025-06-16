@@ -12,12 +12,13 @@
 #ifndef __LIBPS60000A_H__
 #define __LIBPS60000A_H__
 
+#include "../../shared/PicoUnit.h"
+
  /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
 #include "ps6000aApi.h"
-#include "../../shared/PicoUnit.h"
 #else
 #include <sys/types.h>
 #include <string.h>
@@ -95,7 +96,6 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #define DUAL_SCOPE		2
 
 #define MAX_PICO_DEVICES 64
-#define TIMED_LOOP_STEP 500
 
 //Max channels for this API/series of models
 #define PS6000A_MAX_CHANNELS 8 //analog chs only
@@ -142,6 +142,7 @@ void closeDevice(GENERICUNIT* unit);
 PICO_STATUS handleDevice(GENERICUNIT* unit);
 
 void setVoltages(GENERICUNIT* unit);
+void setDigitalPorts(GENERICUNIT* unit);
 void setTimebase(GENERICUNIT* unit);
 
 void setResolution(GENERICUNIT* unit);
@@ -152,7 +153,7 @@ PICO_STATUS clearDataBuffers(GENERICUNIT* unit);
 PICO_STATUS SetTrigger(GENERICUNIT* unit,
 	PICO_TRIGGER_CHANNEL_PROPERTIES* channelProperties,
 	int16_t nChannelProperties,
-	int16_t auxOutputEnable,
+	PICO_AUXIO_MODE auxOutputMode,
 	PICO_CONDITION* triggerConditions,
 	int16_t nTriggerConditions,
 	PICO_DIRECTION* directions,
