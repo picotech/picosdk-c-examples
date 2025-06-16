@@ -42,22 +42,21 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <math.h>
+
+#include "psospaApi.h"
+#include "../shared/Libpsospa.h"
+#include "../shared/LibBlockpsospa.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
-#include <math.h>
-#include "psospaApi.h"
-#include "../shared/Libpsospa.h"
-#include "../shared/LibBlockpsospa.h"
-
 #else
 #include <sys/types.h>
 #include <string.h>
 #include <termios.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -152,6 +151,8 @@ static void mainMenu(GENERICUNIT *unit)
 		printf("T - Triggered Block                           I - SetTimebase\n");
 		printf("                                              A - ADC counts/mV\n");	
 		printf("                                              D - Set Resolution\n");
+		if(unit->digitalPortCount != 0)
+			printf("                                              M - Set Digital Ports (MSO)\n");
 		printf("                                              X - Exit\n");
 		printf("Operation:");
 
@@ -171,6 +172,13 @@ static void mainMenu(GENERICUNIT *unit)
 
 			case 'V':
 				setVoltages(unit);
+				break;
+
+			case 'M':
+				if (unit->digitalPortCount != 0)
+				{
+					setDigitalPorts(unit);
+				}
 				break;
 
 			case 'I':

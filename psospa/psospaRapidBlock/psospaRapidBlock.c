@@ -154,6 +154,8 @@ static void mainMenu(GENERICUNIT *unit)
 		printf("T - Triggered RapidBlock                      I - SetTimebase\n");
 		printf("                                              A - ADC counts/mV\n");	
 		printf("                                              D - Set Resolution\n");
+		if (unit->digitalPortCount != 0)
+			printf("                                              M - Set Digital Ports (MSO)\n");
 		printf("                                              X - Exit\n");
 		printf("Operation:");
 
@@ -173,6 +175,13 @@ static void mainMenu(GENERICUNIT *unit)
 
 			case 'V':
 				setVoltages(unit);
+				break;
+
+			case 'M':
+				if (unit->digitalPortCount != 0)
+				{
+					setDigitalPorts(unit);
+				}
 				break;
 
 			case 'I':

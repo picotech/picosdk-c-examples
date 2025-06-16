@@ -42,17 +42,16 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <math.h>
+
+#include "../shared/Libpsospa.h"
+#include "../shared/LibStreamingpsospa.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
-#include <math.h>
-
 #include "psospaApi.h"
-#include "../shared/Libpsospa.h"
-#include "../shared/LibStreamingpsospa.h"
-
 #else
 #include <sys/types.h>
 #include <string.h>
@@ -153,6 +152,8 @@ static void mainMenu(GENERICUNIT*unit)
 		printf("T - Triggered Streaming                       I - SetTimebase\n");
 		printf("                                              A - ADC counts/mV\n");	
 		printf("                                              D - Set Resolution\n");
+		if (unit->digitalPortCount != 0)
+			printf("                                              M - Set Digital Ports (MSO)\n");
 		printf("                                              X - Exit\n");
 		printf("Operation:");
 
@@ -172,6 +173,13 @@ static void mainMenu(GENERICUNIT*unit)
 
 			case 'V':
 				setVoltages(unit);
+				break;
+
+			case 'M':
+				if (unit->digitalPortCount != 0)
+				{
+					setDigitalPorts(unit);
+				}			
 				break;
 
 			case 'I':
@@ -211,7 +219,7 @@ int32_t main(void)
 	PICO_STATUS status = PICO_OK;
 	GENERICUNIT allUnits[MAX_PICO_DEVICES] = {0};
 
-	printf("PicoScope 6000 Series (psospa) Driver Example \n");
+	printf("PicoScope 3000E Series (psospa) Driver Example \n");
 	printf("\nEnumerating Units...\n");
 
 	do
