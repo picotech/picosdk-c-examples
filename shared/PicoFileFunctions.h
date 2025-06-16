@@ -90,25 +90,41 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #define min(a,b) ((a) < (b) ? a : b)
 #endif
 
+// enums
+typedef enum
+{
+	BLOCK = 0,
+	RAPID_BLOCK = 1,
+	STREAMING = 2
+}CAPTURE_MODE;
+ 
+// Structures
+typedef struct tcaptures_range
+{
+	uint64_t from;
+	uint64_t to;
+}CAPTURES_RANGE;
+
 // Function prototypes
 void WriteArrayToFilesGeneric(GENERICUNIT* unit,
 	int16_t*** minBuffers,
 	int16_t*** maxBuffers,
 	MULTIBUFFERSIZES multiBufferSizes,
-	PICO_PROBE_SCALING* enabledChannelsScaling, ////////////////////////////////////////////////////////////////////////////////////////
-	//double actualTimeInterval,// = 1,
-	char startOfFileName[],// = "Output",
-	int16_t Triggersample, // = 0,//int16_t maxADCValue) // =0
-	int16_t* overflow);
-
-void WriteArrayToFileGeneric(GENERICUNIT* unit,
-	int16_t** minBuffers,
-	int16_t** maxBuffers,
-	MULTIBUFFERSIZES multiBufferSizes,
-	PICO_PROBE_SCALING* enabledChannelsScaling, ////////////////////////////////////////////////////////////////////////////////////////
-	//double actualTimeInterval,
+	PICO_PROBE_SCALING* enabledChannelsScaling,
 	char startOfFileName[],
-	int16_t Triggersample,
+	uint64_t Triggersample,
+	int16_t* overflow,
+	CAPTURES_RANGE* captures_range);
+
+void WriteArrayToStdoutGeneric(GENERICUNIT* unit,
+	int16_t*** minBuffers,
+	int16_t*** maxBuffers,
+	MULTIBUFFERSIZES multiBufferSizes,
+	PICO_PROBE_SCALING* enabledChannelsScaling,
+	CAPTURE_MODE CaptureMode,
+	int16_t numberOfBuffers,
+	uint64_t numberOfSamples,
+	uint64_t Triggersample,
 	int16_t* overflow);
 
 
