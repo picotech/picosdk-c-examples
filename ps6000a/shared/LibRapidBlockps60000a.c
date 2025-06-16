@@ -120,7 +120,7 @@ static void PREF4 CallBackBlock(int16_t handle, PICO_STATUS status, void* pParam
 	if (status != PICO_CANCELLED)
 	{
 		g_ready = TRUE;
-		///*((BOOL*)pParameter) = TRUE;
+		//*((BOOL*)pParameter) = TRUE;
 	}
 }
 
@@ -152,9 +152,9 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	nCaptures = 3;				//Set the number of captures
 
 	//Buffers settings (Set DownSampling mode and ratio)
-	struct tbuffer_settings bufferSettings;
+	struct tbuffer_settings bufferSettings = {0};
 	bufferSettings.startIndex = 0;
-	bufferSettings.downSampleRatioMode = PICO_RATIO_MODE_AGGREGATE; //PICO_RATIO_MODE_RAW; // 
+	bufferSettings.downSampleRatioMode = PICO_RATIO_MODE_AGGREGATE; //PICO_RATIO_MODE_RAW;
 	bufferSettings.downSampleRatio = 16;
 	bufferSettings.nSamples = constBufferSize;
 
@@ -170,7 +170,7 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	status = ps6000aSetNoOfCaptures(unit->handle, nCaptures);
 
 	//Create Buffers - Min and Max (3D buffers - Captures, Channels, Samples)
-	struct tmultiBufferSizes multiBufferSizes;;// to store buffer sizes
+	struct tmultiBufferSizes multiBufferSizes; // to store buffer sizes
 	pico_create_multibuffers(unit, bufferSettings, (int32_t)nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes);
 
 	// Create Overflow Array Buffers
@@ -258,6 +258,30 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 			}
 		}
 	}
+	//digital channels
+	for (channel = 0; channel < unit->digitalPortCount; channel++)
+	{
+		if (unit->digitalChannelSettings[channel].enabled)
+		{
+			for (capture = 0; capture < nCaptures; capture++)
+			{
+				status = ps6000aSetDataBuffers(unit->handle,
+					PICO_PORT0 + (PICO_CHANNEL)channel,
+					maxBuffers[capture][channel + unit->channelCount],
+					minBuffers[capture][channel + unit->channelCount],
+					(int32_t)bufferSettings.nSamples,
+					PICO_INT16_T,
+					0,			//waveform number
+					bufferSettings.downSampleRatioMode,
+					action_flag);
+				action_flag = PICO_ADD;//all subsequent calls use ADD!
+				if (status != PICO_OK)
+				{
+					printf(status ? "blockDataHandler:psospaSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
+				}
+			}
+		}
+	}
 
 	// Get data from device
 	status = ps6000aGetValuesBulk(unit->handle,
@@ -271,43 +295,6 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 
 	if (status == PICO_OK)
 	{
-		// Print first 10 samples from the first 2 captures
-		for (capture = 0; capture < 2; capture++) //nCaptures
-		{
-			printf("\nCapture %llu:- (Max. Values)\n\n", capture + 1);
-
-			for (channel = 0; channel < unit->channelCount; channel++)
-			{
-				printf("Channel %c:\t", 'A' + channel);
-				
-			}
-
-			printf("\n");
-
-			for (i = 0; i < 10; i++)
-			{
-				for (channel = 0; channel < unit->channelCount; channel++)
-				{
-					if (unit->channelSettings[channel].enabled)
-					{
-						if (maxBuffers[capture][channel])//Check buffer is not NULL
-						{//3.3e //6d
-							printf("%3.3e\t", scaleVoltages ?
-								adc_to_mv(maxBuffers[capture][channel][i],
-									unit->channelSettings[PICO_CHANNEL_A + channel].range,
-									unit->maxADCValue)														// If scaleVoltages, print mV value
-								: maxBuffers[capture][channel][i]);
-						}// else print ADC Count
-					}
-					else
-					{
-						printf("   ---  \t"); 
-					}
-				}
-				printf("\n");
-			}
-		}
-
 		//Get scaling Info for each channel
 		PICO_PROBE_SCALING enabledChannelsScaling[PS6000A_MAX_CHANNELS] = {0}; //[unit->channelCount]; //Move to global/golobal struture
 		PICO_PROBE_SCALING channelRangeInfoTemp;
@@ -328,7 +315,18 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 			enabledChannelsScaling[i] = channelRangeInfoTemp;
 			}
 		}
-
+		//Write to console
+		WriteArrayToStdoutGeneric(
+			unit,
+			minBuffers,
+			maxBuffers,
+			multiBufferSizes,
+			enabledChannelsScaling,
+			(CAPTURE_MODE)RAPID_BLOCK,
+			3,						// Number of buffers to write, 1 for block mode
+			10,						// Number of samples to write
+			0,						// Triggersample
+			overflowArray);
 		// Print each segment capture to a file
 		printf("\nWriting each of: %lld channel buffer sets to a file.\n", multiBufferSizes.numberOfBuffers);
 		WriteArrayToFilesGeneric(
@@ -339,35 +337,49 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 			enabledChannelsScaling,
 			"RapidBlockCaptureNo_",
 			0,						// Triggersample
-			overflowArray);	
-	}
+			overflowArray,
+			NULL);	
 
+		// Get relative segment trigger timestamps (in samples)
+		PICO_TRIGGER_INFO* triggerInfo;
+		triggerInfo = (PICO_TRIGGER_INFO*)calloc(nCaptures, sizeof(PICO_TRIGGER_INFO));
+		status = ps6000aGetTriggerInfo(unit->handle,
+					triggerInfo,	//PICO_TRIGGER_INFO * triggerInfo,
+					0,				//firstSegmentIndex,
+					nCaptures		//segmentCount (number of segments)			
+		);
+		if (status != PICO_OK)
+		{
+			printf("RapidBlockDataHandler:psospaGetTriggerInfo ------ 0x%08x \n", status);
+		}
+		// Print first 3 trigger timestamps
+		uint64_t maxprintCaptures = min(nCaptures, 3);
+		for (capture = 0; capture < maxprintCaptures; capture++)
+		{
+			if (triggerInfo != NULL)
+			{
+				printf("\nCapture/segment: %llu, Trigger Timestamp: %llu", capture, triggerInfo[capture].timeStampCounter);
+				if (triggerInfo[capture].status == PICO_DEVICE_TIME_STAMP_RESET || capture == 0)
+				{
+					printf(" Delta: NA");
+				}
+				else //NOTE: PICO_DEVICE_TIME_STAMP_RESET/counter wrap around is NOT accounted for. (counter is a unsigned 2^56 bits)
+				{
+					printf(" Delta Samples: %llu, ", triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter);
+					printf("Delta (seconds): %3.3e", (triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter) * unit->timeInterval);
+				}
+			}
+		}
+		printf("\n");
+	}
 	// Stop device
 	status = ps6000aStop(unit->handle);
 
-	// Free memory
+	// Release buffers from API
 	clearDataBuffers(unit);
+	//free buffers
+	pico_release_multibuffers(unit, &minBuffers, &maxBuffers, &multiBufferSizes);
 	free(overflowArray);
-
-	for (channel = 0; channel < unit->channelCount; channel++)
-	{
-		if (unit->channelSettings[channel].enabled)
-		{
-			for (capture = 0; capture < nCaptures; capture++)
-			{
-				free(maxBuffers[capture][channel]);
-				free(minBuffers[capture][channel]);
-			}
-		}
-	}
-
-	for (capture = 0; capture < nCaptures; capture++)
-	{
-		free(maxBuffers[capture]);
-		free(minBuffers[capture]);
-	}
-	free(maxBuffers);
-	free(minBuffers);
 }
 
 /****************************************************************************
