@@ -4,7 +4,7 @@
  *
  * Description:
  *   This is a C Library file to use with the
- *   PicoScope 6000 Series (ps6000a) devices,
+ *   PicoScope 6XXXE Series (ps6000a) devices,
  *   for Block captures.
  *
  * Copyright (C) 2013-2025 Pico Technology Ltd. See LICENSE file for terms.
@@ -15,7 +15,7 @@
 #include "../../shared/PicoScaling.h"
 #include "../../shared/PicoBuffers.h"
 #include "../../shared/PicoFileFunctions.h"
-#include "./Libps60000a.h"
+#include "./Libps6000a.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
@@ -138,11 +138,10 @@ void blockDataHandler(GENERICUNIT* unit)
 	double timeIndisposed;
 
 	PICO_STATUS status;
-
+	//--------------------------------------------------------------------------//
+	//Capture settings
 	uint64_t nSamples = constBufferSize;	//Set the number of samples per capture
 	PICO_RATIO_MODE ratioMode = PICO_RATIO_MODE_RAW;//used for RunBlock()
-	
-	PICO_RATIO_MODE downSample = PICO_RATIO_MODE_RAW;
 	uint64_t downSampleRatio = 1;//used for GetValues()
 
 	//Buffers settings (Set DownSampling mode and ratio)
@@ -152,6 +151,7 @@ void blockDataHandler(GENERICUNIT* unit)
 	bufferSettings.downSampleRatioMode = ratioMode;
 	bufferSettings.downSampleRatio = downSampleRatio;
 	bufferSettings.nSamples = constBufferSize;
+	//--------------------------------------------------------------------------//
 
 	//Create Buffers - Min and Max (3D buffer - 1 Segment, Channels, Samples)
 	struct tmultiBufferSizes multiBufferSizes;// to store buffer sizes
@@ -169,7 +169,7 @@ void blockDataHandler(GENERICUNIT* unit)
 				(PICO_CHANNEL)i,
 				maxBuffers[0][i], // 1 waveform buffer only
 				minBuffers[0][i], // 1 waveform buffer only
-				(int32_t)bufferSettings.nSamples,
+				multiBufferSizes.maxBufferSize,
 				PICO_INT16_T,
 				0,			//waveform number
 				bufferSettings.downSampleRatioMode,
@@ -191,7 +191,7 @@ void blockDataHandler(GENERICUNIT* unit)
 				PICO_PORT0 + (PICO_CHANNEL)i,
 				maxBuffers[0][i + unit->channelCount], // 1 waveform buffer only
 				minBuffers[0][i + unit->channelCount], // 1 waveform buffer only
-				(int32_t)bufferSettings.nSamples,
+				multiBufferSizes.maxBufferSize,
 				PICO_INT16_T,
 				0,			//waveform number
 				bufferSettings.downSampleRatioMode,
@@ -286,8 +286,8 @@ void blockDataHandler(GENERICUNIT* unit)
 		else
 		{
 			//Get scaling Info for each channel
-			PICO_PROBE_SCALING enabledChannelsScaling[PS6000A_MAX_CHANNELS] = { 0 }; //[unit->channelCount]; //Move to global/golobal struture
-			PICO_PROBE_SCALING channelRangeInfoTemp;
+			struct tPicoProbeScaling enabledChannelsScaling[PS6000A_MAX_CHANNELS] = { 0 };
+			struct tPicoProbeScaling channelRangeInfoTemp;
 			for (i = 0; i < unit->channelCount; i++)
 			{
 				if (unit->channelSettings[i].enabled)

@@ -4,7 +4,7 @@
  *
  * Description:
  *   This is a console mode program that demonstrates how to use some of 
- *	 the PicoScope 6000 Series (ps6000a) driver API functions to perform operations
+ *	 the PicoScope 6XXXE Series (ps6000a) driver API functions to perform operations
  *	 using a PicoScope 6000 Oscilloscope.
  *
  *	Supported PicoScope models:
@@ -42,23 +42,21 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <math.h>
+
+#include "../shared/Libps6000a.h"
+#include "../shared/LibStreamingps6000a.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
-#include <math.h>
-
 #include "ps6000aApi.h"
-#include "../shared/Libps60000a.h"
-#include "../shared/LibStreamingps60000a.h"
-
 #else
 #include <sys/types.h>
 #include <string.h>
 #include <termios.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -246,7 +244,7 @@ int32_t main(void)
 		if (status == PICO_OK )
 		{
 			set_info(&allUnits[0]);
-			status = handleDevice(&allUnits[0]);
+			status = handleDevice(&allUnits[0], NULL);
 		}
 
 		if (status != PICO_OK)
@@ -294,7 +292,7 @@ int32_t main(void)
 		
 		printf("One device opened successfully\n");
 		printf("Model\t: %s\nS/N\t: %s\n", allUnits[listIter].modelString, allUnits[listIter].serial);
-		status = handleDevice(&allUnits[listIter]);
+		status = handleDevice(&allUnits[listIter], NULL);
 		
 		if (status != PICO_OK)
 		{
@@ -337,7 +335,7 @@ int32_t main(void)
 				
 				if ((allUnits[listIter].openStatus == PICO_OK ))
 				{
-					status = handleDevice(&allUnits[listIter]);
+					status = handleDevice(&allUnits[listIter], NULL);
 				}
 				
 				if (status != PICO_OK)

@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps6000aBlock", "ps6000aBloc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps6000aRapidBlock", "ps6000aRapidBlock\ps6000aRapidBlock.vcxproj", "{084191B1-BF30-4B50-A9B2-0EED5C2F965C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps6000aAWG", "ps6000aAWG\ps6000aAWG.vcxproj", "{EA91AECE-B468-4412-ABE0-CCE2400C249E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{084191B1-BF30-4B50-A9B2-0EED5C2F965C}.Release|x64.Build.0 = Release|x64
 		{084191B1-BF30-4B50-A9B2-0EED5C2F965C}.Release|x86.ActiveCfg = Release|Win32
 		{084191B1-BF30-4B50-A9B2-0EED5C2F965C}.Release|x86.Build.0 = Release|Win32
+		{EA91AECE-B468-4412-ABE0-CCE2400C249E}.Debug|x64.ActiveCfg = Debug|x64
+		{EA91AECE-B468-4412-ABE0-CCE2400C249E}.Debug|x64.Build.0 = Debug|x64
+		{EA91AECE-B468-4412-ABE0-CCE2400C249E}.Debug|x86.ActiveCfg = Debug|Win32
+		{EA91AECE-B468-4412-ABE0-CCE2400C249E}.Debug|x86.Build.0 = Debug|Win32
+		{EA91AECE-B468-4412-ABE0-CCE2400C249E}.Release|x64.ActiveCfg = Release|x64
+		{EA91AECE-B468-4412-ABE0-CCE2400C249E}.Release|x64.Build.0 = Release|x64
+		{EA91AECE-B468-4412-ABE0-CCE2400C249E}.Release|x86.ActiveCfg = Release|Win32
+		{EA91AECE-B468-4412-ABE0-CCE2400C249E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

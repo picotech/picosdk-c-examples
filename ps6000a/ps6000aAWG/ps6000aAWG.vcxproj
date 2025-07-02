@@ -22,16 +22,16 @@
     <ClCompile Include="..\..\shared\PicoBuffers.c" />
     <ClCompile Include="..\..\shared\PicoFileFunctions.c" />
     <ClCompile Include="..\..\shared\PicoScaling.c" />
+    <ClCompile Include="..\shared\LibAWGps6000a.c" />
     <ClCompile Include="..\shared\Libps6000a.c" />
-    <ClCompile Include="..\shared\LibStreamingps6000a.c" />
-    <ClCompile Include="ps6000aStreaming.c" />
+    <ClCompile Include="ps6000aAWG.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{481F9863-B30E-411C-B3E8-1FBF07882C2A}</ProjectGuid>
+    <ProjectGuid>{EA91AECE-B468-4412-ABE0-CCE2400C249E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ps5000aCon</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>ps6000aStreaming</ProjectName>
+    <ProjectName>ps6000aAWG</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

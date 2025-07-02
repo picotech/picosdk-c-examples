@@ -1,59 +1,57 @@
 /*******************************************************************************
  *
- * Filename: ps6000aRapidBlock.c
+ * Filename: ps6000aAWG.c
  *
  * Description:
  *   This is a console mode program that demonstrates how to use some of 
- *	 the PicoScope 6000 Series (ps6000a) driver API functions to perform operations
- *	 using a PicoScope 6000 Oscilloscope.
+ *	 the PicoScope 6XXXE Series (ps6000a) driver API functions to perform operations
+ *	 using a PicoScope 3XXXE Oscilloscope.
  *
  *	Supported PicoScope models:
  *
  *      All 6XXXE model numbers and any
- *		PicoScope 6000a API units
+ *		PicoScope ps6000a API units
  *
- * Examples:
- *   Collect a Rapidblock of samples immediately
- *   Collect a Rapidblock of samples when a trigger event occurs
+ * Example:
+ *   Demo of controlling the Signal generator and AWG
+ *   
  * 
  *   With the following options:
- *   -Change timebase & voltage scales
- *   -Display data in mV or ADC counts
- *	 -Handle power source changes
+ *   -Change frequencies & voltage scales
+ *   -Display in V & Hz
  *
  *	To build this application:-
  *
  *		If Microsoft Visual Studio (including Express/Community Edition) is being used:
  *
- *			Select the solution configuration (Debug/Release) and platform (x86/x64)
- *			Ensure that the 32-/64-bit ps6000a.lib can be located
+ *			Select the solution configuration (Debug/Release) and platform (x64)
+ *			Ensure that the 64-bit ps6000a.lib can be located
  *			Ensure that the ps6000aApi.h and PicoStatus.h files can be located
  *
  *		Otherwise:
  *
- *			 Set up a project for a 32-/64-bit console mode application
+ *			 Set up a project for a 64-bit console mode application
  *			 Add this file to the project
  *			 Add ps6000a.lib to the project (Microsoft C only)
  *			 Add ps6000aApi.h and PicoStatus.h to the project
  *			 Build the project
  *
- * Copyright (C) 2023-2025 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2025 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 
 #include <stdio.h>
+#include <math.h>
+
+#include "../shared/Libps6000a.h"
+#include "../shared/LibStreamingps6000a.h"
+#include "../shared/LibAWGps6000a.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
-
 #include <conio.h>
-#include <math.h>
-
-#include "ps6000aApi.h"
-#include "../shared/Libps6000a.h"
-#include "../shared/LibRapidBlockps6000a.h"
-
+#include "ps6000Api.h"
 #else
 #include <sys/types.h>
 #include <string.h>
@@ -127,8 +125,8 @@ return (fp>0)?0:-1;
 /****************************************************************************
 * Refernce Global Variables
 ***************************************************************************/
-extern BOOL		scaleVoltages;
-extern uint32_t	timebase; //extern uint32_t	timebase = 8;
+
+extern BOOL		scaleVoltages; //defined and used in Libps6000a.c
 /***************************************************************************/
 
 /****************************************************************************
@@ -139,69 +137,124 @@ extern uint32_t	timebase; //extern uint32_t	timebase = 8;
 *
 * Returns       none
 ***************************************************************************/
-static void mainMenu(GENERICUNIT *unit)
+static void mainMenu(GENERICUNIT*unit, SIG_GEN_SETTINGS* sigGenSettings)
 {
 	int8_t ch = '.';
 	while (ch != 'X')
 	{
-		displaySettings(unit);
+		//displaySettings(unit); //printf the current channel settings of the device
 
 		printf("\n\n");
-		printf("RapidBlock Mode Example\n");
-		printf("Please select operation:\n\n");
-
-		printf("R - Immediate RapidBlock                      V - Set Voltages\n");
-		printf("T - Triggered RapidBlock                      I - SetTimebase\n");
-		printf("                                              A - ADC counts/mV\n");	
-		printf("                                              D - Set Resolution\n");
-		printf("                                              M - Set Digital Ports (MSO)\n");
-		printf("                                              X - Exit\n");
+		printf("|\t\t\t\tAWG Mode Example\t\t\t\t|\n");
+		printsigGenSettings(unit, sigGenSettings);
+		printf("\n");
+		printf("Please select operation:\n");
+		printf("--- Wave types --------------------------------\n");
+		printf("S - Sine wave\n");
+		printf("Q - Square wave\n");
+		printf("R - Triangle wave\n");
+		//printf("U - Ramp Up\n");
+		//printf("D - Ramp Down\n");
+		printf("A - AWG\n");
+		printf("C - DC\n");
+		printf("--- Output Settings ---------------------------\n");
+		printf("F - Set Frequency\n");
+		printf("V - Set Peak voltage Output\n");
+		printf("O - Set Offset voltage Output\n");
+		printf("--- Sweep Settings ----------------------------\n");
+		printf("E - Toggle ON / OFF\n");
+		printf("Y - Set Stop Frequency\n");
+		printf("I - Set frequency increment (Hz)\n");
+		printf("N - Set increment time (ms)\n");
+		printf("--- Triggering --------------------------------\n");
+		printf("T - Toggle ON / OFF\n");
+		printf("B - Trigger on Ext\n");
+		printf("M - Manual trigger\n");
+		printf("--- AWG ---------------------------------------\n");
+		printf("L - Load AWG file\n");
+		printf("X-- EXIT --------------------------------------\n");
 		printf("Operation:");
-
+		sigGenSettings->Enabled = TRUE; //set enabled to TRUE after every operation
 		ch = toupper(_getch());
 
 		printf("\n\n");
 
 		switch (ch) 
 		{
+			case 'S':
+				SineWave(unit, sigGenSettings);
+				break;
+
+			case 'Q':
+				SquareWave(unit, sigGenSettings);
+				break;
+
 			case 'R':
-				collectRapidBlockImmediate(unit);
+				TriangleWave(unit, sigGenSettings);
 				break;
 
-			case 'T':
-				collectRapidBlockTriggered(unit);
-				break;
-
-			case 'V':
-				setVoltages(unit);
-				break;
-
-			case 'M':
-				setDigitalPorts(unit);
-				break;
-
-			case 'I':
-				setTimebase(unit);
+			case 'C':
+				dc(unit, sigGenSettings);
 				break;
 
 			case 'A':
-				scaleVoltages = !scaleVoltages;
+				AWG(unit, sigGenSettings);
 				break;
 
-			case 'D':
-				setResolution(unit);
+			case 'L':
+				AWGLoadFile(unit, sigGenSettings);
 				break;
 
-			case 'X':
+			case 'V':
+				AWGSetPeaktoPVoltage(unit, sigGenSettings);
+				break;
+
+			case 'O':
+				AWGSetOffsetVoltage(unit, sigGenSettings);
+				break;
+
+			case 'F': 
+				AWGSetFrequency(unit, sigGenSettings);
+				break;
+
+			case 'Y':
+				AWGSetFrequencyStop(unit, sigGenSettings);
+				break;
+
+			case 'I':
+				AWGSetFrequencyInc(unit, sigGenSettings);
+				break;
+
+			case 'N':
+				AWGSetSweepTimeInc(unit, sigGenSettings);
+				break;
+
+			case 'E':
+				SweepOnOff(unit, sigGenSettings);
+				break;
+
+			case 'T':
+				SigGenTriggerOnOff(unit, sigGenSettings);
+				break;
+
+			case 'M':
+				SigGenTriggerNow(unit, sigGenSettings);
+				break;
+
+			case 'B':
+				SigGenTriggerExt(unit, sigGenSettings);
+				break;
+				
+			case 'X': //Exit the application
 				break;
 
 			default:
 				printf("Invalid operation\n");
 				break;
 		}
+		
 	}
 }
-
 
 /****************************************************************************
 * main
@@ -216,8 +269,9 @@ int32_t main(void)
 			"1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#";
 	PICO_STATUS status = PICO_OK;
 	GENERICUNIT allUnits[MAX_PICO_DEVICES] = {0};
+	SIG_GEN_SETTINGS sigGenSettings[MAX_PICO_DEVICES] = {0};
 
-	printf("PicoScope 6000 Series (ps6000a) Driver Example \n");
+	printf("PicoScope 6000E Series (ps6000a) Driver Example \n");
 	printf("\nEnumerating Units...\n");
 
 	do
@@ -246,7 +300,7 @@ int32_t main(void)
 		if (status == PICO_OK )
 		{
 			set_info(&allUnits[0]);
-			status = handleDevice(&allUnits[0], NULL);
+			status = handleDevice(&allUnits[0], &sigGenSettings[0]);
 		}
 
 		if (status != PICO_OK)
@@ -255,7 +309,7 @@ int32_t main(void)
 			return 1;
 		}
 
-		mainMenu(&allUnits[0]);
+		mainMenu(&allUnits[0], &sigGenSettings[0]);
 		closeDevice(&allUnits[0]);
 		printf("Exit...\n");
 		return 0;
@@ -294,7 +348,7 @@ int32_t main(void)
 		
 		printf("One device opened successfully\n");
 		printf("Model\t: %s\nS/N\t: %s\n", allUnits[listIter].modelString, allUnits[listIter].serial);
-		status = handleDevice(&allUnits[listIter], NULL);
+		status = handleDevice(&allUnits[0], &sigGenSettings[0]);
 		
 		if (status != PICO_OK)
 		{
@@ -302,7 +356,7 @@ int32_t main(void)
 			return 1;
 		}
 		
-		mainMenu(&allUnits[listIter]);
+		mainMenu(&allUnits[listIter], &sigGenSettings[listIter]);
 		closeDevice(&allUnits[listIter]);
 		printf("Exit...\n");
 		return 0;
@@ -337,7 +391,7 @@ int32_t main(void)
 				
 				if ((allUnits[listIter].openStatus == PICO_OK ))
 				{
-					status = handleDevice(&allUnits[listIter], NULL);
+					status = handleDevice(&allUnits[0], &sigGenSettings[0]);
 				}
 				
 				if (status != PICO_OK)
@@ -346,7 +400,7 @@ int32_t main(void)
 					return 1;
 				}
 
-				mainMenu(&allUnits[listIter]);
+				mainMenu(&allUnits[listIter], &sigGenSettings[listIter]);
 
 				printf("Found %d devices, pick one to open from the list:\n",devCount);
 				

@@ -42,16 +42,16 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <math.h>
+
+#include "ps6000aApi.h"
+#include "../shared/Libps6000a.h"
+#include "../shared/LibBlockps6000a.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
-#include <math.h>
-#include "ps6000aApi.h"
-#include "../shared/Libps60000a.h"
-#include "../shared/LibBlockps60000a.h"
-
 #else
 #include <sys/types.h>
 #include <string.h>
@@ -244,7 +244,7 @@ int32_t main(void)
 		if (status == PICO_OK )
 		{
 			set_info(&allUnits[0]);
-			status = handleDevice(&allUnits[0]);
+			status = handleDevice(&allUnits[0], NULL);
 		}
 
 		if (status != PICO_OK)
@@ -292,7 +292,7 @@ int32_t main(void)
 		
 		printf("One device opened successfully\n");
 		printf("Model\t: %s\nS/N\t: %s\n", allUnits[listIter].modelString, allUnits[listIter].serial);
-		status = handleDevice(&allUnits[listIter]);
+		status = handleDevice(&allUnits[listIter], NULL);
 		
 		if (status != PICO_OK)
 		{
@@ -335,7 +335,7 @@ int32_t main(void)
 				
 				if ((allUnits[listIter].openStatus == PICO_OK ))
 				{
-					status = handleDevice(&allUnits[listIter]);
+					status = handleDevice(&allUnits[listIter], NULL);
 				}
 				
 				if (status != PICO_OK)

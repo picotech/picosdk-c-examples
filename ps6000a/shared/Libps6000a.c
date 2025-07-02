@@ -4,7 +4,7 @@
  *
  * Description:
  *   This is a C Library file to use with the
- *   PicoScope 6000 Series (ps6000a) devices.
+ *   PicoScope 6XXXE Series (ps6000a) devices.
  *
  * Copyright (C) 2023-2025 Pico Technology Ltd. See LICENSE file for terms.
  *
@@ -15,7 +15,7 @@
 
 #include "../../shared/PicoUnit.h"
 #include "../../shared/PicoScaling.h"
-#include "./Libps60000a.h"
+#include "./Libps6000a.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
@@ -101,7 +101,7 @@ USER_PROBE_INFO userProbeInfo;
 ***************************************************************************/
 BOOL		scaleVoltages = TRUE;
 uint32_t	timebase = 0;
-const uint64_t constBufferSize = 12040;
+const uint64_t constBufferSize = 1024;
 /***************************************************************************/
 
 /****************************************************************************
@@ -290,7 +290,6 @@ PICO_STATUS SetTrigger(GENERICUNIT* unit,
 		return status;
 	}
 
-	//ps6000aSetPulseWidthQualifierDirections //////////////////////////////PASS ZERO DIRECTIONS???
 	if ((status = ps6000aSetPulseWidthQualifierDirections(unit->handle,
 		pwq->directions, pwq->nDirections)) != PICO_OK)
 	{
@@ -348,7 +347,7 @@ void set_info(GENERICUNIT* unit)
 	uint32_t		maxArbitraryWaveformSize = 0;
 
 	//Initialise default unit properties and change when required
-	unit->sigGen = SIGGEN_AWG;
+	unit->sigGenfeature = SIGGEN_AWG;
 	unit->firstRange = PICO_X1_PROBE_10MV;
 	unit->lastRange = PICO_X1_PROBE_20V;
 	unit->channelCount = DUAL_SCOPE;
@@ -383,11 +382,7 @@ void set_info(GENERICUNIT* unit)
 
 			printf("%s: %s\n", description[i], line);
 		}
-
 		printf("\n");
-
-		
-
 
 		// Set sig gen parameters
 		// If device has Arbitrary Waveform Generator, find the maximum AWG buffer size
@@ -915,7 +910,7 @@ PICO_STATUS openDevice(GENERICUNIT* unit, int8_t* serial)
 * Returns
 * - PICO_STATUS to indicate success, or if an error occurred
 ***************************************************************************/
-PICO_STATUS handleDevice(GENERICUNIT* unit)
+PICO_STATUS handleDevice(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
 {
 	int16_t value = 0;
 	int32_t i;
@@ -993,7 +988,7 @@ PICO_STATUS handleDevice(GENERICUNIT* unit)
 			unit->channelSettings[i].enabled = FALSE;
 
 		unit->channelSettings[i].DCcoupled = PICO_DC;	// PICO_AC, PICO_DC, PICO_DC_50OHM
-		unit->channelSettings[i].range = PICO_X1_PROBE_2V;
+		unit->channelSettings[i].range = PICO_X1_PROBE_1V;
 		unit->channelSettings[i].analogueOffset = 0.0f;
 		unit->channelSettings[i].bandwithLimit = PICO_BW_FULL; // PICO_BW_FULL, PICO_BW_20MHZ, PICO_BW_200MHZ
 	}
@@ -1003,8 +998,30 @@ PICO_STATUS handleDevice(GENERICUNIT* unit)
 		unit->digitalChannelSettings[i].threshold[0] = 0.0f;	// Set threshold to 0V
 	}
 
-	//memset(&pulseWidth, 0, sizeof(struct tPwq));
-
+	if (sigGenSettings != NULL)
+	{
+		//Set default Signal Generator settings /AWG settings
+		///////////
+		sigGenSettings->Enabled = 0;
+		//
+		sigGenSettings->PeakVolts = 2.0f;
+		sigGenSettings->Offset = 0.0f;
+		sigGenSettings->Frequency = 1000.0f; // 1.0e3;
+		// Sweep settings
+		sigGenSettings->FrequencyStop = 2000.0f;
+		sigGenSettings->FrequencyIncrement = 100.0f;   //double* frequencyIncrement(Hz),
+		sigGenSettings->DwellTime = 0.1f;              //double* dwellTime (s)
+		sigGenSettings->SweepType = PICO_UP;
+		// Waveform settings
+		sigGenSettings->AWGBufferSize = 0;
+		//sigGenSettings->AWGBuffer = (int16_t*)calloc(maxAwgBufferLeght, sizeof(int16_t));
+		sigGenSettings->AWGBuffer = NULL;
+		// Trigger settings
+		sigGenSettings->triggerSource = PICO_SIGGEN_NONE;
+		sigGenSettings->triggerType = PICO_SIGGEN_RISING;
+		sigGenSettings->cycles = 1; // Number of cycles to output
+		sigGenSettings->autoTrigPicoSecs = 0; // Auto trigger in pico seconds (0 = no auto trigger)
+	}
 	setDefaults(unit);
 
 	/* Trigger disabled	*/

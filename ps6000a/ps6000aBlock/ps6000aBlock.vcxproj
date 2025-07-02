@@ -22,8 +22,8 @@
     <ClCompile Include="..\..\shared\PicoBuffers.c" />
     <ClCompile Include="..\..\shared\PicoFileFunctions.c" />
     <ClCompile Include="..\..\shared\PicoScaling.c" />
-    <ClCompile Include="..\shared\LibBlockps60000a.c" />
-    <ClCompile Include="..\shared\Libps60000a.c" />
+    <ClCompile Include="..\shared\LibBlockps6000a.c" />
+    <ClCompile Include="..\shared\Libps6000a.c" />
     <ClCompile Include="ps6000aBlock.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -111,6 +111,8 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProgramW6432)\Pico Technology\SDK\inc</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,6 +149,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProgramW6432)\Pico Technology\SDK\inc</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
