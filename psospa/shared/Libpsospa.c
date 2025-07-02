@@ -101,7 +101,7 @@ USER_PROBE_INFO userProbeInfo;
 ***************************************************************************/
 BOOL		scaleVoltages = TRUE;
 uint32_t	timebase = 0;
-const uint64_t constBufferSize = 12040;
+const uint64_t constBufferSize = 1024;
 /***************************************************************************/
 
 /****************************************************************************
@@ -335,7 +335,7 @@ void set_info(GENERICUNIT* unit)
 	uint32_t		maxArbitraryWaveformSize = 0;
 
 	//Initialise default unit properties and change when required
-	unit->sigGen = SIGGEN_AWG;
+	unit->sigGenfeature = SIGGEN_AWG;
 	unit->firstRange = PICO_X1_PROBE_10MV;
 	unit->lastRange = PICO_X1_PROBE_20V;
 	unit->channelCount = DUAL_SCOPE;
@@ -553,8 +553,6 @@ void setTimebase(GENERICUNIT* unit)
 	if (status != PICO_OK)
 	{
 		printf("setTimebase:psospaGetMinimumTimebaseStateless ------ 0x%08lx \n", status);
-		if(status == 0x0000018c)
-			printf("The channel combination is not valid for the ADC resolution (10/12bit)");
 		return;
 	}
 
@@ -785,10 +783,16 @@ void displaySettings(GENERICUNIT* unit)
 				printf("Coupling: 50Ohm, ");
 			if ( unit->channelSettings[ch].bandwithLimit == PICO_BW_FULL)
 				printf("bandwithLimit: FULL, ");
-			if (unit->channelSettings[ch].bandwithLimit == PICO_BW_20MHZ)	//Not 6428E-D
+			if (unit->channelSettings[ch].bandwithLimit == PICO_BW_20MHZ)
 				printf("bandwithLimit: 20MHz, ");
-			if (unit->channelSettings[ch].bandwithLimit == PICO_BW_200MHZ)	//64x5E and 64x6E only
+			if (unit->channelSettings[ch].bandwithLimit == PICO_BW_50MHZ)
+				printf("bandwithLimit: 50MHz, ");
+			if (unit->channelSettings[ch].bandwithLimit == PICO_BW_100MHZ)
+				printf("bandwithLimit: 100MHz, ");
+			if (unit->channelSettings[ch].bandwithLimit == PICO_BW_200MHZ)
 				printf("bandwithLimit: 200MHz, ");
+			if (unit->channelSettings[ch].bandwithLimit == PICO_BW_500MHZ)
+				printf("bandwithLimit: 500MHz, ");
 			printf("analogueOffset: %g\n", unit->channelSettings[ch].analogueOffset);
 		}
 	}
@@ -852,7 +856,7 @@ PICO_STATUS openDevice(GENERICUNIT* unit, int8_t* serial)
 * Returns
 * - PICO_STATUS to indicate success, or if an error occurred
 ***************************************************************************/
-PICO_STATUS handleDevice(GENERICUNIT* unit)
+PICO_STATUS handleDevice(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
 {
 	int16_t value = 0;
 	int32_t i;
@@ -947,8 +951,30 @@ PICO_STATUS handleDevice(GENERICUNIT* unit)
 		unit->digitalChannelSettings[i].enabled = FALSE;		//turn off digital channels
 		unit->digitalChannelSettings[i].threshold[0] = 0.0f;	// Set threshold to 0V
 	}
-
-	//memset(&pulseWidth, 0, sizeof(struct tPwq));
+	if (sigGenSettings != NULL)
+	{
+		//Set default Signal Generator settings /AWG settings
+		///////////
+		sigGenSettings->Enabled = 0;
+		//
+		sigGenSettings->PeakVolts = 2.0f;
+		sigGenSettings->Offset = 0.0f;
+		sigGenSettings->Frequency = 1000.0f; // 1.0e3;
+		// Sweep settings
+		sigGenSettings->FrequencyStop = 2000.0f;
+		sigGenSettings->FrequencyIncrement = 100.0f;   //double* frequencyIncrement(Hz),
+		sigGenSettings->DwellTime = 0.1f;              //double* dwellTime (s)
+		sigGenSettings->SweepType = PICO_UP;
+		// Waveform settings
+		sigGenSettings->AWGBufferSize = 0;
+		//sigGenSettings->AWGBuffer = (int16_t*)calloc(maxAwgBufferLeght, sizeof(int16_t));
+		sigGenSettings->AWGBuffer = NULL;
+		// Trigger settings
+		sigGenSettings->triggerSource = PICO_SIGGEN_NONE;
+		sigGenSettings->triggerType = PICO_SIGGEN_RISING;
+		sigGenSettings->cycles = 1; // Number of cycles to output
+		sigGenSettings->autoTrigPicoSecs = 0; // Auto trigger in pico seconds (0 = no auto trigger)
+	}
 
 	setDefaults(unit);
 

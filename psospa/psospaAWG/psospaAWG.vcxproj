@@ -14,16 +14,16 @@
     <ClCompile Include="..\..\shared\PicoBuffers.c" />
     <ClCompile Include="..\..\shared\PicoFileFunctions.c" />
     <ClCompile Include="..\..\shared\PicoScaling.c" />
+    <ClCompile Include="..\shared\LibAWGpsospa.c" />
     <ClCompile Include="..\shared\Libpsospa.c" />
-    <ClCompile Include="..\shared\LibStreamingpsospa.c" />
-    <ClCompile Include="psospaStreaming.c" />
+    <ClCompile Include="psospaAWG.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{481F9863-B30E-411C-B3E8-1FBF07882C2A}</ProjectGuid>
+    <ProjectGuid>{EA9CF181-17A3-4C50-BEE4-FBFC5EAD9BAC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ps5000aCon</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
-    <ProjectName>psospaStreaming</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>psospaAWG</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -63,7 +63,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProgramW6432)\Pico Technology\SDK\inc</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
@@ -82,7 +82,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProgramW6432)\Pico Technology\SDK\inc</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>

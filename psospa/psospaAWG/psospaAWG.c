@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Filename: psospaStreaming.c
+ * Filename: psospaAWG.c
  *
  * Description:
  *   This is a console mode program that demonstrates how to use some of 
@@ -12,14 +12,13 @@
  *      All 3XXXE model numbers and any
  *		PicoScope psospa API units
  *
- * Examples:
- *   Collect Streaming blocks of samples immediately
- *   Collect Streaming blocks of samples when a trigger event occurs
+ * Example:
+ *   Demo of controlling the Signal generator and AWG
+ *   
  * 
  *   With the following options:
- *   -Change timebase & voltage scales
- *   -Display data in mV or ADC counts
- *	 -Handle power source changes
+ *   -Change frequencies & voltage scales
+ *   -Display in V & Hz
  *
  *	To build this application:-
  *
@@ -46,6 +45,7 @@
 
 #include "../shared/Libpsospa.h"
 #include "../shared/LibStreamingpsospa.h"
+#include "../shared/LibAWGpsospa.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
@@ -137,26 +137,44 @@ extern BOOL		scaleVoltages; //defined and used in Libpsospa.c
 *
 * Returns       none
 ***************************************************************************/
-static void mainMenu(GENERICUNIT*unit)
+static void mainMenu(GENERICUNIT*unit, SIG_GEN_SETTINGS* sigGenSettings)
 {
 	int8_t ch = '.';
 	while (ch != 'X')
 	{
-		displaySettings(unit);
+		//displaySettings(unit); //printf the current channel settings of the device
 
 		printf("\n\n");
-		printf("Streaming Mode Example\n");
-		printf("Please select operation:\n\n");
-
-		printf("S - Immediate Streaming                       V - Set Voltages\n");
-		printf("T - Triggered Streaming                       I - SetTimebase\n");
-		printf("                                              A - ADC counts/mV\n");	
-		printf("                                              D - Set Resolution\n");
-		if (unit->digitalPortCount != 0)
-			printf("                                              M - Set Digital Ports (MSO)\n");
-		printf("                                              X - Exit\n");
+		printf("|\t\t\t\tAWG Mode Example\t\t\t\t|\n");
+		printsigGenSettings(unit, sigGenSettings);
+		printf("\n");
+		printf("Please select operation:\n");
+		printf("--- Wave types --------------------------------\n");
+		printf("S - Sine wave\n");
+		printf("Q - Square wave\n");
+		printf("R - Triangle wave\n");
+		//printf("U - Ramp Up\n");
+		//printf("D - Ramp Down\n");
+		printf("A - AWG\n");
+		printf("C - DC\n");
+		printf("--- Output Settings ---------------------------\n");
+		printf("F - Set Frequency\n");
+		printf("V - Set Peak voltage Output\n");
+		printf("O - Set Offset voltage Output\n");
+		printf("--- Sweep Settings ----------------------------\n");
+		printf("E - Toggle ON / OFF\n");
+		printf("Y - Set Stop Frequency\n");
+		printf("I - Set frequency increment (Hz)\n");
+		printf("N - Set increment time (ms)\n");
+		printf("--- Triggering --------------------------------\n");
+		printf("T - Toggle ON / OFF\n");
+		printf("B - Trigger on Ext\n");
+		printf("M - Manual trigger\n");
+		printf("--- AWG ---------------------------------------\n");
+		printf("L - Load AWG file\n");
+		printf("X-- EXIT --------------------------------------\n");
 		printf("Operation:");
-
+		sigGenSettings->Enabled = TRUE; //set enabled to TRUE after every operation
 		ch = toupper(_getch());
 
 		printf("\n\n");
@@ -164,46 +182,79 @@ static void mainMenu(GENERICUNIT*unit)
 		switch (ch) 
 		{
 			case 'S':
-				collectStreamingImmediate(unit);
+				SineWave(unit, sigGenSettings);
 				break;
 
-			case 'T':
-				collectStreamingTriggered(unit);
+			case 'Q':
+				SquareWave(unit, sigGenSettings);
 				break;
 
-			case 'V':
-				setVoltages(unit);
+			case 'R':
+				TriangleWave(unit, sigGenSettings);
 				break;
 
-			case 'M':
-				if (unit->digitalPortCount != 0)
-				{
-					setDigitalPorts(unit);
-				}			
-				break;
-
-			case 'I':
-				setTimebase(unit);
+			case 'C':
+				dc(unit, sigGenSettings);
 				break;
 
 			case 'A':
-				scaleVoltages = !scaleVoltages;
+				AWG(unit, sigGenSettings);
 				break;
 
-			case 'D':
-				setResolution(unit);
+			case 'L':
+				AWGLoadFile(unit, sigGenSettings);
 				break;
 
-			case 'X':
+			case 'V':
+				AWGSetPeaktoPVoltage(unit, sigGenSettings);
+				break;
+
+			case 'O':
+				AWGSetOffsetVoltage(unit, sigGenSettings);
+				break;
+
+			case 'F': 
+				AWGSetFrequency(unit, sigGenSettings);
+				break;
+
+			case 'Y':
+				AWGSetFrequencyStop(unit, sigGenSettings);
+				break;
+
+			case 'I':
+				AWGSetFrequencyInc(unit, sigGenSettings);
+				break;
+
+			case 'N':
+				AWGSetSweepTimeInc(unit, sigGenSettings);
+				break;
+
+			case 'E':
+				SweepOnOff(unit, sigGenSettings);
+				break;
+
+			case 'T':
+				SigGenTriggerOnOff(unit, sigGenSettings);
+				break;
+
+			case 'M':
+				SigGenTriggerNow(unit, sigGenSettings);
+				break;
+
+			case 'B':
+				SigGenTriggerExt(unit, sigGenSettings);
+				break;
+				
+			case 'X': //Exit the application
 				break;
 
 			default:
 				printf("Invalid operation\n");
 				break;
 		}
+		
 	}
 }
-
 
 /****************************************************************************
 * main
@@ -218,6 +269,7 @@ int32_t main(void)
 			"1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#";
 	PICO_STATUS status = PICO_OK;
 	GENERICUNIT allUnits[MAX_PICO_DEVICES] = {0};
+	SIG_GEN_SETTINGS sigGenSettings[MAX_PICO_DEVICES] = {0};
 
 	printf("PicoScope 3000E Series (psospa) Driver Example \n");
 	printf("\nEnumerating Units...\n");
@@ -248,7 +300,7 @@ int32_t main(void)
 		if (status == PICO_OK )
 		{
 			set_info(&allUnits[0]);
-			status = handleDevice(&allUnits[0], NULL);
+			status = handleDevice(&allUnits[0], &sigGenSettings[0]);
 		}
 
 		if (status != PICO_OK)
@@ -257,7 +309,7 @@ int32_t main(void)
 			return 1;
 		}
 
-		mainMenu(&allUnits[0]);
+		mainMenu(&allUnits[0], &sigGenSettings[0]);
 		closeDevice(&allUnits[0]);
 		printf("Exit...\n");
 		return 0;
@@ -296,7 +348,7 @@ int32_t main(void)
 		
 		printf("One device opened successfully\n");
 		printf("Model\t: %s\nS/N\t: %s\n", allUnits[listIter].modelString, allUnits[listIter].serial);
-		status = handleDevice(&allUnits[listIter], NULL);
+		status = handleDevice(&allUnits[0], &sigGenSettings[0]);
 		
 		if (status != PICO_OK)
 		{
@@ -304,7 +356,7 @@ int32_t main(void)
 			return 1;
 		}
 		
-		mainMenu(&allUnits[listIter]);
+		mainMenu(&allUnits[listIter], &sigGenSettings[listIter]);
 		closeDevice(&allUnits[listIter]);
 		printf("Exit...\n");
 		return 0;
@@ -339,7 +391,7 @@ int32_t main(void)
 				
 				if ((allUnits[listIter].openStatus == PICO_OK ))
 				{
-					status = handleDevice(&allUnits[listIter], NULL);
+					status = handleDevice(&allUnits[0], &sigGenSettings[0]);
 				}
 				
 				if (status != PICO_OK)
@@ -348,7 +400,7 @@ int32_t main(void)
 					return 1;
 				}
 
-				mainMenu(&allUnits[listIter]);
+				mainMenu(&allUnits[listIter], &sigGenSettings[listIter]);
 
 				printf("Found %d devices, pick one to open from the list:\n",devCount);
 				

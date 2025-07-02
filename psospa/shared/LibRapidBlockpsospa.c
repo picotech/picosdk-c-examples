@@ -146,18 +146,19 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	uint64_t nCaptures;
 	uint64_t nCompletedCaptures;
 	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);//bitwise OR flags for first buffer that is set
-
+	//--------------------------------------------------------------------------//
 	//Capture settings
 	uint64_t nSamples = constBufferSize;	//Set the number of samples per capture
+	uint64_t noOfPreTriggerSamples = 0;
 	nCaptures = 3;				//Set the number of captures
 
 	//Buffers settings (Set DownSampling mode and ratio)
 	struct tbuffer_settings bufferSettings = {0};
 	bufferSettings.startIndex = 0;
-	bufferSettings.downSampleRatioMode = PICO_RATIO_MODE_AGGREGATE; //PICO_RATIO_MODE_RAW;
-	bufferSettings.downSampleRatio = 16;
+	bufferSettings.downSampleRatioMode = PICO_RATIO_MODE_AGGREGATE;
+	bufferSettings.downSampleRatio = 4;
 	bufferSettings.nSamples = constBufferSize;
-
+	//--------------------------------------------------------------------------//
 	//printf(scaleVoltages ? "Volts\n" : "ADC Counts\n");
 	printf("Press any key to abort\n");
 
@@ -178,7 +179,7 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	overflowArray = (int16_t*)calloc(nCaptures, sizeof(int16_t));
 
 	printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
-	printf("%llu Captures each with %llu Samples\n", nCaptures, nSamples);
+	printf("%llu Captures each with %llu ADC Samples\n", nCaptures, nSamples);
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_RAW)
 		printf("DownSampling Mode is set to: None\n");
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -192,8 +193,8 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 
 	//Start acquisition
 	status = psospaRunBlock(unit->handle,
-		0,
-		nSamples,
+		noOfPreTriggerSamples,
+		nSamples - noOfPreTriggerSamples,
 		timebase,
 		&timeIndisposed,
 		0,
@@ -244,7 +245,7 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 					(PICO_CHANNEL)channel,
 					maxBuffers[capture][channel],
 					minBuffers[capture][channel],
-					(int32_t)nSamples,
+					multiBufferSizes.maxBufferSize,
 					PICO_INT16_T, //PICO_DATA_TYPE
 					capture,
 					bufferSettings.downSampleRatioMode,
@@ -269,9 +270,9 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 					PICO_PORT0 + (PICO_CHANNEL)channel,
 					maxBuffers[capture][channel + unit->channelCount],
 					minBuffers[capture][channel + unit->channelCount],
-					(int32_t)bufferSettings.nSamples,
+					multiBufferSizes.maxBufferSize,
 					PICO_INT16_T,
-					0,			//waveform number
+					capture,			//waveform number
 					bufferSettings.downSampleRatioMode,
 					action_flag);
 				action_flag = PICO_ADD;//all subsequent calls use ADD!
@@ -296,8 +297,8 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	if (status == PICO_OK)
 	{
 		//Get scaling Info for each channel
-		PICO_PROBE_SCALING enabledChannelsScaling[PSOSPA_MAX_CHANNELS] = {0};
-		PICO_PROBE_SCALING channelRangeInfoTemp;
+		struct tPicoProbeScaling enabledChannelsScaling[PSOSPA_MAX_CHANNELS] = { 0 };
+		struct tPicoProbeScaling channelRangeInfoTemp;
 		for (i = 0; i < unit->channelCount; i++)
 		{
 			if (unit->channelSettings[i].enabled)
@@ -314,9 +315,9 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 			multiBufferSizes,
 			enabledChannelsScaling,
 			(CAPTURE_MODE)RAPID_BLOCK,
-			3,						// Number of buffers to write, 1 for block mode
+			3,						// Number of buffers to write
 			10,						// Number of samples to write
-			0,						// Triggersample
+			noOfPreTriggerSamples,	// Triggersample
 			overflowArray);
 		// Print each segment capture to a file
 		printf("\nWriting each of: %lld channel buffer sets to a file.\n", multiBufferSizes.numberOfBuffers);
@@ -327,7 +328,7 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 			multiBufferSizes,
 			enabledChannelsScaling,
 			"RapidBlockCaptureNo_",
-			0,						// Triggersample
+			noOfPreTriggerSamples,	// Triggersample
 			overflowArray,
 			NULL);	
 
@@ -431,9 +432,11 @@ void collectRapidBlockTriggered(GENERICUNIT* unit)
 
 	printf("Collect RapidBlock triggered...\n");
 	printf("Trigger Channel is %c\n", 'A' + sourceDetails.channel);
+	// If scaleVoltages, print mV value
+	// else print ADC Count
 	printf("Collects when value rises past %d", scaleVoltages ?
-		(int16_t)adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[sourceDetails.channel].range, unit->maxADCValue)	// If scaleVoltages, print mV value
-		: sourceDetails.thresholdUpper);																// else print ADC Count
+		(int16_t)adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[sourceDetails.channel].range, unit->maxADCValue)
+		: sourceDetails.thresholdUpper);
 	
 	printf(scaleVoltages ? " mV\n" : " ADC Counts\n");
 

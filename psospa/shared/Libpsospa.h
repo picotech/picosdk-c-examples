@@ -116,12 +116,29 @@ typedef struct tPwq
 	PICO_PULSE_WIDTH_TYPE type;
 }PWQ;
 
-typedef enum
+// Struct to store Signal generator and AWG unit settings
+typedef struct tSigGenSettings
 {
-	SIGGEN_NONE = 0,
-	SIGGEN_FUNCTGEN = 1,
-	SIGGEN_AWG = 2
-}SIGGEN_TYPE;
+	int16_t						Enabled;
+	// General Signal Generator Settings
+	PICO_WAVE_TYPE				WaveType;
+	double						PeakVolts;
+	double						Offset;
+	double						Frequency;
+	double						dutyCyclePercent;
+	// Signal Generator Sweep Settings
+	double						FrequencyStop;
+	double						FrequencyIncrement;// frequencyIncrement
+	double 						DwellTime; //Seconds
+	PICO_SWEEP_TYPE				SweepType;
+	// Signal Generator Trigger Settings
+	PICO_SIGGEN_TRIG_TYPE		triggerType;       // PICO_SIGGEN_TRIG_TYPE triggerType,
+	PICO_SIGGEN_TRIG_SOURCE		triggerSource;      // PICO_SIGGEN_TRIG_SOURCE triggerSource,
+	uint64_t					cycles;
+	uint64_t					autoTrigPicoSecs; // Signal Generator Waveform Settings
+	int16_t*					AWGBuffer;
+	uint64_t					AWGBufferSize;
+}SIG_GEN_SETTINGS;
 
 // Struct to store intelligent probe information
 typedef struct tUserProbeInfo
@@ -139,7 +156,7 @@ void displaySettings(GENERICUNIT* unit);
 
 PICO_STATUS openDevice(GENERICUNIT* unit, int8_t* serial);
 void closeDevice(GENERICUNIT* unit);
-PICO_STATUS handleDevice(GENERICUNIT* unit);
+PICO_STATUS handleDevice(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings);
 
 void setVoltages(GENERICUNIT* unit);
 void setDigitalPorts(GENERICUNIT* unit);

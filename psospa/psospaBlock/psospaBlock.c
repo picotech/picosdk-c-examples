@@ -248,7 +248,7 @@ int32_t main(void)
 		if (status == PICO_OK )
 		{
 			set_info(&allUnits[0]);
-			status = handleDevice(&allUnits[0]);
+			status = handleDevice(&allUnits[0], NULL);
 		}
 
 		if (status != PICO_OK)
@@ -296,7 +296,7 @@ int32_t main(void)
 		
 		printf("One device opened successfully\n");
 		printf("Model\t: %s\nS/N\t: %s\n", allUnits[listIter].modelString, allUnits[listIter].serial);
-		status = handleDevice(&allUnits[listIter]);
+		status = handleDevice(&allUnits[listIter], NULL);
 		
 		if (status != PICO_OK)
 		{
@@ -339,7 +339,7 @@ int32_t main(void)
 				
 				if ((allUnits[listIter].openStatus == PICO_OK ))
 				{
-					status = handleDevice(&allUnits[listIter]);
+					status = handleDevice(&allUnits[listIter], NULL);
 				}
 				
 				if (status != PICO_OK)

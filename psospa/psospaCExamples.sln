@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psospaRapidBlock", "psospaR
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psospaStreaming", "psospaStreaming\psospaStreaming.vcxproj", "{481F9863-B30E-411C-B3E8-1FBF07882C2A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps6000aAWG", "psospaAWG\psospaAWG.vcxproj", "{EA9CF181-17A3-4C50-BEE4-FBFC5EAD9BAC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -27,6 +29,10 @@ Global
 		{481F9863-B30E-411C-B3E8-1FBF07882C2A}.Debug|x64.Build.0 = Debug|x64
 		{481F9863-B30E-411C-B3E8-1FBF07882C2A}.Release|x64.ActiveCfg = Release|x64
 		{481F9863-B30E-411C-B3E8-1FBF07882C2A}.Release|x64.Build.0 = Release|x64
+		{EA9CF181-17A3-4C50-BEE4-FBFC5EAD9BAC}.Debug|x64.ActiveCfg = Debug|x64
+		{EA9CF181-17A3-4C50-BEE4-FBFC5EAD9BAC}.Debug|x64.Build.0 = Debug|x64
+		{EA9CF181-17A3-4C50-BEE4-FBFC5EAD9BAC}.Release|x64.ActiveCfg = Release|x64
+		{EA9CF181-17A3-4C50-BEE4-FBFC5EAD9BAC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
