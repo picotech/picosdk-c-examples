@@ -89,11 +89,19 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #define max(a,b) ((a) > (b) ? a : b)
 #define min(a,b) ((a) < (b) ? a : b)
 #endif
+
 typedef enum
 {
 	MODEL_NONE = 0,//this is used
 	//models values not used in the code
 }MODEL_TYPE; 
+
+typedef enum
+{
+	SIGGEN_NONE = 0,
+	SIGGEN_FUNCTGEN = 1,
+	SIGGEN_AWG = 2
+}SIGGEN_FEATURE;
 
 typedef struct
 {
@@ -129,7 +137,31 @@ typedef struct tGenericUnit
 	PICO_CONNECT_PROBE_RANGE	lastRange;
 	int16_t						channelCount;
 	int16_t						maxADCValue;
-	PICO_WAVE_TYPE				sigGen;
+	
+	SIGGEN_FEATURE				sigGenfeature; // SIGGEN_NONE, SIGGEN_FUNCTGEN, SIGGEN_AWG
+	/*
+	// AWG settings
+	int16_t						sigGenEnabled;
+	PICO_WAVE_TYPE				sigGenWaveType;
+	double						sigGenPeakVolts;
+	double						sigGenOffset;
+	double						sigGenFrequency;
+	//
+	double						sigGenFrequencyStop;
+	double						sigGenFrequencyIncrement;// frequencyIncrement
+	double 						sigGenDwellTime; //Seconds
+	PICO_SWEEP_TYPE				sigGenSweepType;
+	//
+	PICO_SIGGEN_TRIG_TYPE		sigGentriggerType;       // PICO_SIGGEN_TRIG_TYPE triggerType,
+	PICO_SIGGEN_TRIG_SOURCE		sigGentriggerSource;      // PICO_SIGGEN_TRIG_SOURCE triggerSource,
+	uint64_t					sigGencycles;
+	uint64_t					sigGenautoTrigPicoSecs;
+	//
+	double						dutyCyclePercent;
+	int16_t*					AWGBuffer;
+	uint64_t					AWGBufferSize;
+	// //
+	*/
 	int16_t						hasHardwareETS;
 	uint16_t					awgBufferSize;
 	CHANNEL_SETTINGS			channelSettings[8];
