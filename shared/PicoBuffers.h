@@ -106,7 +106,7 @@ typedef struct tmultiBufferSizes
 // Function prototypes
 void data_buffer_sizes(PICO_RATIO_MODE downSampleRatioMode, uint64_t downSampleRatio, uint64_t noOfSamples, uint64_t* maxBufferSize, uint64_t* minBufferSize);
 
-void pico_create_multibuffers(GENERICUNIT* unit, BUFFER_SETTINGS bufferSettings, uint64_t numberOfBuffers, int16_t**** minBuffers, int16_t**** maxBuffers, MULTIBUFFERSIZES* multiBufferSizes);
+int16_t pico_create_multibuffers(GENERICUNIT* unit, BUFFER_SETTINGS bufferSettings, uint64_t numberOfBuffers, int16_t**** minBuffers, int16_t**** maxBuffers, MULTIBUFFERSIZES* multiBufferSizes);
 void pico_release_multibuffers(GENERICUNIT* unit, int16_t**** minBuffers, int16_t**** maxBuffers, MULTIBUFFERSIZES* multiBufferSizes);
 
 #endif

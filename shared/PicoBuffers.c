@@ -165,7 +165,7 @@ void data_buffer_sizes(PICO_RATIO_MODE downSampleRatioMode, uint64_t downSampleR
 * - MULTIBUFFERSIZES* multiBufferSizes
 
 ****************************************************************************/
-void pico_create_multibuffers(GENERICUNIT* unit, BUFFER_SETTINGS bufferSettings,
+int16_t pico_create_multibuffers(GENERICUNIT* unit, BUFFER_SETTINGS bufferSettings,
     uint64_t numberOfBuffers, int16_t**** minBuffers, int16_t**** maxBuffers, MULTIBUFFERSIZES* multiBufferSizes)
 {
 
@@ -185,39 +185,64 @@ void pico_create_multibuffers(GENERICUNIT* unit, BUFFER_SETTINGS bufferSettings,
     for (uint64_t capture = 0; capture < numberOfBuffers; capture++)
     {
         int16_t channel = 0;
-		//int16_t numOfAnalogChs = 0;
 
         (*minBuffers)[capture] = (int16_t**)calloc(unit->channelCount + unit->digitalPortCount, sizeof(int16_t*));
         (*maxBuffers)[capture] = (int16_t**)calloc(unit->channelCount + unit->digitalPortCount, sizeof(int16_t*));
 
         for (channel = 0; channel < unit->channelCount; channel++)
         {
-            if (unit->channelSettings[channel].enabled)
+            if ((*maxBuffers)[capture] != NULL && (*minBuffers)[capture] != NULL)
             {
-                if ((*minBuffers)[capture] != NULL)
-                    (*minBuffers)[capture][channel] = (int16_t*)calloc(minBufferSize, sizeof(int16_t));
-                if ((*maxBuffers)[capture] != NULL)
-                    (*maxBuffers)[capture][channel] = (int16_t*)calloc(maxBufferSize, sizeof(int16_t));
+                if (unit->channelSettings[channel].enabled)
+                {
+                        if (minBufferSize)
+                            (*minBuffers)[capture][channel] = (int16_t*)calloc(minBufferSize, sizeof(int16_t));
+                        else
+                            (*minBuffers)[capture][channel] = NULL; // If minBufferSize is 0, set pointer to NULL
+                        (*maxBuffers)[capture][channel] = (int16_t*)calloc(maxBufferSize, sizeof(int16_t));
+                }
+                else // If channel is not enabled, set pointers to NULL
+                {
+                        (*minBuffers)[capture][channel] = NULL;
+                        (*maxBuffers)[capture][channel] = NULL;
+                }
+            }
+            else
+            {
+				return 1; // Return error if memory allocation failed
             }
         
         }
 		//digital channels
         for (channel = 0; channel < unit->digitalPortCount; channel++)
         {
-            if (unit->digitalChannelSettings[channel].enabled)
+            if ((*maxBuffers)[capture] != NULL && (*minBuffers)[capture] != NULL)
             {
-                if ((*minBuffers)[capture] != NULL)
-                    (*minBuffers)[capture][(channel + unit->channelCount)] = (int16_t*)calloc(minBufferSize, sizeof(int16_t));
-                if ((*maxBuffers)[capture] != NULL)
+                if (unit->digitalChannelSettings[channel].enabled)
+                {
+                    if (minBufferSize)
+                        (*minBuffers)[capture][(channel + unit->channelCount)] = (int16_t*)calloc(minBufferSize, sizeof(int16_t));
+                    else
+                        (*minBuffers)[capture][(channel + unit->channelCount)] = NULL; // If minBufferSize is 0, set pointer to NULL
                     (*maxBuffers)[capture][(channel + unit->channelCount)] = (int16_t*)calloc(maxBufferSize, sizeof(int16_t));
+                }
+                else // If channel is not enabled, set pointers to NULL
+                {
+                    (*minBuffers)[capture][(channel + unit->channelCount)] = NULL;
+                    (*maxBuffers)[capture][(channel + unit->channelCount)] = NULL;
+                }
+            }
+            else
+            {
+                return 1; // Return error if memory allocation failed
             }
         }    
-
 	}
     // Add sizes of the buffers to MULTIBUFFERSIZES struture
     multiBufferSizes->numberOfBuffers = numberOfBuffers;
     multiBufferSizes->maxBufferSize = maxBufferSize;
     multiBufferSizes->minBufferSize = minBufferSize;
+    return 0;
 }
 
 /****************************************************************************
@@ -244,7 +269,7 @@ void pico_release_multibuffers(GENERICUNIT* unit,
             {
                 //if((*maxBuffers)[capture] != NULL)
                     free((*maxBuffers)[capture][channel]);
-                //if ((*minBuffers)[capture] != NULL)
+               // if ((*minBuffers)[capture] != NULL)
                     free((*minBuffers)[capture][channel]);
             }
             //numOfAnalogChs++;
@@ -259,7 +284,7 @@ void pico_release_multibuffers(GENERICUNIT* unit,
             {
                 //if ((*maxBuffers)[capture] != NULL)
                     free( (*maxBuffers)[capture][(channel + unit->channelCount)] );
-                //if ((*minBuffers)[capture] != NULL)
+               // if ((*minBuffers)[capture] != NULL)
                     free( (*minBuffers)[capture][(channel + unit->channelCount)] );
             }
            
