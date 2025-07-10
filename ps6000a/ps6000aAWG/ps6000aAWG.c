@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "ps6000aApi.h"
 #include "../shared/Libps6000a.h"
 #include "../shared/LibStreamingps6000a.h"
 #include "../shared/LibAWGps6000a.h"
@@ -51,7 +52,6 @@
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
-#include "ps6000Api.h"
 #else
 #include <sys/types.h>
 #include <string.h>
@@ -268,15 +268,20 @@ int32_t main(void)
 	int8_t devChars[] =
 			"1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#";
 	PICO_STATUS status = PICO_OK;
-	GENERICUNIT allUnits[MAX_PICO_DEVICES] = {0};
-	SIG_GEN_SETTINGS sigGenSettings[MAX_PICO_DEVICES] = {0};
+	GENERICUNIT* allUnits = (GENERICUNIT*)calloc(MAX_PICO_DEVICES, sizeof(GENERICUNIT));
+	if(allUnits != NULL)
+		allUnits[0] = (GENERICUNIT){ 0 }; // Initialize first element to zero
+	SIG_GEN_SETTINGS sigGenSettings[MAX_PICO_DEVICES] = { 0 };
 
 	printf("PicoScope 6000E Series (ps6000a) Driver Example \n");
 	printf("\nEnumerating Units...\n");
 
 	do
 	{
-		status = openDevice(&(allUnits[devCount]), NULL);
+		if(allUnits != NULL)
+			status = openDevice(&(allUnits[devCount]), NULL);
+		else
+			return 1;
 		
 		if (status == PICO_OK)
 		{
@@ -288,6 +293,7 @@ int32_t main(void)
 	if (devCount == 0)
 	{
 		printf("Picoscope devices not found\n");
+		free(allUnits);
 		return 1;
 	}
 
@@ -306,12 +312,14 @@ int32_t main(void)
 		if (status != PICO_OK)
 		{
 			printf("Picoscope devices open failed, error code 0x%x\n",(uint32_t)status);
+			free(allUnits);
 			return 1;
 		}
 
 		mainMenu(&allUnits[0], &sigGenSettings[0]);
 		closeDevice(&allUnits[0]);
 		printf("Exit...\n");
+		free(allUnits);
 		return 0;
 	}
 	else
@@ -333,6 +341,7 @@ int32_t main(void)
 	if (openIter == 0)
 	{
 		printf("Picoscope devices init failed\n");
+		free(allUnits);
 		return 1;
 	}
 	// Just one - handle it here
@@ -353,12 +362,14 @@ int32_t main(void)
 		if (status != PICO_OK)
 		{
 			printf("Picoscope device open failed, error code 0x%x\n", (uint32_t)status);
+			free(allUnits);
 			return 1;
 		}
 		
 		mainMenu(&allUnits[listIter], &sigGenSettings[listIter]);
 		closeDevice(&allUnits[listIter]);
 		printf("Exit...\n");
+		free(allUnits);
 		return 0;
 	}
 	printf("Found %d devices, pick one to open from the list:\n", devCount);
@@ -397,6 +408,7 @@ int32_t main(void)
 				if (status != PICO_OK)
 				{
 					printf("Picoscope devices open failed, error code 0x%x\n", (uint32_t)status);
+					free(allUnits);
 					return 1;
 				}
 
@@ -421,6 +433,6 @@ int32_t main(void)
 		closeDevice(&allUnits[listIter]);
 	}
 	printf("Exit...\n");
-	
+	free(allUnits);
 	return 0;
 }
