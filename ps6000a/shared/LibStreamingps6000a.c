@@ -117,7 +117,6 @@ extern const uint64_t constBufferSize;
 ****************************************************************************/ 
 void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_t autostop)
 {
-	int16_t retry = 0;
 	int32_t index = 0;
 	uint32_t triggeredAt = 0;
 	int16_t channel = 0;
@@ -151,79 +150,10 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 	struct tmultiBufferSizes multiBufferSizes;// to store buffer sizes
 	int16_t*** minBuffers;
 	int16_t*** maxBuffers;
-	pico_create_multibuffers(unit, bufferSettings, nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes);
+	if(pico_create_multibuffers(unit, bufferSettings, nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes))
+	printf("\nCreated Buffers");
 
-	// Pass first set of channel Buffers to the API
-	printf("Calling SetDataBuffers() for BufferSet #0 Channel(s) - ");
-	for (channel = 0; channel < unit->channelCount; channel++)
-	{
-		if (unit->channelSettings[channel].enabled)
-		{
-			NoEnabledchannels++;
-
-			status = ps6000aSetDataBuffers(unit->handle,
-				(PICO_CHANNEL)channel,
-				maxBuffers[0][channel],
-				minBuffers[0][channel],
-				multiBufferSizes.maxBufferSize,
-				PICO_INT16_T, //PICO_DATA_TYPE
-				0,
-				bufferSettings.downSampleRatioMode,
-				action_flag);
-
-			action_flag = PICO_ADD;//all subsequent calls use ADD!
-
-			printf("%c,", 'A' + channel);
-			if (status != PICO_OK)
-			{
-				printf("\nError from function SetDataBuffers with status: ------ 0x%08lx", status);
-				break;
-			}
-		}
-	}
-	//digital channels
-	for (channel = 0; channel < unit->digitalPortCount; channel++)
-	{
-		if (unit->digitalChannelSettings[channel].enabled)
-		{
-			NoEnabledchannels++;
-
-			status = ps6000aSetDataBuffers(unit->handle,
-				PICO_PORT0 + (PICO_CHANNEL)channel,
-				maxBuffers[0][channel + unit->channelCount],
-				minBuffers[0][channel + unit->channelCount],
-				multiBufferSizes.maxBufferSize,
-				PICO_INT16_T,
-				0,			//waveform number
-				bufferSettings.downSampleRatioMode,
-				action_flag);
-			action_flag = PICO_ADD;//all subsequent calls use ADD!
-			printf("PORT%d,", channel);
-			if (status != PICO_OK)
-			{
-				printf(status ? "blockDataHandler:psospaSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
-			}
-		}
-	}
-
-	// Start continuous streaming
-	printf("\nStarting Data Capture...");
-	
 	printf("\nNumber of PreTriggerSamples: %lld", noOfPreTriggerSamples);
-	status = ps6000aRunStreaming(unit->handle,
-		&idealTimeInterval,
-		sampleIntervalTimeUnits,
-		noOfPreTriggerSamples,
-		nSamples - noOfPreTriggerSamples,
-		autostop,
-		downSampleRatio,
-		ratioMode);
-	
-	if (status != PICO_OK)
-	{
-		printf("\nError from function RunStreaming with status: ------ 0x%08lx", status);
-		return;
-	}
 
 	//Get scaling Info for each channel
 	struct tPicoProbeScaling enabledChannelsScaling[PS6000A_MAX_CHANNELS] = {0};
@@ -234,6 +164,14 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 		{
 			getRangeScaling(unit->channelSettings[PICO_CHANNEL_A + 0].range, &channelRangeInfoTemp);
 			enabledChannelsScaling[channel] = channelRangeInfoTemp;
+			NoEnabledchannels++;
+		}
+	}
+	for (channel = 0; channel < unit->digitalPortCount; channel++)
+	{
+		if (unit->digitalChannelSettings[channel].enabled)
+		{
+			NoEnabledchannels++;
 		}
 	}
 
@@ -317,170 +255,193 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 
 		// delay millseconds for driver to fill channel buffer(s)
 		// (timeInternal x SI units x samples x 1000) x 0.3 delay in ms to fill buffer 30% (Recommended delay is 30-50%)
-		double timedelay_ms = (double)((idealTimeInterval * (pow(10, 3 * sampleIntervalTimeUnits) / 1E+15)) * nSamples * 0.3 * 1000);
+		double timedelay_ms = (double)((idealTimeInterval * (pow(10, 3 * sampleIntervalTimeUnits) / 1E+15)) * nSamples * 0.333 * 1000);
 		
-		if (status == PICO_OK)
-		{
-			bool SetDataBufferFlag = FALSE;
-			capture = 0;
+		bool RunStreamingFlag = TRUE; // Flag to start streaming only once
+		bool SetDataBufferFlag = TRUE; // Flag set to TRUE to set data buffers on first loop
+		capture = 0;
+		uint64_t printTriggerSample = 0;
 
-			while (capture < nCaptures) //loop for each buffer Set created
-			{	
-				if (SetDataBufferFlag)
-				{	// Pass next set of channel Buffers to the API	
-					printf("\nCalling SetDataBuffer() for BufferSet #%d Channel(s) - ", (int)capture);
-					for (channel = 0; channel < unit->channelCount; channel++)
-					{
-						if (unit->channelSettings[channel].enabled)
-						{
-							status = ps6000aSetDataBuffers(unit->handle,
-								(PICO_CHANNEL)channel,
-								maxBuffers[capture][channel],
-								minBuffers[capture][channel],
-								multiBufferSizes.maxBufferSize,
-								PICO_INT16_T,
-								0,
-								bufferSettings.downSampleRatioMode,
-								action_flag);
-							printf("%c,", 'A' + channel);
-							if (status != PICO_OK)
-							{
-								printf(" - Error from function SetDataBuffers with status: ------ 0x%08lx", status);
-								break;
-							}
-						}
-					}
-					//digital channels
-					for (channel = 0; channel < unit->digitalPortCount; channel++)
-					{
-						if (unit->digitalChannelSettings[channel].enabled)
-						{
-							status = ps6000aSetDataBuffers(unit->handle,
-								PICO_PORT0 + (PICO_CHANNEL)channel,
-								maxBuffers[capture][channel + unit->channelCount], // 1 waveform buffer only
-								minBuffers[capture][channel + unit->channelCount], // 1 waveform buffer only
-								multiBufferSizes.maxBufferSize,
-								PICO_INT16_T,
-								0,			//waveform number
-								bufferSettings.downSampleRatioMode,
-								action_flag);
-							printf("PORT%d,", channel);
-							if (status != PICO_OK)
-							{
-								printf(status ? "blockDataHandler:ps6000aSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
-							}
-						}
-					}
-					SetDataBufferFlag = FALSE;
-				}
-
- 				Sleep((int)timedelay_ms);
-
-				//Call GetStreamingLatestValues() - passing buffer status data in and out
-				status = ps6000aGetStreamingLatestValues(unit->handle,
-					dataStreamInfo,					//pointer to dataStreamInfo,
-					(uint64_t)numEnableCh,			//  // Number of elements in dataStreamInfo
-					&streamingDataTriggerInfoTemp); //pointer to streamingDataTriggerInfoTemp
-
-				///Copy returned Array and sturture to Arrays for each segement
-				int16_t tempNumofChs = 0;
+		while (capture < nCaptures) //loop for each buffer Set created
+		{	
+			if (SetDataBufferFlag)
+			{	// Pass next set of channel Buffers to the API	
+				printf("\nCalling SetDataBuffer() for BufferSet #%d Channel(s) - ", (int)capture);
 				for (channel = 0; channel < unit->channelCount; channel++)
 				{
 					if (unit->channelSettings[channel].enabled)
 					{
-						if(streamingDataInfoArray[channel])
-							streamingDataInfoArray[channel][capture] = dataStreamInfo[tempNumofChs];
-						if ((FileOverflow + capture) != NULL)
-							FileOverflow[capture] |= dataStreamInfo[tempNumofChs].overflow_; //logic OR all channel overflow flags into variable for file writing
-						tempNumofChs++;
+						status = ps6000aSetDataBuffers(unit->handle,
+							(PICO_CHANNEL)channel,
+							maxBuffers[capture][channel],
+							minBuffers[capture][channel],
+							multiBufferSizes.maxBufferSize,
+							PICO_INT16_T,
+							0,
+							bufferSettings.downSampleRatioMode,
+							action_flag);
+						action_flag = PICO_ADD;//all subsequent calls use ADD!
+						printf("%c,", 'A' + channel);
+						if (status != PICO_OK)
+						{
+							printf(" - Error from function SetDataBuffers with status: ------ 0x%08lx", status);
+							break;
+						}
 					}
 				}
+				//digital channels
 				for (channel = 0; channel < unit->digitalPortCount; channel++)
 				{
 					if (unit->digitalChannelSettings[channel].enabled)
 					{
-						if (streamingDataInfoArray[channel + unit->channelCount])
-							streamingDataInfoArray[channel + unit->channelCount][capture] = dataStreamInfo[tempNumofChs];
-						if ((FileOverflow + capture) != NULL)
-							//logic OR all channel overflow flags into variable for file writing
-							*(FileOverflow + capture) |= (dataStreamInfo + tempNumofChs)->overflow_;
-						tempNumofChs++;
+						status = ps6000aSetDataBuffers(unit->handle,
+							PICO_PORT0 + (PICO_CHANNEL)channel,
+							maxBuffers[capture][channel + unit->channelCount], // 1 waveform buffer only
+							minBuffers[capture][channel + unit->channelCount], // 1 waveform buffer only
+							multiBufferSizes.maxBufferSize,
+							PICO_INT16_T,
+							0,			//waveform number
+							bufferSettings.downSampleRatioMode,
+							action_flag);
+						action_flag = PICO_ADD;//all subsequent calls use ADD!
+						printf("PORT%d,", channel);
+						if (status != PICO_OK)
+						{
+							printf(status ? "blockDataHandler:ps6000aSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
+						}
 					}
 				}
-				if(streamingDataTriggerInfoArray != NULL)
-					streamingDataTriggerInfoArray[capture] = streamingDataTriggerInfoTemp;
+				SetDataBufferFlag = FALSE;
+			}
 
-				//printf("\nPolling Delay is: %6.3le ms", timedelay);
-				if(dataStreamInfo[0].noOfSamples_ != 0)
+			if (RunStreamingFlag)
+			{
+				// Start continuous streaming
+				printf("\nStarting Data Capture...");
+				status = ps6000aRunStreaming(unit->handle,
+					&idealTimeInterval,
+					sampleIntervalTimeUnits,
+					noOfPreTriggerSamples,
+					nSamples - noOfPreTriggerSamples,
+					autostop,
+					downSampleRatio,
+					ratioMode);
+
+				if (status != PICO_OK)
 				{
-					printf("\nPolling GetStreamingLatestValues status = 0x%08lx - noOfSamples: %08ld StartIndex: %08ld",
-						status, dataStreamInfo[0].noOfSamples_, dataStreamInfo[0].startIndex_);
+					printf("\nError from function RunStreaming with status: ------ 0x%08lx", status);
+					return;
 				}
+				RunStreamingFlag = FALSE;
+			}
 
-				// If buffers full move to next bufferSet, or continue if autoStop triggered
-				if ((status == PICO_WAITING_FOR_DATA_BUFFERS) | (streamingDataTriggerInfoTemp.autoStop_ == 1))
+ 			Sleep((int)timedelay_ms);
+
+			//Call GetStreamingLatestValues() - passing buffer status data in and out
+			status = ps6000aGetStreamingLatestValues(unit->handle,
+				dataStreamInfo,					//pointer to dataStreamInfo,
+				(uint64_t)numEnableCh,			// Number of elements in dataStreamInfo
+				&streamingDataTriggerInfoTemp); //pointer to streamingDataTriggerInfoTemp
+
+			///Copy returned Array and sturture to Arrays for each segement
+			int16_t tempNumofChs = 0;
+			for (channel = 0; channel < unit->channelCount; channel++)
+			{
+				if (unit->channelSettings[channel].enabled)
 				{
-					//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"
-					//WRITING TO TEXT FOR DEMO ONLY!, FOR HIGH SPEED SAMPLING WRITE TO BINARY FILE OR COPY TO ANOTHER BUFFER
-
-					//Write one segment to a file as captured
-					printf("\nWriting Buffer Set %lld of channels to a file.\n", capture);
-
-					//Create file name string
-					char buf[58 + (3 * sizeof(int))];
-					size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-					//snprintf(buf, buf_size, "%s%d.txt", startOfFileName, (int)capture);
-					snprintf(buf, buf_size, "%s", startOfFileName);
-
-					if (streamingDataTriggerInfoArray && FileOverflow) // Check for dereferencing null pointers
-					{
-						struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
-						WriteArrayToFilesGeneric(
-							unit,
-							minBuffers,
-							maxBuffers,
-							multiBufferSizes,
-							enabledChannelsScaling,
-							buf,
-							streamingDataTriggerInfoArray[capture].triggerAt_, // Triggersample
-							(int16_t*)(FileOverflow),
-							&captures_range
-							);
-					}
-
-					if(streamingDataTriggerInfoTemp.autoStop_ == 1)
-					{
-						printf("\nAutoStop Triggered!\n");
-						break;	//exit loop on Autostop	
-					}
-
-					capture++;	//index next bufferSet and set flag
-					SetDataBufferFlag = TRUE;
-				}
-				else
-				{
-					if (status != PICO_OK)
-					{
-						printf("\nError from function GetStreamingLatestValues with status: ------ 0x%08lx", status);
-						break;
-					}
+					if(streamingDataInfoArray[channel])
+						streamingDataInfoArray[channel][capture] = dataStreamInfo[tempNumofChs];
+					if ((FileOverflow + capture) != NULL)
+						FileOverflow[capture] |= dataStreamInfo[tempNumofChs].overflow_; //logic OR all channel overflow flags into variable for file writing
+					tempNumofChs++;
 				}
 			}
- 			printf("\n");
-			//OR WAIT UNTIL ALL BUFFER SEGMENTS ARE CAPTURED AND PROCESS DATA IN - "maxBuffers and minBuffers"
-			//Write to console
-			WriteArrayToStdoutGeneric(
-				unit,
-				minBuffers,
-				maxBuffers,
-				multiBufferSizes,
-				enabledChannelsScaling,
-				(CAPTURE_MODE)STREAMING,
-				3,						// Number of buffers to write
-				10,						// Number of samples to write
-				0,						// Triggersample
-				FileOverflow);
+			for (channel = 0; channel < unit->digitalPortCount; channel++)
+			{
+				if (unit->digitalChannelSettings[channel].enabled)
+				{
+					if (streamingDataInfoArray[channel + unit->channelCount])
+						streamingDataInfoArray[channel + unit->channelCount][capture] = dataStreamInfo[tempNumofChs];
+					if ((FileOverflow + capture) != NULL)
+						//logic OR all channel overflow flags into variable for file writing
+						*(FileOverflow + capture) |= (dataStreamInfo + tempNumofChs)->overflow_;
+					tempNumofChs++;
+				}
+			}
+			if(streamingDataTriggerInfoArray != NULL)
+				streamingDataTriggerInfoArray[capture] = streamingDataTriggerInfoTemp;
+
+			if(dataStreamInfo[0].noOfSamples_ != 0)
+			{
+				printf("\nPolling GetStreamingLatestValues status = 0x%08lx - noOfSamples: %08ld StartIndex: %08ld",
+					status, dataStreamInfo[0].noOfSamples_, dataStreamInfo[0].startIndex_);
+			}
+
+			// If buffers full move to next bufferSet, or continue if autoStop triggered
+			if ((status == PICO_WAITING_FOR_DATA_BUFFERS) | (streamingDataTriggerInfoTemp.autoStop_ == 1))
+			{
+				//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"
+				//WRITING TO TEXT FOR DEMO ONLY!, FOR HIGH SPEED SAMPLING WRITE TO BINARY FILE OR COPY TO ANOTHER BUFFER
+
+				//Write one segment to a file as captured
+				printf("\nWriting Buffer Set %lld of channels to a file.\n", capture);
+
+				//Create file name string
+				char buf[58 + (3 * sizeof(int))];
+				size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+				//snprintf(buf, buf_size, "%s%d.txt", startOfFileName, (int)capture);
+				snprintf(buf, buf_size, "%s", startOfFileName);
+
+				if (streamingDataTriggerInfoArray && FileOverflow) // Check for dereferencing null pointers
+				{
+					struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
+					WriteArrayToFilesGeneric(
+						unit,
+						minBuffers,
+						maxBuffers,
+						multiBufferSizes,
+						enabledChannelsScaling,
+						buf,
+						streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
+						(int16_t*)(FileOverflow),
+						&captures_range);
+				}
+
+				
+				if(streamingDataTriggerInfoTemp.autoStop_ == 1)
+				{
+					printTriggerSample = streamingDataTriggerInfoTemp.triggerAt_;
+					printf("\nAutoStop Triggered!\n");
+					break;	//exit loop on Autostop	
+				}
+
+				capture++;	//index next bufferSet and set flag
+				SetDataBufferFlag = TRUE;
+			}
+			else
+			{
+				if (status != PICO_OK)
+				{
+					printf("\nError from function GetStreamingLatestValues with status: ------ 0x%08lx", status);
+					break;
+				}
+			}
 		}
+ 		printf("\n");
+		//OR WAIT UNTIL ALL BUFFER SEGMENTS ARE CAPTURED AND PROCESS DATA IN - "maxBuffers and minBuffers"
+		//Write to console
+		WriteArrayToStdoutGeneric(
+			unit,
+			minBuffers,
+			maxBuffers,
+			multiBufferSizes,
+			enabledChannelsScaling,
+			(CAPTURE_MODE)STREAMING,
+			3,						// Number of buffers to write
+			10,						// Number of samples to write
+			printTriggerSample,		// passes Triggersample regardless of which buffer triggered,(0 if no trigger)
+			FileOverflow);
+
 	}
 
 	printf("Stopping Streaming... ");
