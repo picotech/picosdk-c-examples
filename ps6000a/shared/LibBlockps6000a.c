@@ -141,8 +141,8 @@ void blockDataHandler(GENERICUNIT* unit)
 	//--------------------------------------------------------------------------//
 	//Capture settings
 	uint64_t nSamples = constBufferSize;	//Set the number of samples per capture
-	PICO_RATIO_MODE ratioMode = PICO_RATIO_MODE_RAW;//used for RunBlock()
-	uint64_t downSampleRatio = 1;//used for GetValues()
+	PICO_RATIO_MODE ratioMode = PICO_RATIO_MODE_AGGREGATE; // PICO_RATIO_MODE_RAW;//used for RunBlock()
+	uint64_t downSampleRatio = 16;//used for GetValues()
 
 	//Buffers settings (Set DownSampling mode and ratio)
 	//Use scope acquisition settings for first data download
@@ -239,21 +239,32 @@ void blockDataHandler(GENERICUNIT* unit)
 	if (ratioMode != PICO_RATIO_MODE_RAW)
 		printf("\nDownSampling Ratio is set to: %llu\n", downSampleRatio);
 
+
+	// Can retrieve data using different ratios and ratio modes from driver
+	int16_t overflow = 0;
+
+	status = ps6000aGetValuesOverlapped(unit->handle, 0, (uint64_t*)&nSamples, downSampleRatio, ratioMode, 0,0, &overflow);
+
+	if (status != PICO_OK)
+	{
+			printf("blockDataHandler:ps6000aGetValuesOverlapped ------ 0x%08lx \n", status);
+	}
+
 	/* Start it collecting, then wait for completion*/
 	g_ready = FALSE;
 
-	do
-	{
-		retry = 0;
+	//do
+	//{
+		//retry = 0;
 
-		status = ps6000aRunBlock(unit->handle, 0, nSamples, timebase, &timeIndisposed, 0, CallBackBlock, NULL);
+		status = ps6000aRunBlock(unit->handle, (uint64_t)0, nSamples, timebase, &timeIndisposed, 0, NULL, NULL);
 
 		if (status != PICO_OK)
 		{
 			printf("BlockDataHandler:ps5000aRunBlock ------ 0x%08lx \n", status);
-			return;
+			//return;
 		}
-	} while (retry);
+	//} while (retry);
 
 	//status = ps5000aIsTriggerOrPulseWidthQualifierEnabled(unit->handle, &triggerEnabled, &pwqEnabled);
 
@@ -267,21 +278,29 @@ void blockDataHandler(GENERICUNIT* unit)
 	}
 
 	//wait for capture to complete or for user to abort
+	//while (!g_ready && !_kbhit())
 	while (!g_ready && !_kbhit())
 	{
+		status = ps6000aIsReady(unit->handle, &g_ready);
+
+		if (status != PICO_OK)
+		{
+			printf("blockDataHandler:ps6000aGetValues ------ 0x%08lx \n", status);
+			break;
+		}
 		Sleep(1);
 	}
 
 	if (g_ready)
 	{
 		// Can retrieve data using different ratios and ratio modes from driver
-		int16_t overflow = 0;
+		//int16_t overflow = 0;
 
-		status = ps6000aGetValues(unit->handle, 0, (uint64_t*)&nSamples, downSampleRatio, ratioMode, 0, &overflow);
+		//status = ps6000aGetValues(unit->handle, 0, (uint64_t*)&nSamples, downSampleRatio, ratioMode, 0, &overflow);
 
 		if (status != PICO_OK)
 		{
-			printf("blockDataHandler:ps6000aGetValues ------ 0x%08lx \n", status);
+		//	printf("blockDataHandler:ps6000aGetValues ------ 0x%08lx \n", status);
 		}
 		else
 		{
