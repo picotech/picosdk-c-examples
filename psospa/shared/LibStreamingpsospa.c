@@ -95,14 +95,13 @@ return (fp>0)?0:-1;
 #endif
 
 char startOfFileName[] = "StreamingCaptureNoS_";
-FILE* fp = NULL;
 
 /****************************************************************************
 * Refernce Global Variables
 ***************************************************************************/
 extern BOOL		scaleVoltages;
 extern uint32_t	timebase;
-extern const uint64_t constBufferSize;
+extern int16_t   g_ready;
 /***************************************************************************/
 
 /****************************************************************************
@@ -113,29 +112,40 @@ extern const uint64_t constBufferSize;
 * Input :
 * - unit : the unit to use.
 * - noOfPreTriggerSamples : number of samples to capture before trigger.
+* - noOfPostTriggerSamples : number of samples to capture after trigger.
+* - idealTimeInterval : ideal time interval between samples (in seconds).
+* - sampleIntervalTimeUnits : time units for idealTimeInterval (0 = fs, 1 = ps, 2 = ns, 3 = us, 4 = ms, 5 = s).
+* - nSamples : Set the number of samples per capture - Used by SetDataBuffers()
+* - ratioMode : Set the downsampling mode - Used by SetDataBuffers()
+* - downSampleRatio : Set the downsampling ratio - Used by SetDataBuffers()
 * - autostop : 1 to stop when trigger condition is met, 0 to continue until user stops.
 ****************************************************************************/ 
-void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_t autostop)
+void streamDataHandler(GENERICUNIT* unit,
+						uint64_t noOfPreTriggerSamples,		// Used by RunStreaming()
+						uint64_t noOfPostTriggerSamples,	// Used by RunStreaming()
+						double idealTimeInterval,			// Used by RunStreaming()
+						uint32_t sampleIntervalTimeUnits,	// Used by RunStreaming()
+						uint64_t nSamples,					// Set the number of samples per capture - Used by SetDataBuffers()
+						PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+						uint64_t downSampleRatio,			// Used by SetDataBuffers()
+						int16_t autostop)
 {
-	int32_t index = 0;
-	uint32_t triggeredAt = 0;
+	uint16_t Triggered = 0;
+	uint64_t triggeredAt = 0;
+	int32_t TriggeredBufNo = 0; // to store the buffer number where the trigger occured
+
 	int16_t channel = 0;
 	uint64_t capture = 0;
 	int16_t NoEnabledchannels = 0;
 	PICO_STATUS status = PICO_OK;
+	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);	// bitwise OR flags for first buffer that is set
+	int32_t counter = 0; // counter for number of waveform captures
+	unit->CapturesComplete = 0; // clear number of captures done
 
-	//--------------------------------------------------------------------------//
 	//Set the number buffers needed (2 or greater) for this code.
-	const uint64_t nCaptures = 3;
-	int16_t numOfAnalogChs = 0;
+	const uint64_t nCaptures = 2; // Set the number of buffer sets to create
 
 	//Define acquisition Settings
-	double idealTimeInterval = 1;
-	uint32_t sampleIntervalTimeUnits = PICO_US;
-	uint64_t nSamples = constBufferSize; //Set the number of samples per capture - Used by RunStreaming()
-	PICO_RATIO_MODE ratioMode = PICO_RATIO_MODE_RAW;		//used by RunStreaming()
-	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);	// bitwise OR flags for first buffer that is set
-	uint64_t downSampleRatio = 1;							//used by RunStreaming()
 
 	//Buffers settings (Set DownSampling mode and ratio)
 	//Use scope acquisition settings for first data download
@@ -144,7 +154,6 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 	bufferSettings.downSampleRatioMode = ratioMode;
 	bufferSettings.downSampleRatio = downSampleRatio;
 	bufferSettings.nSamples = nSamples;
-	//--------------------------------------------------------------------------//
 
 	//Create Buffers - Min and Max (3D buffers - Captures, Channels, Samples)
 	struct tmultiBufferSizes multiBufferSizes;// to store buffer sizes
@@ -262,55 +271,12 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 		capture = 0;
 		uint64_t printTriggerSample = 0;
 
-		while (capture < nCaptures) //loop for each buffer Set created
+		while(!_kbhit()) // loop for each buffer set created, exit if a key is pressed
 		{	
 			if (SetDataBufferFlag)
 			{	// Pass next set of channel Buffers to the API	
-				printf("\nCalling SetDataBuffer() for BufferSet #%d Channel(s) - ", (int)capture);
-				for (channel = 0; channel < unit->channelCount; channel++)
-				{
-					if (unit->channelSettings[channel].enabled)
-					{
-						status = psospaSetDataBuffers(unit->handle,
-							(PICO_CHANNEL)channel,
-							maxBuffers[capture][channel],
-							minBuffers[capture][channel],
-							multiBufferSizes.maxBufferSize,
-							PICO_INT16_T,
-							0,
-							bufferSettings.downSampleRatioMode,
-							action_flag);
-						action_flag = PICO_ADD;//all subsequent calls use ADD!
-						printf("%c,", 'A' + channel);
-						if (status != PICO_OK)
-						{
-							printf(" - Error from function SetDataBuffers with status: ------ 0x%08lx", status);
-							break;
-						}
-					}
-				}
-				//digital channels
-				for (channel = 0; channel < unit->digitalPortCount; channel++)
-				{
-					if (unit->digitalChannelSettings[channel].enabled)
-					{
-						status = psospaSetDataBuffers(unit->handle,
-							PICO_PORT0 + (PICO_CHANNEL)channel,
-							maxBuffers[capture][channel + unit->channelCount], // 1 waveform buffer only
-							minBuffers[capture][channel + unit->channelCount], // 1 waveform buffer only
-							multiBufferSizes.maxBufferSize,
-							PICO_INT16_T,
-							0,			//waveform number
-							bufferSettings.downSampleRatioMode,
-							action_flag);
-						action_flag = PICO_ADD;//all subsequent calls use ADD!
-						printf("PORT%d,", channel);
-						if (status != PICO_OK)
-						{
-							printf(status ? "blockDataHandler:psospaSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
-						}
-					}
-				}
+				// SET ONLY ONE BUFFER SET AT A TIME, and clear the action flag after first call
+				SetAllDataBuffers(unit, &bufferSettings, &minBuffers, &maxBuffers, &multiBufferSizes, capture, (CAPTURE_MODE)STREAMING, (int16_t)counter);
 				SetDataBufferFlag = FALSE;
 			}
 
@@ -322,7 +288,7 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 					&idealTimeInterval,
 					sampleIntervalTimeUnits,
 					noOfPreTriggerSamples,
-					nSamples - noOfPreTriggerSamples,
+					noOfPostTriggerSamples,
 					autostop,
 					downSampleRatio,
 					ratioMode);
@@ -335,7 +301,8 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 				RunStreamingFlag = FALSE;
 			}
 
- 			Sleep((int)timedelay_ms);
+			if (timedelay_ms > 20)
+				Sleep((int)timedelay_ms);
 
 			//Call GetStreamingLatestValues() - passing buffer status data in and out
 			status = psospaGetStreamingLatestValues(unit->handle,
@@ -371,43 +338,47 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 			if(streamingDataTriggerInfoArray != NULL)
 				streamingDataTriggerInfoArray[capture] = streamingDataTriggerInfoTemp;
 
-			if(dataStreamInfo[0].noOfSamples_ != 0)
-			{
-				printf("\nPolling GetStreamingLatestValues status = 0x%08lx - noOfSamples: %08ld StartIndex: %08ld",
-					status, dataStreamInfo[0].noOfSamples_, dataStreamInfo[0].startIndex_);
-			}
+			// DEBUG CODE
+			//if(dataStreamInfo[0].noOfSamples_ != 0)
+			//{
+				//printf("\nPolling GetStreamingLatestValues status = 0x%08lx - noOfSamples: %08ld StartIndex: %08ld",
+				//	status, dataStreamInfo[0].noOfSamples_, dataStreamInfo[0].startIndex_);
+			//}
 
+			if (streamingDataTriggerInfoTemp.triggered_ == 1) // Latch Triggered flag and sample
+			{
+				Triggered = 1;
+				triggeredAt = streamingDataTriggerInfoTemp.triggerAt_;
+				TriggeredBufNo = counter; // Store buffer number where trigger occured
+			}
 			// If buffers full move to next bufferSet, or continue if autoStop triggered
 			if ((status == PICO_WAITING_FOR_DATA_BUFFERS) | (streamingDataTriggerInfoTemp.autoStop_ == 1))
 			{
 				//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"
-				//WRITING TO TEXT FOR DEMO ONLY!, FOR HIGH SPEED SAMPLING WRITE TO BINARY FILE OR COPY TO ANOTHER BUFFER
-
-				//Write one segment to a file as captured
-				printf("\nWriting Buffer Set %lld of channels to a file.\n", capture);
-
-				//Create file name string
-				char buf[58 + (3 * sizeof(int))];
-				size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-				//snprintf(buf, buf_size, "%s%d.txt", startOfFileName, (int)capture);
-				snprintf(buf, buf_size, "%s", startOfFileName);
-
-				if (streamingDataTriggerInfoArray && FileOverflow) // Check for dereferencing null pointers
+				if ((unit->timeInterval) > 0.9e-06)  // Only write to file if sample interval is > 0.9us (1.1MS/s) for demo purposes
 				{
-					struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
-					WriteArrayToFilesGeneric(
-						unit,
-						minBuffers,
-						maxBuffers,
-						multiBufferSizes,
-						enabledChannelsScaling,
-						buf,
-						streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
-						(int16_t*)(FileOverflow),
-						&captures_range);
+					// FOR HIGH SPEED SAMPLING WRITE TO BINARY FILE OR COPY TO ANOTHER BUFFER
+					if (streamingDataTriggerInfoArray && FileOverflow) // Check for dereferencing null pointers
+					{
+						//Create file name string
+						char buf[58 + (3 * sizeof(int))];
+						size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+						snprintf(buf, buf_size, "%s%d_SubSet", startOfFileName, counter);
+						printf("\nWriting capture %ld (Buffer Set %lld) of channels to a file.\n", counter, capture);
+						struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
+						WriteArrayToFilesGeneric(
+							unit,
+							minBuffers,
+							maxBuffers,
+							multiBufferSizes,
+							enabledChannelsScaling,
+							buf,
+							streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
+							(int16_t*)(FileOverflow),
+							&captures_range);
+					}
 				}
 
-				
 				if(streamingDataTriggerInfoTemp.autoStop_ == 1)
 				{
 					printTriggerSample = streamingDataTriggerInfoTemp.triggerAt_;
@@ -415,8 +386,13 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 					break;	//exit loop on Autostop	
 				}
 
-				capture++;	//index next bufferSet and set flag
-				SetDataBufferFlag = TRUE;
+				capture++;	// index next bufferSet and set flag
+				counter++;	// counter for buffers used and file name (loop irritations)
+				if (capture == nCaptures) // Create circular buffer
+				{
+					capture = 0;
+				}
+				SetDataBufferFlag = TRUE; // Set flag to move to next bufferSet
 			}
 			else
 			{
@@ -427,16 +403,19 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 				}
 			}
 		}
- 		printf("\n");
+		if (Triggered)
+			printf("\nTriggered in Buffer No: %d, At Sample: %lld", TriggeredBufNo, triggeredAt);
+
 		//OR WAIT UNTIL ALL BUFFER SEGMENTS ARE CAPTURED AND PROCESS DATA IN - "maxBuffers and minBuffers"
-		//Write to console
+		// Write to console
+		printf("\n");
 		WriteArrayToStdoutGeneric(
 			unit,
 			minBuffers,
 			maxBuffers,
 			multiBufferSizes,
 			enabledChannelsScaling,
-			(CAPTURE_MODE)STREAMING,
+			(enum enCaptureMode)STREAMING,
 			3,						// Number of buffers to write
 			10,						// Number of samples to write
 			printTriggerSample,		// passes Triggersample regardless of which buffer triggered,(0 if no trigger)
@@ -454,6 +433,7 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 	else
 		printf("Stopped capture\n");
 
+	unit->CapturesComplete = 1; // set to 1 to indicate complete
 	// Release Buffer memory from API
 	clearDataBuffers(unit);
 
@@ -477,84 +457,4 @@ void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_
 	}
 	free(streamingDataInfoArray);
 	free(dataStreamInfo);
-}
-
-/****************************************************************************
-*  collectStreamingTriggered
-*  This function demonstrates how to collect a stream of data
-*  from the unit (start collecting immediately)
-*  If autoStop is set to 1, the function will stop when the trigger condition is met.
-***************************************************************************/
-void collectStreamingTriggered(GENERICUNIT* unit)
-{
-	PICO_STATUS status = PICO_OK;
-
-	//Set triggerLevelADC to +50% of set channel voltage range
-	int16_t triggerLevelADC = mv_to_adc((double)inputRanges[unit->channelSettings[PICO_CHANNEL_A].range] / 2,
-		unit->channelSettings[PICO_CHANNEL_A].range,
-		unit->maxADCValue);
-
-	struct tPicoTriggerChannelProperties sourceDetails = {
-											triggerLevelADC,	//thresholdUpper
-											256 * 10,			//thresholdUpperHysteresis
-											triggerLevelADC,	//thresholdLower
-											256 * 10,			//thresholdLowerHysteresis
-											PICO_CHANNEL_A,		//channel - PICO_CHANNEL
-	};
-
-	struct tPicoCondition conditions = { sourceDetails.channel,	//PICO_CHANNEL
-											PICO_CONDITION_TRUE	//PICO_TRIGGER_STATE - true/false/Don't care
-	};
-
-	struct tPicoDirection directions = {
-	directions.channel = conditions.source,
-	directions.direction = PICO_RISING,
-	directions.thresholdMode = PICO_LEVEL };
-
-	//Create Pulse Width Qualifier structure with settings
-	struct tPwq pulseWidth;
-	memset(&pulseWidth, 0, sizeof(struct tPwq));//zero out pulseWidth
-
-	printf("Collect streaming...\n");
-	printf("Trigger Channel is %c\n", 'A' + sourceDetails.channel);
-	// If scaleVoltages, print mV value
-	// else print ADC Count
-	printf("Collects when value rises past %d", scaleVoltages ?
-		(int16_t)adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[sourceDetails.channel].range, unit->maxADCValue)
-		: sourceDetails.thresholdUpper);							
-	printf(scaleVoltages ? " mV\n" : " ADC Counts\n");
-	printf("Press a key to start...\n");
-	_getch();
-
-	setDefaults(unit);
-
-	status = SetTrigger(unit,
-		&sourceDetails, 1,	//channelProperties //nChannelProperties
-		1,					//auxOutputEnable
-		&conditions, 1,
-		&directions, 1,
-		&pulseWidth,		//PWQ
-		0, 0);				//TrigDelay //AutoTrigger_us
-
-	streamDataHandler(unit, 0, 1); // unit, 0: PreTriggerSamples, 1: Autostop(On)
-}
-/****************************************************************************
-*  collectStreamingImmediate
-*  This function demonstrates how to collect a stream of data
-*  from the unit (start collecting immediately)
-***************************************************************************/
-void collectStreamingImmediate(GENERICUNIT* unit)
-{
-	PICO_STATUS status = PICO_OK;
-
- 	setDefaults(unit);
-
-	/* Trigger disabled	*/
-	status = psospaSetSimpleTrigger(unit->handle, 0, PICO_CHANNEL_A, 0, PICO_RISING, 0, 0);
-
-	printf("Collect streaming ...\n");
-	printf("Press a key to start\n");
-	_getch();
-
-	streamDataHandler(unit, 0, 0); // unit, 0: PreTriggerSamples, 0: Autostop(Off)
 }

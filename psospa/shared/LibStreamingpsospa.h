@@ -93,13 +93,35 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #define min(a,b) ((a) < (b) ? a : b)
 #endif
 
-//#define BUFFER_SIZE 	1024
-
-
 // Function prototypes
+void streamDataHandler(GENERICUNIT* unit,
+	uint64_t noOfPreTriggerSamples,		// Used by RunStreaming()
+	uint64_t noOfPostTriggerSamples,	// Used by RunStreaming()
+	double idealTimeInterval,			// Used by RunStreaming()
+	uint32_t sampleIntervalTimeUnits,	// Used by RunStreaming()
+	uint64_t nSamples,					// Set the number of samples per capture - Used by SetDataBuffers()
+	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+	uint64_t downSampleRatio,			// Used by SetDataBuffers()
+	int16_t autostop);
 
-void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples, int16_t autostop);
-void collectStreamingImmediate(GENERICUNIT* unit);
-void collectStreamingTriggered(GENERICUNIT* unit);
+void collectStreamingImmediate(GENERICUNIT* unit,
+	uint64_t noOfPreTriggerSamples,		// Used by RunStreaming()
+	uint64_t noOfPostTriggerSamples,	// Used by RunStreaming()
+	double idealTimeInterval,			// Used by RunStreaming()
+	uint32_t sampleIntervalTimeUnits,	// Used by RunStreaming()
+	uint64_t nSamples,					// Set the number of samples per capture - Used by SetDataBuffers()
+	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+	uint64_t downSampleRatio,			// Used by SetDataBuffers()
+	int16_t autostop);
+
+void collectStreamingTriggered(GENERICUNIT* unit,
+	uint64_t noOfPreTriggerSamples,		// Used by RunStreaming()
+	uint64_t noOfPostTriggerSamples,	// Used by RunStreaming()
+	double idealTimeInterval,			// Used by RunStreaming()
+	uint32_t sampleIntervalTimeUnits,	// Used by RunStreaming()
+	uint64_t nSamples,					// Set the number of samples per capture - Used by SetDataBuffers()
+	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+	uint64_t downSampleRatio,			// Used by SetDataBuffers()
+	int16_t autostop);
 
 #endif

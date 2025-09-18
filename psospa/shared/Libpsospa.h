@@ -150,22 +150,48 @@ typedef struct tUserProbeInfo
 }USER_PROBE_INFO;
 
 // Function prototypes
+
+// Callback function
+void PREF4 CallBackData(int16_t handle, PICO_STATUS status, void* pParameter);
+
+void GetMoreDataHandler(GENERICUNIT* unit,
+								PICO_RATIO_MODE ratioMode,
+								uint64_t downSampleRatio,
+								uint64_t nSamples);
+
+// Unit setup and management functions
 void setDefaults(GENERICUNIT* unit);
 void set_info(GENERICUNIT* unit);
 void displaySettings(GENERICUNIT* unit);
 
+// Device connection functions
 PICO_STATUS openDevice(GENERICUNIT* unit, int8_t* serial);
 void closeDevice(GENERICUNIT* unit);
 PICO_STATUS handleDevice(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings);
 
+// Timebase and Channel settings functions
 void setVoltages(GENERICUNIT* unit);
 void setDigitalPorts(GENERICUNIT* unit);
 void setTimebase(GENERICUNIT* unit);
 
+// Resolution functions
 void setResolution(GENERICUNIT* unit);
 void printResolution(PICO_DEVICE_RESOLUTION* resolution);
 
+// Data buffer functions
+void SetAllDataBuffers(GENERICUNIT* unit,
+	struct tbuffer_settings* bufferSettings,
+	int16_t**** minBuffers,
+	int16_t**** maxBuffers,
+	struct tmultiBufferSizes *multiBufferSizes,
+	uint64_t StreamBufToSet,
+	enum enCaptureMode CaptureMode,
+	int16_t Reset_action);
+
 PICO_STATUS clearDataBuffers(GENERICUNIT* unit);
+
+// triggering functions
+void SetupTrigger(GENERICUNIT* unit);
 
 PICO_STATUS SetTrigger(GENERICUNIT* unit,
 	PICO_TRIGGER_CHANNEL_PROPERTIES* channelProperties,

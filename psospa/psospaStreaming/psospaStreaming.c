@@ -126,7 +126,8 @@ return (fp>0)?0:-1;
 * Refernce Global Variables
 ***************************************************************************/
 
-extern BOOL		scaleVoltages; //defined and used in Libpsospa.c
+extern BOOL				scaleVoltages; //defined and used in Libps6000a.c
+extern const uint64_t	constBufferSize; //defined and used in Libps6000a.c
 /***************************************************************************/
 
 /****************************************************************************
@@ -150,7 +151,7 @@ static void mainMenu(GENERICUNIT*unit)
 
 		printf("S - Immediate Streaming                       V - Set Voltages\n");
 		printf("T - Triggered Streaming                       I - SetTimebase\n");
-		printf("                                              A - ADC counts/mV\n");	
+		printf("J - GetMoreData Stopped                       A - ADC counts/mV\n");	
 		printf("                                              D - Set Resolution\n");
 		if (unit->digitalPortCount != 0)
 			printf("                                              M - Set Digital Ports (MSO)\n");
@@ -164,11 +165,37 @@ static void mainMenu(GENERICUNIT*unit)
 		switch (ch) 
 		{
 			case 'S':
-				collectStreamingImmediate(unit);
+				// Trigger disabled
+				PICO_STATUS status = psospaSetSimpleTrigger(unit->handle, 0, PICO_CHANNEL_A, 0, PICO_RISING, 0, 0);
+				streamDataHandler(unit,
+					0,						// noOfPreTriggerSamples - Used by RunStreaming()
+					constBufferSize,		// noOfPostTriggerSamples - Used by RunStreaming()
+					1,						// idealTimeInterval - Used by RunStreaming()
+					PICO_US,				// sampleIntervalTimeUnits - Used by RunStreaming()
+					constBufferSize,		// nSamples - Set the number of samples per capture - Used by SetDataBuffers()
+					PICO_RATIO_MODE_RAW,	// ratioMode - Used by SetDataBuffers()
+					1,						// downSampleRatio - Used by SetDataBuffers()
+					0);						// autostop
 				break;
 
 			case 'T':
-				collectStreamingTriggered(unit);
+				SetupTrigger(unit);
+				streamDataHandler(unit,
+					1024,					// noOfPreTriggerSamples - Used by RunStreaming()
+					constBufferSize - 1024,	// noOfPostTriggerSamples - Used by RunStreaming()
+					1,						// idealTimeInterval - Used by RunStreaming()
+					PICO_US,				// sampleIntervalTimeUnits - Used by RunStreaming()
+					constBufferSize,		// nSamples - Set the number of samples per capture - Used by SetDataBuffers()
+					PICO_RATIO_MODE_RAW,	// ratioMode - Used by SetDataBuffers()
+					1,						// downSampleRatio - Used by SetDataBuffers()
+					1);						// autostop
+				break;
+
+			case 'J':
+				GetMoreDataHandler(unit,
+					PICO_RATIO_MODE_RAW,
+					1,
+					constBufferSize);
 				break;
 
 			case 'V':
@@ -265,6 +292,7 @@ int32_t main(void)
 		}
 
 		mainMenu(&allUnits[0]);
+
 		closeDevice(&allUnits[0]);
 		printf("Exit...\n");
 		free(allUnits);

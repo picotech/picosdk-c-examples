@@ -94,9 +94,13 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #endif
 
 // Function prototypes
-void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset);
-//void rapidblockDataHandler(UNIT* unit, int8_t* text, int32_t offset);
-void collectRapidBlockImmediate(GENERICUNIT* unit);
-void collectRapidBlockTriggered(GENERICUNIT* unit);
-
+void rapidblockDataHandler(GENERICUNIT* unit,
+									uint64_t noOfPreTriggerSamples,		// Used by RunBlock()
+									uint64_t noOfPostTriggerSamples,	// Used by RunBlock()
+									double idealTimeInterval,			// Used by RunBlock()
+									uint64_t nSamples,					// Used by SetDataBuffers()
+									uint64_t nCaptures,
+									PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+									uint64_t downSampleRatio			// Used by SetDataBuffers()
+									);
 #endif

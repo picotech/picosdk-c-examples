@@ -15,6 +15,8 @@
 
 #include "../../shared/PicoUnit.h"
 #include "../../shared/PicoScaling.h"
+#include "../../shared/PicoBuffers.h"
+#include "../../shared/PicoFileFunctions.h"
 #include "./Libpsospa.h"
 
 /* Headers for Windows */
@@ -102,6 +104,7 @@ USER_PROBE_INFO userProbeInfo;
 BOOL		scaleVoltages = TRUE;
 uint32_t	timebase = 0;
 const uint64_t constBufferSize = 131072; //128kB
+int16_t   		g_ready = FALSE;
 /***************************************************************************/
 
 /****************************************************************************
@@ -148,6 +151,21 @@ static void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status, 
 
 	g_probeStateChanged = 1;
 
+}
+
+/****************************************************************************
+* CallbackData
+* used by psospa data block collection calls, on receipt of data.
+* used to set global flags etc checked by user routines
+****************************************************************************/
+//void PREF4 CallBackBlock( int16_t handle, PICO_STATUS status, void * pParameter)
+void PREF4 CallBackData(int16_t handle, PICO_STATUS status, void* pParameter)
+{
+	if (status != PICO_CANCELLED)
+	{
+		g_ready = TRUE;
+		///*((BOOL*)pParameter) = TRUE;
+	}
 }
 
 /****************************************************************************
@@ -235,8 +253,8 @@ PICO_STATUS SetTrigger(GENERICUNIT* unit,
 	int32_t autoTrigger_us)
 {
 	PICO_STATUS status;
-	PICO_CONDITIONS_INFO info = PICO_CLEAR_CONDITIONS;
-	PICO_CONDITIONS_INFO pwqInfo = PICO_CLEAR_CONDITIONS;
+	PICO_ACTION info = PICO_CLEAR_ALL;
+	PICO_ACTION pwqInfo = PICO_CLEAR_ALL;
 
 	if ((status = psospaSetTriggerChannelProperties(unit->handle,
 		channelProperties,
@@ -249,7 +267,8 @@ PICO_STATUS SetTrigger(GENERICUNIT* unit,
 
 	if (nTriggerConditions != 0)
 	{
-		info = (PICO_CONDITIONS_INFO)(PICO_CLEAR_CONDITIONS | PICO_ADD_CONDITION); // Clear and add trigger condition specified unless no trigger conditions have been specified
+		info = (PICO_ACTION)(PICO_CLEAR_ALL | PICO_ADD);
+		// Clear and add trigger condition specified unless no trigger conditions have been specified
 	}
 
 	if ((status = psospaSetTriggerChannelConditions(unit->handle, triggerConditions, nTriggerConditions, info) != PICO_OK))
@@ -287,7 +306,7 @@ PICO_STATUS SetTrigger(GENERICUNIT* unit,
 	// Clear and add pulse width qualifier condition, clear if no pulse width qualifier has been specified
 	if (pwq->nConditions != 0)
 	{
-		pwqInfo = (PICO_CONDITIONS_INFO)(PICO_CLEAR_CONDITIONS | PICO_ADD_CONDITION);
+		pwqInfo = (PICO_ACTION)(PICO_CLEAR_ALL | PICO_ADD);
 	}
 
 	if ((status = psospaSetPulseWidthQualifierConditions(unit->handle, pwq->conditions, pwq->nConditions, pwqInfo)) != PICO_OK)
@@ -911,11 +930,10 @@ PICO_STATUS handleDevice(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
 	if (unit->channelCount > ENABLED_CHS_LIMIT)
 	{
 		enabled_chs_limit = ENABLED_CHS_LIMIT;
-		printf("Limiting enabled channels to %d! (Starting at ChA)\n", enabled_chs_limit);
+		//printf("Limiting enabled channels to %d! (Starting at ChA)\n", enabled_chs_limit);
 	}
-	if(TURN_ON_EVERY_N_CH != 1)
-		printf("Turning on every %d Channels\n", TURN_ON_EVERY_N_CH);
-
+	//if(TURN_ON_EVERY_N_CH != 1)
+	//	printf("Turning on every %d Channels\n", TURN_ON_EVERY_N_CH);
 	// Turn off any digital ports (MSO models only)
 	if (unit->digitalPortCount > 0)
 	{
@@ -951,6 +969,9 @@ PICO_STATUS handleDevice(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
 		unit->digitalChannelSettings[i].enabled = FALSE;		//turn off digital channels
 		unit->digitalChannelSettings[i].threshold[0] = 0.0f;	// Set threshold to 0V
 	}
+
+	unit->CapturesComplete = 0; // used by GetMoreDataHandler()
+
 	if (sigGenSettings != NULL)
 	{
 		//Set default Signal Generator settings /AWG settings
@@ -990,4 +1011,332 @@ PICO_STATUS handleDevice(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
 void closeDevice(GENERICUNIT* unit)
 {
 	psospaCloseUnit(unit->handle);
+}
+
+/****************************************************************************
+* GetMoreDataHandler
+* - Used by all data routines
+* - acquires data, displays 10 items
+*   and saves all data to a file.
+* Input :
+* - unit : the unit to use.
+* - noOfPreTriggerSamples : number of samples to capture before trigger.
+* - autostop : 1 to stop when trigger condition is met, 0 to continue until user stops.
+****************************************************************************/
+void GetMoreDataHandler(GENERICUNIT* unit,
+						PICO_RATIO_MODE ratioMode,
+						uint64_t downSampleRatio,
+						uint64_t nSamples) // Set the number of raw samples
+{
+	int32_t index = 0;
+	int16_t channel = 0;
+	PICO_STATUS status = PICO_OK;
+	//Set the number buffers from previous Rapid block capture.
+	if (unit->CapturesComplete == 0)
+	{
+		printf("No Captures done - Exiting MoreDataHandler()\n");
+		return;
+	}
+	uint64_t nCaptures = unit->CapturesComplete;
+	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);	// bitwise OR flags for first buffer that is set
+
+	//Define acquisition Settings
+
+	//Buffers settings
+	//Use scope acquisition settings for data download
+	struct tbuffer_settings bufferSettings = { 0 };
+	bufferSettings.startIndex = 0;
+	bufferSettings.downSampleRatioMode = ratioMode;
+	bufferSettings.downSampleRatio = downSampleRatio;
+	bufferSettings.nSamples = nSamples;
+
+	//Create Buffers - Min and Max (3D buffers - Captures, Channels, Samples)
+	struct tmultiBufferSizes multiBufferSizes;// to store buffer sizes
+	int16_t*** minBuffersStopped;
+	int16_t*** maxBuffersStopped;
+	pico_create_multibuffers(unit, bufferSettings, nCaptures, &minBuffersStopped, &maxBuffersStopped, &multiBufferSizes);
+
+	printf("\nRequesting More Data.");
+	//printf("\nNumber of PreTriggerSamples: %lld", noOfPreTriggerSamples);
+
+	//Save and print Sample Internal set (in seconds)
+	//unit->timeInterval = (idealTimeInterval * (pow(10, 3 * sampleIntervalTimeUnits) / 1E+15));
+	printf("\nsample Internal: %g seconds\n", unit->timeInterval);
+	//print number of Samples
+	printf("%llu Samples\n", nSamples);
+	uint64_t printTriggerSample = 0;
+
+	// SetDataBuffers with API
+	if (nCaptures == 1) // only 1 segment, for block and streaming download
+		SetAllDataBuffers(unit, &bufferSettings, &minBuffersStopped, &maxBuffersStopped, &multiBufferSizes, 0, (CAPTURE_MODE)BLOCK, 0);
+	else // > 1 segment, Rapid download only
+		SetAllDataBuffers(unit, &bufferSettings, &minBuffersStopped, &maxBuffersStopped, &multiBufferSizes, 0, (CAPTURE_MODE)RAPID_BLOCK, 0);
+	
+	printf("\nPress any key to abort.");
+	printf("\nWaiting for Data ");
+
+	g_ready = FALSE; // reset flag
+
+	if (unit->CapturesComplete == 1)
+	{
+		status = psospaGetValuesAsync(unit->handle,
+			0,				// startIndex
+			bufferSettings.nSamples,
+			downSampleRatio,
+			ratioMode,
+			0,				// segmentIndex
+			CallBackData,	// pointer to Data callback
+			NULL);			// pParameter
+
+		if (status != PICO_OK)
+		{
+			printf(status ? "blockDataHandler:psospaGetValuesAsync ------ 0x%08lx \n" : "", status);
+			return;
+		}
+	}
+	else // > 1 segment
+	{
+		status = psospaGetValuesBulkAsync(unit->handle,
+			0,				// startIndex
+			bufferSettings.nSamples,// noOfSamples
+			0,				// From Segment
+			nCaptures - 1,	// To Segment
+			downSampleRatio,
+			ratioMode,
+			CallBackData,	// pointer to Data callback
+			NULL);			// pParameter
+
+		if (status != PICO_OK)
+		{
+			printf(status ? "blockDataHandler:psosp0aGetValuesBulkAsync ------ 0x%08lx \n" : "", status);
+			return;
+		}
+	}
+	//wait for capture to complete or for user to abort
+	while (!g_ready && !_kbhit())
+	{
+		Sleep(500);
+		printf(". ");
+	}
+
+	printf("\nFinished Data download");
+	//Write one segment to a file as captured
+	printf("\nWriting Buffer Set of channels to a file.\n");
+
+	//Create file name string
+	char startOfFileName2[] = "MoreDataStopped";
+	char buf[58 + (3 * sizeof(int))];
+	size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+	//snprintf(buf, buf_size, "%s%d.txt", startOfFileName, (int)capture);
+	snprintf(buf, buf_size, "%s", startOfFileName2);
+
+	//Get scaling Info for each channel
+	struct tPicoProbeScaling enabledChannelsScaling[PSOSPA_MAX_CHANNELS] = { 0 };
+	struct tPicoProbeScaling channelRangeInfoTemp;
+	for (channel = 0; channel < unit->channelCount; channel++)
+	{
+		if (unit->channelSettings[channel].enabled)
+		{
+			getRangeScaling(unit->channelSettings[PICO_CHANNEL_A + 0].range, &channelRangeInfoTemp);
+			enabledChannelsScaling[channel] = channelRangeInfoTemp;
+		}
+	}
+
+	WriteArrayToFilesGeneric(
+		unit,
+		minBuffersStopped,
+		maxBuffersStopped,
+		multiBufferSizes,
+		enabledChannelsScaling,
+		buf,
+		0,		// streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
+		NULL,	// No overflow flags
+		NULL);	// Set default full range if NULL
+
+	// Release Buffer memory from API
+	clearDataBuffers(unit);
+
+	// Free buffers
+	pico_release_multibuffers(unit, &minBuffersStopped, &maxBuffersStopped, &multiBufferSizes);
+}
+
+/****************************************************************************
+* SetupTrigger
+* This function sets up an advanced trigger on Channel A, rising, at +50% of the channel range.
+* Inputs :
+* - unit : the unit to use.
+* Returns       none
+****************************************************************************/
+void SetupTrigger(GENERICUNIT* unit)
+{
+	PICO_STATUS status = PICO_OK;
+
+	//Set triggerLevelADC to +50% of set channel voltage range
+	int16_t triggerLevelADC = mv_to_adc((double)inputRanges[unit->channelSettings[PICO_CHANNEL_A].range] / 2,
+		unit->channelSettings[PICO_CHANNEL_A].range,
+		unit->maxADCValue);
+
+	struct tPicoTriggerChannelProperties sourceDetails = {
+											triggerLevelADC,	//thresholdUpper
+											256 * 16,			//thresholdUpperHysteresis
+											triggerLevelADC,	//thresholdLower
+											256 * 16,			//thresholdLowerHysteresis
+											PICO_CHANNEL_A,		//channel - PICO_CHANNEL
+	};
+
+	struct tPicoCondition conditions = { sourceDetails.channel,	//PICO_CHANNEL
+											PICO_CONDITION_TRUE	//PICO_TRIGGER_STATE - true/false/Don't care
+	};
+
+	struct tPicoDirection directions = {
+		directions.channel = conditions.source,
+		directions.direction = PICO_RISING,
+		directions.thresholdMode = PICO_LEVEL };
+
+	//Create Pulse Width Qualifier structure with settings
+	struct tPwq pulseWidth;
+	memset(&pulseWidth, 0, sizeof(struct tPwq));//zero out pulseWidth
+
+	printf("Trigger Channel is %c\n", 'A' + sourceDetails.channel);
+	printf("Collects when value rises past %d", scaleVoltages ?
+		(int16_t)adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[sourceDetails.channel].range, unit->maxADCValue)	// If scaleVoltages, print mV value
+		: sourceDetails.thresholdUpper);																// else print ADC Count
+
+	printf(scaleVoltages ? " mV\n" : " ADC Counts\n");
+
+	printf("Press a key to start...\n");
+	_getch();
+
+	setDefaults(unit);
+
+	status = SetTrigger(unit,
+		&sourceDetails, 1,	//channelProperties //nChannelProperties
+		PICO_AUXIO_INPUT,	//auxIoMode
+		&conditions, 1,		//conditions		//nConditions
+		&directions, 1,		//directions		//nDirections
+		&pulseWidth,		//PWQ
+		0, 0);				//TrigDelay //AutoTrigger_us
+}
+
+/****************************************************************************
+* SetAllDataBuffers
+* This function Setups all the data buffers for enabled channels and segments.
+* Inputs :
+* - unit : the unit to use.
+* - bufferSettings : structure containing buffer settings
+* - minBuffers : 3D array of pointers to int16_t buffers for minimum ADC values
+* - maxBuffers : 3D array of pointers to int16_t buffers for maximum ADC values
+* - multiBufferSizes : structure containing buffer sizes
+* - StreamBufToSet : in streaming mode, the buffer number to set (0 to (multiBufferSizes->numberOfBuffers -1) )
+* - CaptureMode : enum to indicate if BLOCK, RAPID_BLOCK or STREAMING mode
+* - Reset_action : if 0, first buffer set uses CLEAR_ALL | ADD, if not 0, first buffer set uses ADD only (used in streaming mode)
+* Returns       none
+****************************************************************************/
+void SetAllDataBuffers(GENERICUNIT* unit,
+	struct tbuffer_settings* bufferSettings, 
+	int16_t**** minBuffers, 
+	int16_t**** maxBuffers, 
+	struct tmultiBufferSizes* multiBufferSizes,
+	uint64_t StreamBufToSet,
+	enum enCaptureMode CaptureMode,
+	int16_t Reset_action)
+{
+	uint64_t waveform;
+	uint64_t nCaptures;
+	int16_t channel;
+	uint64_t capture;
+	PICO_STATUS status = PICO_OK;
+	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);//bitwise OR flags for first buffer that is set
+
+ 	if (CaptureMode != (enum enCaptureMode)STREAMING )
+	{
+		nCaptures = multiBufferSizes->numberOfBuffers;
+	}
+	else // Streaming mode - only set one buffer at a time
+	{
+		waveform = 0;
+		// force "for loop" to only use one buffer set
+		nCaptures = StreamBufToSet + 1;
+		if (Reset_action != 0) // Set action flag to ADD on subsequent calls into this function
+			action_flag = PICO_ADD; // all subsequent calls use ADD!
+	}
+
+	//printf("\nCalling SetDataBuffers() for Channel(s) - ");
+	// SetDataBuffers with API
+	for (channel = 0; channel < unit->channelCount; channel++)
+	{
+		if (unit->channelSettings[channel].enabled)
+		{
+			if (CaptureMode != (enum enCaptureMode)STREAMING)
+			{
+				capture = 0;
+			}
+			else // Streaming mode - only set one buffer at a time
+			{
+				capture = StreamBufToSet; // force "for loop" to only use one buffer set
+			}
+
+			for (capture; capture < nCaptures; capture++)
+			{
+				if (CaptureMode != (enum enCaptureMode)STREAMING)
+					waveform = capture;
+				status = psospaSetDataBuffers(unit->handle,
+					(PICO_CHANNEL)channel,
+					(*maxBuffers)[capture][channel],
+					(*minBuffers)[capture][channel],
+					multiBufferSizes->maxBufferSize,
+					PICO_INT16_T, //PICO_DATA_TYPE
+					waveform,
+					bufferSettings->downSampleRatioMode,
+					action_flag);
+				action_flag = PICO_ADD;//all subsequent calls use ADD!
+				if (status != PICO_OK)
+				{
+					printf("SetAllDataBuffers:psospaSetDataBuffers ------ 0x%08x, for channel %c \n", status, PICO_CHANNEL_A + channel);
+					return;
+				}
+				//if (capture == 0)
+				//	printf("%c,", 'A' + channel);
+			}
+		}
+	}
+	//digital channels
+	for (channel = 0; channel < unit->digitalPortCount; channel++)
+	{
+		if (unit->digitalChannelSettings[channel].enabled)
+		{
+			if (CaptureMode != (enum enCaptureMode)STREAMING)
+			{
+				capture = 0;
+			}
+			else // Streaming mode - only set one buffer at a time
+			{
+				capture = StreamBufToSet; // force "for loop" to only use one buffer set
+			}
+
+			for (capture; capture < nCaptures; capture++)
+			{ 
+				if (CaptureMode != (enum enCaptureMode)STREAMING)
+					waveform = capture; 
+				status = psospaSetDataBuffers(unit->handle,
+					PICO_PORT0 + (PICO_CHANNEL)channel,
+					(*maxBuffers)[capture][channel + unit->channelCount],
+					(*minBuffers)[capture][channel + unit->channelCount],
+					multiBufferSizes->maxBufferSize,
+					PICO_INT16_T,
+					waveform,			//waveform number
+					bufferSettings->downSampleRatioMode,
+					action_flag);
+				action_flag = PICO_ADD;//all subsequent calls use ADD!
+				if (status != PICO_OK)
+				{
+					printf(status ? "SetAllDataBuffers:psospaSetDataBuffers(PORT %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
+					return;
+				}
+				//if (capture == 0)
+				//	printf("PORT%d,", channel);
+			}
+		}
+	}
+	//printf("\n");
 }
