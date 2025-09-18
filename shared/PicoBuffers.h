@@ -21,7 +21,6 @@
 #include <string.h>
 #include <termios.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -106,7 +105,7 @@ typedef struct tmultiBufferSizes
 // Function prototypes
 void data_buffer_sizes(PICO_RATIO_MODE downSampleRatioMode, uint64_t downSampleRatio, uint64_t noOfSamples, uint64_t* maxBufferSize, uint64_t* minBufferSize);
 
-int16_t pico_create_multibuffers(GENERICUNIT* unit, BUFFER_SETTINGS bufferSettings, uint64_t numberOfBuffers, int16_t**** minBuffers, int16_t**** maxBuffers, MULTIBUFFERSIZES* multiBufferSizes);
-void pico_release_multibuffers(GENERICUNIT* unit, int16_t**** minBuffers, int16_t**** maxBuffers, MULTIBUFFERSIZES* multiBufferSizes);
+int16_t pico_create_multibuffers(GENERICUNIT* unit, struct tbuffer_settings bufferSettings, uint64_t numberOfBuffers, int16_t**** minBuffers, int16_t**** maxBuffers, struct tmultiBufferSizes* multiBufferSizes);
+void pico_release_multibuffers(GENERICUNIT* unit, int16_t**** minBuffers, int16_t**** maxBuffers, struct tmultiBufferSizes* multiBufferSizes);
 
 #endif

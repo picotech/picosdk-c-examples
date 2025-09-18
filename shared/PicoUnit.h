@@ -96,21 +96,21 @@ typedef enum
 	//models values not used in the code
 }MODEL_TYPE; 
 
-typedef enum
+typedef enum enSigGenFeature
 {
 	SIGGEN_NONE = 0,
 	SIGGEN_FUNCTGEN = 1,
 	SIGGEN_AWG = 2
 }SIGGEN_FEATURE;
 
-typedef struct
+typedef struct tChannelSettings
 {
 	int16_t enabled;
 	PICO_COUPLING DCcoupled;
 	PICO_CONNECT_PROBE_RANGE range;	// For APIs that use enum channel range
 
 	// 3 Items below for psospa API only
-	PICO_PROBE_RANGE_INFO rangeType;	//x1 or x10 scaling
+	PICO_PROBE_RANGE_INFO rangeType;//x1 or x10 scaling
 	int64_t			rangeMin;		// In nV
 	int64_t			rangeMax;		// In nV
 	
@@ -118,7 +118,7 @@ typedef struct
 	PICO_BANDWIDTH_LIMITER bandwithLimit;
 }CHANNEL_SETTINGS;
 
-typedef struct
+typedef struct enMSOChannelSettings
 {
 	int16_t enabled;
 	double threshold[8];//voltage threshold per digital channel I/P, only threshold[0] for non 6000a API units
@@ -139,29 +139,7 @@ typedef struct tGenericUnit
 	int16_t						maxADCValue;
 	
 	SIGGEN_FEATURE				sigGenfeature; // SIGGEN_NONE, SIGGEN_FUNCTGEN, SIGGEN_AWG
-	/*
-	// AWG settings
-	int16_t						sigGenEnabled;
-	PICO_WAVE_TYPE				sigGenWaveType;
-	double						sigGenPeakVolts;
-	double						sigGenOffset;
-	double						sigGenFrequency;
-	//
-	double						sigGenFrequencyStop;
-	double						sigGenFrequencyIncrement;// frequencyIncrement
-	double 						sigGenDwellTime; //Seconds
-	PICO_SWEEP_TYPE				sigGenSweepType;
-	//
-	PICO_SIGGEN_TRIG_TYPE		sigGentriggerType;       // PICO_SIGGEN_TRIG_TYPE triggerType,
-	PICO_SIGGEN_TRIG_SOURCE		sigGentriggerSource;      // PICO_SIGGEN_TRIG_SOURCE triggerSource,
-	uint64_t					sigGencycles;
-	uint64_t					sigGenautoTrigPicoSecs;
-	//
-	double						dutyCyclePercent;
-	int16_t*					AWGBuffer;
-	uint64_t					AWGBufferSize;
-	// //
-	*/
+
 	int16_t						hasHardwareETS;
 	uint16_t					awgBufferSize;
 	CHANNEL_SETTINGS			channelSettings[8];
@@ -169,9 +147,9 @@ typedef struct tGenericUnit
 	double						timeInterval;
 	int16_t						digitalPortCount;
 	MSO_CHANNEL_SETTINGS		digitalChannelSettings[2];
+	uint64_t					CapturesComplete; // Used in all capture modes
 }GENERICUNIT;
 
 // Function prototypes
-
 
 #endif

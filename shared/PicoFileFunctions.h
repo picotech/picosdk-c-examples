@@ -91,7 +91,7 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #endif
 
 // enums
-typedef enum
+typedef enum enCaptureMode
 {
 	BLOCK = 0,
 	RAPID_BLOCK = 1,
@@ -106,26 +106,25 @@ typedef struct tcaptures_range
 }CAPTURES_RANGE;
 
 // Function prototypes
-void WriteArrayToFilesGeneric(GENERICUNIT* unit,
+void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
 	int16_t*** minBuffers,
 	int16_t*** maxBuffers,
-	MULTIBUFFERSIZES multiBufferSizes,
-	PICO_PROBE_SCALING* enabledChannelsScaling,
+	struct tmultiBufferSizes multiBufferSizes,
+	struct tPicoProbeScaling* enabledChannelsScaling,
 	char startOfFileName[],
 	uint64_t Triggersample,
 	int16_t* overflow,
-	CAPTURES_RANGE* captures_range);
+	struct tcaptures_range* captures_range);
 
-void WriteArrayToStdoutGeneric(GENERICUNIT* unit,
+void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
 	int16_t*** minBuffers,
 	int16_t*** maxBuffers,
-	MULTIBUFFERSIZES multiBufferSizes,
-	PICO_PROBE_SCALING* enabledChannelsScaling,
-	CAPTURE_MODE CaptureMode,
+	struct tmultiBufferSizes multiBufferSizes,
+	struct tPicoProbeScaling* enabledChannelsScaling,
+	enum enCaptureMode CaptureMode,
 	int16_t numberOfBuffers,
 	uint64_t numberOfSamples,
 	uint64_t Triggersample,
 	int16_t* overflow);
-
 
 #endif

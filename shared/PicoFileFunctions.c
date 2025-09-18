@@ -111,15 +111,15 @@ return (fp>0)?0:-1;
 * Writes files to disk of current path
 ****************************************************************************/
 
-void WriteArrayToFilesGeneric(GENERICUNIT* unit,
+void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
 int16_t*** minBuffers,
 int16_t*** maxBuffers,
-MULTIBUFFERSIZES multiBufferSizes,
-PICO_PROBE_SCALING* enabledChannelsScaling,
+struct tmultiBufferSizes multiBufferSizes,
+struct tPicoProbeScaling* enabledChannelsScaling,
 char startOfFileName[],
 uint64_t Triggersample,
 int16_t* overflow,
-CAPTURES_RANGE* captures_rangeIp)
+struct tcaptures_range* captures_rangeIp)
 {   
     FILE* fp = NULL;
     if(startOfFileName == NULL)
@@ -158,14 +158,16 @@ CAPTURES_RANGE* captures_rangeIp)
                 unit->timeInterval, multiBufferSizes.maxBufferSize, Triggersample);
 
 			//overrange flags
-            fprintf(fp, "OverRange flag: ");
-            i = 10; // upto 2 digital ports + 8 analog channels (CHAR_BIT * sizeof integer)
-            while (i--)
+            if (overflow != NULL)
             {
-                fprintf(fp, "%d", ((uint16_t)overflow[capture] >> i) & 1);
+                fprintf(fp, "OverRange flag: ");
+                i = 10; // upto 2 digital ports + 8 analog channels (CHAR_BIT * sizeof integer)
+                while (i--)
+                {
+                    fprintf(fp, "%d", ((uint16_t)overflow[capture] >> i) & 1);
+                }
+                fprintf(fp, " (LSB ChA)\n");
             }
-            fprintf(fp, " (LSB ChA)\n");
-
             // Write time and channel headings
             fprintf(fp, "Time(s) ");
 
@@ -259,12 +261,12 @@ CAPTURES_RANGE* captures_rangeIp)
 * Writes text to stdout/console
 ****************************************************************************/
 
-void WriteArrayToStdoutGeneric(GENERICUNIT* unit,
+void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
     int16_t*** minBuffers,
     int16_t*** maxBuffers,
-    MULTIBUFFERSIZES multiBufferSizes,
-    PICO_PROBE_SCALING* enabledChannelsScaling,
-    CAPTURE_MODE CaptureMode,
+    struct tmultiBufferSizes multiBufferSizes,
+    struct tPicoProbeScaling* enabledChannelsScaling,
+    enum enCaptureMode CaptureMode,
     int16_t numberOfBuffers,
     uint64_t numberOfSamples,
     uint64_t Triggersample,
@@ -281,7 +283,7 @@ void WriteArrayToStdoutGeneric(GENERICUNIT* unit,
             //Write header lines
             printf("Outputting the first: %lld samples...\n",
                 numberOfSamples);
-            if (CaptureMode != BLOCK)
+            if (CaptureMode != (enum enCaptureMode)BLOCK)
             {
                 printf("Capture: %lld of %lld Captures\n",
                     capture, multiBufferSizes.numberOfBuffers);
