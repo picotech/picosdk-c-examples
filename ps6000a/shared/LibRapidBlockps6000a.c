@@ -96,8 +96,6 @@ return (fp>0)?0:-1;
 #define min(a,b) ((a) < (b) ? a : b)
 #endif
 
-int16_t   		g_ready = FALSE;
-
 int8_t RapidBlockFile[20] = "rapidblock.txt";
 FILE* fp = NULL;
 
@@ -106,35 +104,37 @@ FILE* fp = NULL;
 ***************************************************************************/
 extern BOOL		scaleVoltages;
 extern uint32_t	timebase;
+extern int16_t   g_ready;
 extern const uint64_t constBufferSize;
 /***************************************************************************/
 
 /****************************************************************************
-* Block Callback
-* used by ps6000a data block collection calls, on receipt of data.
-* used to set global flags etc checked by user routines
-****************************************************************************/
-//void PREF4 CallBackBlock( int16_t handle, PICO_STATUS status, void * pParameter)
-static void PREF4 CallBackBlock(int16_t handle, PICO_STATUS status, void* pParameter)
-{
-	if (status != PICO_CANCELLED)
-	{
-		g_ready = TRUE;
-		//*((BOOL*)pParameter) = TRUE;
-	}
-}
-
-/****************************************************************************
-* CollectRapidBlock
+* rapidblockDataHandler
 *  This function demonstrates how to collect a set of captures using
 *  rapid block mode.
-*
+* Inputs :
+* - unit : the unit to use.
+* - noOfPreTriggerSamples : number of samples to capture before trigger.
+* - noOfPostTriggerSamples : number of samples to capture after trigger.
+* - idealTimeInterval : the desired time interval (in seconds) between samples.
+* - nSamples : Set the number of samples per capture - Used by SetDataBuffers()
+* - nCaptures : Set the number of captures - Used by SetNoOfCaptures()
+* - ratioMode : Set the downsampling mode - Used by SetDataBuffers()
+* - downSampleRatio : Set the downsampling ratio - Used by SetDataBuffers()
+* Returns       none
 ****************************************************************************/
-void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
+void rapidblockDataHandler(GENERICUNIT* unit,
+							uint64_t noOfPreTriggerSamples,		// Used by RunBlock()
+							uint64_t noOfPostTriggerSamples,	// Used by RunBlock()
+							double idealTimeInterval,			// Used by RunBlock()
+							uint64_t nSamples,					// Used by SetDataBuffers()
+							uint64_t nCaptures,
+							PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+							uint64_t downSampleRatio			// Used by SetDataBuffers()
+)
 {
 	PICO_STATUS status = 0; 
 	int16_t i;
-	int16_t channel;
 	uint64_t capture;
 
 	int64_t nMaxSamples = 0;
@@ -143,22 +143,17 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	int16_t*** minBuffers;
 	int16_t*** maxBuffers;
 
-	uint64_t nCaptures;
-	uint64_t nCompletedCaptures;
+	uint64_t nCompletedCaptures = 0;
 	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);//bitwise OR flags for first buffer that is set
-	//--------------------------------------------------------------------------//
-	//Capture settings
-	uint64_t nSamples = constBufferSize;	//Set the number of samples per capture
-	uint64_t noOfPreTriggerSamples = 0;
-	nCaptures = 3;				//Set the number of captures
 
+	//Capture settings
 	//Buffers settings (Set DownSampling mode and ratio)
 	struct tbuffer_settings bufferSettings = {0};
 	bufferSettings.startIndex = 0;
-	bufferSettings.downSampleRatioMode = PICO_RATIO_MODE_AGGREGATE;
-	bufferSettings.downSampleRatio = 4;
-	bufferSettings.nSamples = constBufferSize;
-	//--------------------------------------------------------------------------//
+	bufferSettings.downSampleRatioMode = ratioMode;
+	bufferSettings.downSampleRatio = downSampleRatio;
+	bufferSettings.nSamples = nSamples;
+
 	//printf(scaleVoltages ? "Volts\n" : "ADC Counts\n");
 	printf("Press any key to abort\n");
 
@@ -172,11 +167,38 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 
 	//Create Buffers - Min and Max (3D buffers - Captures, Channels, Samples)
 	struct tmultiBufferSizes multiBufferSizes; // to store buffer sizes
-	pico_create_multibuffers(unit, bufferSettings, (int32_t)nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes);
+	pico_create_multibuffers(unit, bufferSettings, nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes);
 
 	// Create Overflow Array Buffers
 	int16_t* overflowArray;
 	overflowArray = (int16_t*)calloc(nCaptures, sizeof(int16_t));
+
+	// Find nearest timebase
+	// Find the analogue channels that are enabled
+	PICO_CHANNEL_FLAGS enabledChannelOrPortFlags = (PICO_CHANNEL_FLAGS)0;
+	for (int32_t ch = 0; ch < unit->channelCount; ch++)
+	{
+		if (unit->channelSettings[ch].enabled)
+		{
+			enabledChannelOrPortFlags = enabledChannelOrPortFlags | (PICO_CHANNEL_FLAGS)(1 << ch);
+		}
+	}
+	if (unit->digitalChannelSettings[0].enabled)
+		enabledChannelOrPortFlags = enabledChannelOrPortFlags | PICO_PORT0_FLAGS;
+	if (unit->digitalChannelSettings[1].enabled)
+		enabledChannelOrPortFlags = enabledChannelOrPortFlags | PICO_PORT1_FLAGS;
+
+		status = ps6000aNearestSampleIntervalStateless(unit->handle,
+														enabledChannelOrPortFlags,
+														idealTimeInterval,
+														unit->resolution,
+														&timebase,
+														&(unit->timeInterval));
+		if (status != PICO_OK)
+		{
+			printf("RapidBlockDataHandler:ps6000aNearestSampleIntervalStateless ------ 0x%08x \n", status);
+			return;
+		}
 
 	printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
 	printf("%llu Captures each with %llu ADC Samples\n", nCaptures, nSamples);
@@ -194,11 +216,11 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	//Start acquisition
 	status = ps6000aRunBlock(unit->handle,
 		noOfPreTriggerSamples,
-		nSamples - noOfPreTriggerSamples,
+		noOfPostTriggerSamples,
 		timebase,
 		&timeIndisposed,
 		0,
-		CallBackBlock,
+		CallBackData,
 		NULL);
 
 	if (status != PICO_OK)
@@ -207,96 +229,50 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	}
 
 	//Wait until data ready
-	g_ready = 0;
+	g_ready = FALSE;
 
 	while (!g_ready && !_kbhit())
 	{
 		Sleep(1);
 	}
 
-	if (!g_ready)
+	if (!g_ready) // If user aborted stop the acquisition
 	{
 		_getch();
-
+		printf("Rapid capture aborted. ");
 		status = ps6000aStop(unit->handle);
-		status = ps6000aGetNoOfCaptures(unit->handle, &nCompletedCaptures);
-
-		printf("Rapid capture aborted. %llu complete blocks were captured\n", nCompletedCaptures);
-		printf("\nPress any key...\n\n");
-		_getch();
-
-		if (nCompletedCaptures == 0)
-		{
-			return;
-		}
-
-		// Only display the blocks that were captured
-		nCaptures = nCompletedCaptures;
 	}
+	// Get the number of captures that were completed
+	status = ps6000aGetNoOfCaptures(unit->handle, &nCompletedCaptures);
+	printf("%llu complete blocks were captured\n", nCompletedCaptures);
+	printf("\nPress any key...\n\n");
+	_getch();
+
+	if (nCompletedCaptures == 0)
+	{
+		return; // Exit if no captures were made
+	}
+
+	// Only use the blocks that were captured
+	nCaptures = nCompletedCaptures;
+	unit->CapturesComplete = nCompletedCaptures;
 	
 	// SetDataBuffers with API
-	for (channel = 0; channel < unit->channelCount; channel++)
-	{
-		if (unit->channelSettings[channel].enabled)
-		{
-			for (capture = 0; capture < nCaptures; capture++)
-			{
-				status = ps6000aSetDataBuffers(unit->handle,
-					(PICO_CHANNEL)channel,
-					maxBuffers[capture][channel],
-					minBuffers[capture][channel],
-					multiBufferSizes.maxBufferSize,
-					PICO_INT16_T, //PICO_DATA_TYPE
-					capture,
-					bufferSettings.downSampleRatioMode,
-					action_flag);
-				action_flag = PICO_ADD;//all subsequent calls use ADD!
-
-				if (status != PICO_OK)
-				{
-					printf("RapidBlockDataHandler:ps6000aSetDataBuffers ------ 0x%08x, for channel %d \n", status, channel);
-				}
-			}
-		}
-	}
-	//digital channels
-	for (channel = 0; channel < unit->digitalPortCount; channel++)
-	{
-		if (unit->digitalChannelSettings[channel].enabled)
-		{
-			for (capture = 0; capture < nCaptures; capture++)
-			{
-				status = ps6000aSetDataBuffers(unit->handle,
-					PICO_PORT0 + (PICO_CHANNEL)channel,
-					maxBuffers[capture][channel + unit->channelCount],
-					minBuffers[capture][channel + unit->channelCount],
-					multiBufferSizes.maxBufferSize,
-					PICO_INT16_T,
-					capture,			//waveform number
-					bufferSettings.downSampleRatioMode,
-					action_flag);
-				action_flag = PICO_ADD;//all subsequent calls use ADD!
-				if (status != PICO_OK)
-				{
-					printf(status ? "blockDataHandler:psospaSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
-				}
-			}
-		}
-	}
+	SetAllDataBuffers(unit, &bufferSettings, &minBuffers, &maxBuffers, &multiBufferSizes, 0, (CAPTURE_MODE)RAPID_BLOCK, 0);
 
 	// Get data from device
 	status = ps6000aGetValuesBulk(unit->handle,
-		0,						//Start Index for each segment
-		&nSamples,				//Number of samples for each segment
-		0,						//From Segment
-		nCaptures - 1,			//To Segment
-		bufferSettings.downSampleRatio,						//Down Sample Ratio
-		bufferSettings.downSampleRatioMode,				//Down Sample Ratio mode
-		overflowArray);				//Array of Channel overrage flags
+		0,									// Start Index for each segment
+		&nSamples,							// Number of samples for each segment
+		0,									// From Segment
+		nCaptures - 1,						// To Segment
+		bufferSettings.downSampleRatio,		// Down Sample Ratio
+		bufferSettings.downSampleRatioMode,	// Down Sample Ratio mode
+		overflowArray);						// Array of Channel overrage flags
 
 	if (status == PICO_OK)
 	{
-		//Get scaling Info for each channel
+		// Get scaling Info for each channel
 		struct tPicoProbeScaling enabledChannelsScaling[PS6000A_MAX_CHANNELS] = { 0 };
 		struct tPicoProbeScaling channelRangeInfoTemp;
 		for (i = 0; i < unit->channelCount; i++)
@@ -323,7 +299,7 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 			maxBuffers,
 			multiBufferSizes,
 			enabledChannelsScaling,
-			(CAPTURE_MODE)RAPID_BLOCK,
+			(enum enCaptureMode)RAPID_BLOCK,
 			3,						// Number of buffers to write
 			10,						// Number of samples to write
 			noOfPreTriggerSamples,	// Triggersample
@@ -348,7 +324,7 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 					triggerInfo,	//PICO_TRIGGER_INFO * triggerInfo,
 					0,				//firstSegmentIndex,
 					nCaptures		//segmentCount (number of segments)			
-		);
+					);
 		if (status != PICO_OK)
 		{
 			printf("RapidBlockDataHandler:psospaGetTriggerInfo ------ 0x%08x \n", status);
@@ -382,86 +358,3 @@ void rapidblockDataHandler(GENERICUNIT* unit, int8_t* text, int32_t offset)
 	pico_release_multibuffers(unit, &minBuffers, &maxBuffers, &multiBufferSizes);
 	free(overflowArray);
 }
-
-/****************************************************************************
-* collectRapidBlockImmediate
-*  this function demonstrates how to collect a single block of data
-*  from the unit (start collecting immediately)
-****************************************************************************/
-void collectRapidBlockImmediate(GENERICUNIT* unit)
-{
-	PICO_STATUS status = PICO_OK;
-
-	printf("Collect RapidBlock immediate...\n");
-	printf("Press a key to start\n");
-	_getch();
-
-	setDefaults(unit);
-
-	/* Trigger disabled	*/
-	status = ps6000aSetSimpleTrigger(unit->handle, 0, PICO_CHANNEL_A, 0, PICO_RISING, 0, 0);
-
-	rapidblockDataHandler(unit, (int8_t*)"First 10 readings\n", 0);
-}
-
-/****************************************************************************
-* collectRapidBlockTriggered
-*  this function demonstrates how to collect a single block of data from the
-*  unit, when a trigger event occurs.
-****************************************************************************/
-void collectRapidBlockTriggered(GENERICUNIT* unit)
-{
-	PICO_STATUS status = PICO_OK;
-
-	//Set triggerLevelADC to +50% of set channel voltage range
-	int16_t triggerLevelADC = mv_to_adc((double)inputRanges[unit->channelSettings[PICO_CHANNEL_A].range] / 2,
-		unit->channelSettings[PICO_CHANNEL_A].range,
-		unit->maxADCValue);
-
-	struct tPicoTriggerChannelProperties sourceDetails = {
-											triggerLevelADC,	//thresholdUpper
-											256 * 10,			//thresholdUpperHysteresis
-											triggerLevelADC,	//thresholdLower
-											256 * 10,			//thresholdLowerHysteresis
-											PICO_CHANNEL_A,		//channel - PICO_CHANNEL
-	};
-
-	struct tPicoCondition conditions = { sourceDetails.channel,	//PICO_CHANNEL
-											PICO_CONDITION_TRUE	//PICO_TRIGGER_STATE - true/false/Don't care
-	};
-
-	struct tPicoDirection directions = {
-		directions.channel = conditions.source,
-		directions.direction = PICO_RISING,
-		directions.thresholdMode = PICO_LEVEL };
-
-	//Create Pulse Width Qualifier structure with settings
-	struct tPwq pulseWidth;
-	memset(&pulseWidth, 0, sizeof(struct tPwq));//zero out pulseWidth
-
-	printf("Collect RapidBlock triggered...\n");
-	printf("Trigger Channel is %c\n", 'A' + sourceDetails.channel);
-	// If scaleVoltages, print mV value
-	// else print ADC Count
-	printf("Collects when value rises past %d", scaleVoltages ?
-		(int16_t)adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[sourceDetails.channel].range, unit->maxADCValue)
-		: sourceDetails.thresholdUpper);
-	
-	printf(scaleVoltages ? " mV\n" : " ADC Counts\n");
-
-	printf("Press a key to start...\n");
-	_getch();
-
-	setDefaults(unit);
-
-	status = SetTrigger(unit,
-		&sourceDetails, 1,	//channelProperties //nChannelProperties
-		1,					//auxOutputEnable
-		&conditions, 1,
-		&directions, 1,
-		&pulseWidth,		//PWQ
-		0, 0);				//TrigDelay //AutoTrigger_us
-
-	rapidblockDataHandler(unit, (int8_t*)"First 10 readings after trigger\n", 0);
-}
-

@@ -96,12 +96,10 @@ return (fp>0)?0:-1;
 ***************************************************************************/
 extern BOOL		scaleVoltages;
 extern uint32_t	timebase;
-extern const uint64_t constBufferSize;
 
 /****************************************************************************
 * Global Variables
 ***************************************************************************/
-int16_t   		g_ready = FALSE;
 int16_t 	    DutyCycle = FALSE;      // Default to no duty cycle
 int16_t 	    Sweep = FALSE;          // Default to no sweep
 int16_t 	    SigGenTrigger = FALSE;  // Default to no trigger

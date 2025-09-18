@@ -46,7 +46,7 @@
 
 #include "ps6000aApi.h"
 #include "../shared/Libps6000a.h"
-#include "../shared/LibStreamingps6000a.h"
+#include "../shared/LibRapidBlockps6000a.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
@@ -127,6 +127,7 @@ return (fp>0)?0:-1;
 ***************************************************************************/
 extern BOOL		scaleVoltages;
 extern uint32_t	timebase; //extern uint32_t	timebase = 8;
+extern const uint64_t	constBufferSize; //defined and used in Libps6000a.c
 /***************************************************************************/
 
 /****************************************************************************
@@ -150,7 +151,7 @@ static void mainMenu(GENERICUNIT *unit)
 
 		printf("R - Immediate RapidBlock                      V - Set Voltages\n");
 		printf("T - Triggered RapidBlock                      I - SetTimebase\n");
-		printf("                                              A - ADC counts/mV\n");	
+		printf("J - GetMoreRapidData                          A - ADC counts/mV\n");	
 		printf("                                              D - Set Resolution\n");
 		printf("                                              M - Set Digital Ports (MSO)\n");
 		printf("                                              X - Exit\n");
@@ -163,11 +164,35 @@ static void mainMenu(GENERICUNIT *unit)
 		switch (ch) 
 		{
 			case 'R':
-				collectRapidBlockImmediate(unit);
+				// Trigger disabled
+				PICO_STATUS status = ps6000aSetSimpleTrigger(unit->handle, 0, PICO_CHANNEL_A, 0, PICO_RISING, 0, 0);
+				rapidblockDataHandler(unit,
+											0,						// noOfPreTriggerSamples - on Device
+											constBufferSize,		// noOfPostTriggerSamples - on Device
+											0,						// idealTimeInterval - 0 find max. sample rate
+											constBufferSize,		// nSamples - PC buffer size
+											3,						// nCaptures	
+											PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
+											1);						// downSampleRatio - Used by Buffer
 				break;
 
 			case 'T':
-				collectRapidBlockTriggered(unit);
+				SetupTrigger(unit);
+				rapidblockDataHandler(unit,
+											0,						// noOfPreTriggerSamples - on Device
+											constBufferSize,		// noOfPostTriggerSamples - on Device
+											0,						// idealTimeInterval - 0 find max. sample rate
+											constBufferSize,		// nSamples - PC buffer size
+											3,						// nCaptures	
+											PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
+											1);						// downSampleRatio - Used by Buffer
+				break;
+
+			case 'J':
+				GetMoreDataHandler(unit,
+											PICO_RATIO_MODE_AGGREGATE,
+											16,
+											constBufferSize);
 				break;
 
 			case 'V':

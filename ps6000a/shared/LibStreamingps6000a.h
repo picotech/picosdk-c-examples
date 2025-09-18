@@ -11,8 +11,6 @@
 #ifndef __LIBSTREAMINGPS6000A_H__
 #define __LIBSTREAMINGPS6000A_H__
 
-
-
  /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
@@ -91,13 +89,15 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #define min(a,b) ((a) < (b) ? a : b)
 #endif
 
-//#define BUFFER_SIZE 	1024
-
-
 // Function prototypes
-
-void streamDataHandler(GENERICUNIT* unit, uint64_t noOfPreTriggerSamples);
-void collectStreamingImmediate(GENERICUNIT* unit);
-void collectStreamingTriggered(GENERICUNIT* unit);
+void streamDataHandler(GENERICUNIT* unit,
+	uint64_t noOfPreTriggerSamples,		// Used by RunStreaming()
+	uint64_t noOfPostTriggerSamples,	// Used by RunStreaming()
+	double idealTimeInterval,			// Used by RunStreaming()
+	uint32_t sampleIntervalTimeUnits,	// Used by RunStreaming()
+	uint64_t nSamples,					// Set the number of samples per capture - Used by SetDataBuffers()
+	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+	uint64_t downSampleRatio,			// Used by SetDataBuffers()
+	int16_t autostop);
 
 #endif

@@ -91,8 +91,6 @@ return (fp>0)?0:-1;
 #define min(a,b) ((a) < (b) ? a : b)
 #endif
 
-int16_t   		g_ready = FALSE;
-
 int8_t BlockFile[20] = "Block_Mode";
 
 /****************************************************************************
@@ -100,49 +98,45 @@ int8_t BlockFile[20] = "Block_Mode";
 ***************************************************************************/
 extern BOOL		scaleVoltages;
 extern uint32_t	timebase;
+extern int16_t   g_ready;
 extern const uint64_t constBufferSize;
 /***************************************************************************/
-
-/****************************************************************************
-* Block Callback
-* used by ps6000a data block collection calls, on receipt of data.
-* used to set global flags etc checked by user routines
-****************************************************************************/
-//void PREF4 CallBackBlock( int16_t handle, PICO_STATUS status, void * pParameter)
-static void PREF4 CallBackBlock(int16_t handle, PICO_STATUS status, void* pParameter)
-{
-	if (status != PICO_CANCELLED)
-	{
-		g_ready = TRUE;
-		///*((BOOL*)pParameter) = TRUE;
-	}
-}
 
 /****************************************************************************
 * BlockDataHandler
 * - Used by all block data routines
 * - acquires data (user sets trigger mode before calling), displays 10 items
-*   and saves all to block.txt
-* Input :
+*   and saves all to text file.
+* Inputs :
 * - unit : the unit to use.
+* - noOfPreTriggerSamples : number of samples to capture before trigger.
+* - noOfPostTriggerSamples : number of samples to capture after trigger.
+* - idealTimeInterval : the desired time interval (in seconds) between samples.
+* - nSamples : Set the number of samples per capture - Used by SetDataBuffers()
+* - ratioMode : Set the downsampling mode - Used by SetDataBuffers()
+* - downSampleRatio : Set the downsampling ratio - Used by SetDataBuffers()
+* Returns       none
 ****************************************************************************/
-void blockDataHandler(GENERICUNIT* unit)
+void blockDataHandler(GENERICUNIT* unit,
+						uint64_t noOfPreTriggerSamples,		// Used by RunBlock()
+						uint64_t noOfPostTriggerSamples,	// Used by RunBlock()
+						double idealTimeInterval,			// Used by RunBlock()
+						uint64_t nSamples,					// Used by SetDataBuffers()
+						PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+						uint64_t downSampleRatio			// Used by SetDataBuffers()
+						)
 {
 	int16_t retry;
 	int16_t triggerEnabled = 0;
 	int16_t pwqEnabled = 0;
 
 	int32_t i;
-	double timeInterval;
-	uint64_t maxSamples;
 	double timeIndisposed;
 
 	PICO_STATUS status;
 	//--------------------------------------------------------------------------//
 	//Capture settings
-	uint64_t nSamples = constBufferSize;	//Set the number of samples per capture
-	PICO_RATIO_MODE ratioMode = PICO_RATIO_MODE_AGGREGATE; // PICO_RATIO_MODE_RAW;//used for RunBlock()
-	uint64_t downSampleRatio = 16;//used for GetValues()
+	//uint64_t nSamples = constBufferSize;	//Set the number of samples per capture
 
 	//Buffers settings (Set DownSampling mode and ratio)
 	//Use scope acquisition settings for first data download
@@ -150,7 +144,7 @@ void blockDataHandler(GENERICUNIT* unit)
 	bufferSettings.startIndex = 0;
 	bufferSettings.downSampleRatioMode = ratioMode;
 	bufferSettings.downSampleRatio = downSampleRatio;
-	bufferSettings.nSamples = constBufferSize;
+	bufferSettings.nSamples = nSamples;
 	//--------------------------------------------------------------------------//
 
 	//Create Buffers - Min and Max (3D buffer - 1 Segment, Channels, Samples)
@@ -159,74 +153,38 @@ void blockDataHandler(GENERICUNIT* unit)
 	int16_t*** maxBuffers;
 	pico_create_multibuffers(unit, bufferSettings, 1, &minBuffers, &maxBuffers, &multiBufferSizes);
 
-	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);//bitwise OR flags for first buffer that is set
+	// SetDataBuffers with API
+	SetAllDataBuffers(unit, &bufferSettings, &minBuffers, &maxBuffers, &multiBufferSizes, 0, (CAPTURE_MODE)BLOCK, 0);
 
-	for (i = 0; i < unit->channelCount; i++)
+	// Find nearest timebase
+	// Find the analogue channels that are enabled
+	PICO_CHANNEL_FLAGS enabledChannelOrPortFlags = (PICO_CHANNEL_FLAGS)0;
+	for (int32_t ch = 0; ch < unit->channelCount; ch++)
 	{
-		if (unit->channelSettings[i].enabled)
+		if (unit->channelSettings[ch].enabled)
 		{
-			status = ps6000aSetDataBuffers(unit->handle,
-				(PICO_CHANNEL)i,
-				maxBuffers[0][i], // 1 waveform buffer only
-				minBuffers[0][i], // 1 waveform buffer only
-				multiBufferSizes.maxBufferSize,
-				PICO_INT16_T,
-				0,			//waveform number
-				bufferSettings.downSampleRatioMode,
-				action_flag);
-
-			action_flag = PICO_ADD;//all subsequent calls use ADD!
-			if (status != PICO_OK)
-			{
-				printf(status ? "blockDataHandler:ps6000aSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", i, status);
-			}
+			enabledChannelOrPortFlags = enabledChannelOrPortFlags | (PICO_CHANNEL_FLAGS)(1 << ch);
 		}
 	}
-	//digital channels
-	for (i = 0; i < unit->digitalPortCount; i++)
+	if (unit->digitalChannelSettings[0].enabled)
+		enabledChannelOrPortFlags = enabledChannelOrPortFlags | PICO_PORT0_FLAGS;
+	if (unit->digitalChannelSettings[1].enabled)
+		enabledChannelOrPortFlags = enabledChannelOrPortFlags | PICO_PORT1_FLAGS;
+
+	status = ps6000aNearestSampleIntervalStateless(unit->handle,
+		enabledChannelOrPortFlags,
+		idealTimeInterval,
+		unit->resolution,
+		&timebase,
+		&(unit->timeInterval));
+	if (status != PICO_OK)
 	{
-		if (unit->digitalChannelSettings[i].enabled)
-		{
-			status = ps6000aSetDataBuffers(unit->handle,
-				PICO_PORT0 + (PICO_CHANNEL)i,
-				maxBuffers[0][i + unit->channelCount], // 1 waveform buffer only
-				minBuffers[0][i + unit->channelCount], // 1 waveform buffer only
-				multiBufferSizes.maxBufferSize,
-				PICO_INT16_T,
-				0,			//waveform number
-				bufferSettings.downSampleRatioMode,
-				action_flag);
-			action_flag = PICO_ADD;//all subsequent calls use ADD!
-			if (status != PICO_OK)
-			{
-				printf(status ? "blockDataHandler:ps6000aSetDataBuffers(channel %d) ------ 0x%08lx \n" : "", PICO_PORT0 + i, status);
-			}
-		}
+		printf("RapidBlockDataHandler:ps6000aNearestSampleIntervalStateless ------ 0x%08x \n", status);
+		return;
 	}
 
-	/*  Find the maximum number of samples and the time interval (in nanoseconds).
-	 *	If the function returns PICO_OK, the timebase will be used.
-	 */
-	do
-	{
-		status = ps6000aGetTimebase(unit->handle, timebase, nSamples, &timeInterval, &maxSamples, 0);
-		if (status == PICO_INVALID_NUMBER_CHANNELS_FOR_RESOLUTION ||
-			status == PICO_CHANNEL_COMBINATION_NOT_VALID_IN_THIS_RESOLUTION)
-		{
-			printf("BlockDataHandler: Error - Invalid number of channels for resolution. Or incorrect set of channels enabled.\n");
-			return;
-		}
-		else if (status == PICO_OK)
-		{
-			// Do nothing
-		}
-		else
-		{
-			timebase++;
-		}
-	} while (status != PICO_OK);
+	printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
 
-	printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase, timeInterval * 1e-9);
 	printf("Number of Capture Samples: %llu\n", nSamples);
 	if(ratioMode == PICO_RATIO_MODE_RAW)
 		printf("DownSampling Mode is set to: None\n");
@@ -239,34 +197,30 @@ void blockDataHandler(GENERICUNIT* unit)
 	if (ratioMode != PICO_RATIO_MODE_RAW)
 		printf("\nDownSampling Ratio is set to: %llu\n", downSampleRatio);
 
-
-	// Can retrieve data using different ratios and ratio modes from driver
-	int16_t overflow = 0;
-
-	status = ps6000aGetValuesOverlapped(unit->handle, 0, (uint64_t*)&nSamples, downSampleRatio, ratioMode, 0,0, &overflow);
-
-	if (status != PICO_OK)
-	{
-			printf("blockDataHandler:ps6000aGetValuesOverlapped ------ 0x%08lx \n", status);
-	}
-
 	/* Start it collecting, then wait for completion*/
 	g_ready = FALSE;
 
-	//do
-	//{
-		//retry = 0;
+	do
+	{
+		retry = 0;
 
-		status = ps6000aRunBlock(unit->handle, (uint64_t)0, nSamples, timebase, &timeIndisposed, 0, NULL, NULL);
+		status = ps6000aRunBlock(unit->handle,
+					noOfPreTriggerSamples,
+					noOfPostTriggerSamples,
+					timebase,
+					&timeIndisposed,
+					0,
+					CallBackData,
+					NULL);
 
 		if (status != PICO_OK)
 		{
 			printf("BlockDataHandler:ps5000aRunBlock ------ 0x%08lx \n", status);
-			//return;
+			return;
 		}
-	//} while (retry);
+	} while (retry);
 
-	//status = ps5000aIsTriggerOrPulseWidthQualifierEnabled(unit->handle, &triggerEnabled, &pwqEnabled);
+	//status = ps6000aIsTriggerOrPulseWidthQualifierEnabled(unit->handle, &triggerEnabled, &pwqEnabled);
 
 	if (triggerEnabled || pwqEnabled)
 	{
@@ -278,29 +232,21 @@ void blockDataHandler(GENERICUNIT* unit)
 	}
 
 	//wait for capture to complete or for user to abort
-	//while (!g_ready && !_kbhit())
 	while (!g_ready && !_kbhit())
 	{
-		status = ps6000aIsReady(unit->handle, &g_ready);
-
-		if (status != PICO_OK)
-		{
-			printf("blockDataHandler:ps6000aGetValues ------ 0x%08lx \n", status);
-			break;
-		}
 		Sleep(1);
 	}
 
 	if (g_ready)
 	{
 		// Can retrieve data using different ratios and ratio modes from driver
-		//int16_t overflow = 0;
+		int16_t overflow = 0;
 
-		//status = ps6000aGetValues(unit->handle, 0, (uint64_t*)&nSamples, downSampleRatio, ratioMode, 0, &overflow);
+ 		status = ps6000aGetValues(unit->handle, 0, (uint64_t*)&nSamples, downSampleRatio, ratioMode, 0, &overflow);
 
 		if (status != PICO_OK)
 		{
-		//	printf("blockDataHandler:ps6000aGetValues ------ 0x%08lx \n", status);
+			printf("blockDataHandler:ps6000aGetValues ------ 0x%08lx \n", status);
 		}
 		else
 		{
@@ -315,6 +261,8 @@ void blockDataHandler(GENERICUNIT* unit)
 					enabledChannelsScaling[i] = channelRangeInfoTemp;
 				}
 			}
+			unit->CapturesComplete = 1; // set to 1 to indicate complete
+
 			//Write to console
 			WriteArrayToStdoutGeneric(
 				unit,
@@ -348,90 +296,6 @@ void blockDataHandler(GENERICUNIT* unit)
 		_getch();
 	}
 
-	if ((status = ps6000aStop(unit->handle)) != PICO_OK)
-	{
-		printf("blockDataHandler:ps6000aStop ------ 0x%08lx \n", status);
-	}
 	clearDataBuffers(unit);
 	pico_release_multibuffers(unit, &minBuffers, &maxBuffers, &multiBufferSizes);
-}
-
-/****************************************************************************
-* collectBlockImmediate
-*  this function demonstrates how to collect a single block of data
-*  from the unit (start collecting immediately)
-****************************************************************************/
-void collectBlockImmediate(GENERICUNIT* unit)
-{
-	PICO_STATUS status = PICO_OK;
-
-	printf("Collect block immediate...\n");
-	printf("Press a key to start\n");
-	_getch();
-
-	setDefaults(unit);
-
-	/* Trigger disabled	*/
-	status = ps6000aSetSimpleTrigger(unit->handle, 0, PICO_CHANNEL_A, 0, PICO_RISING, 0, 0);
-
-	blockDataHandler(unit);
-}
-
-/****************************************************************************
-* collectBlockTriggered
-*  this function demonstrates how to collect a single block of data from the
-*  unit, when a trigger event occurs.
-****************************************************************************/
-void collectBlockTriggered(GENERICUNIT* unit)
-{
-	PICO_STATUS status = PICO_OK;
-
-	//Set triggerLevelADC to +50% of set channel voltage range
-	int16_t triggerLevelADC = mv_to_adc( (double)inputRanges[unit->channelSettings[PICO_CHANNEL_A].range] / 2,
-		unit->channelSettings[PICO_CHANNEL_A].range,
-		unit->maxADCValue);
-
-	struct tPicoTriggerChannelProperties sourceDetails = {
-											triggerLevelADC,	//thresholdUpper
-											256 * 16,			//thresholdUpperHysteresis
-											triggerLevelADC,	//thresholdLower
-											256 * 16,			//thresholdLowerHysteresis
-											PICO_CHANNEL_A,		//channel - PICO_CHANNEL
-											};
-
-	struct tPicoCondition conditions = { sourceDetails.channel,	//PICO_CHANNEL
-											PICO_CONDITION_TRUE	//PICO_TRIGGER_STATE - true/false/Don't care
-										};
-
-	struct tPicoDirection directions = {
-		directions.channel = conditions.source,
-		directions.direction = PICO_RISING,
-		directions.thresholdMode = PICO_LEVEL };
-
-	//Create Pulse Width Qualifier structure with settings
-	struct tPwq pulseWidth;
-	memset(&pulseWidth, 0, sizeof(struct tPwq));//zero out pulseWidth
-
-	printf("Collect block triggered...\n");
-	printf("Trigger Channel is %c\n", 'A' + sourceDetails.channel);
-	printf("Collects when value rises past %d", scaleVoltages ?
-		(int16_t)adc_to_mv(sourceDetails.thresholdUpper, unit->channelSettings[sourceDetails.channel].range, unit->maxADCValue)	// If scaleVoltages, print mV value
-		: sourceDetails.thresholdUpper);																// else print ADC Count
-	
-	printf(scaleVoltages ? " mV\n" : " ADC Counts\n");
-
-	printf("Press a key to start...\n");
-	_getch();
-
-	setDefaults(unit);
-
-	status = SetTrigger(unit,
-		&sourceDetails, 1,	//channelProperties //nChannelProperties
-		PICO_AUXIO_INPUT,	//auxIoMode
-		&conditions, 1,		//conditions		//nConditions
-		&directions, 1,		//directions		//nDirections
-		&pulseWidth,		//PWQ
-		0, 0);				//TrigDelay //AutoTrigger_us
-
-	blockDataHandler(unit);
 }
