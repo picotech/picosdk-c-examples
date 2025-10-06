@@ -201,17 +201,15 @@ void setDefaults(GENERICUNIT* unit)
 		int16_t temp_threshold[8];
 		for (int16_t b = 0; b < 8; b++)
 		{
-			temp_threshold[b] = mv_to_adc(
-				unit->digitalChannelSettings[i].threshold[b] * 1000,//pass mV
-				PICO_X1_PROBE_5V, //fixed 5v range for digital ports
-				unit->maxADCValue);
+			temp_threshold[b] = (int16_t)(unit->digitalChannelSettings[i].threshold[b] * 32767 / 8);
+			// fixed +/-8v range for digital ports
 		}
 		
 		if (unit->digitalChannelSettings[i].enabled == TRUE)
 		{
 			status = ps6000aSetDigitalPortOn(unit->handle,
 				(PICO_CHANNEL)(PICO_PORT0 + i),
-				&temp_threshold[i], //(unit->digitalChannelSettings[i].threshold),
+				&temp_threshold[i],
 				(sizeof(unit->digitalChannelSettings[i].threshold) / sizeof(unit->digitalChannelSettings[i].threshold[0])),
 				PICO_NORMAL_100MV);
 
