@@ -198,7 +198,10 @@ static void mainMenu(GENERICUNIT *unit)
 				break;
 
 			case 'M':
-				setDigitalPorts(unit);
+				if (unit->digitalPortCount != 0)
+				{
+					setDigitalPorts(unit);
+				}
 				break;
 
 			case 'I':
