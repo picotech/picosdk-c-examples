@@ -211,7 +211,7 @@ void blockDataHandler(GENERICUNIT* unit,
 					timebase,
 					&timeIndisposed,
 					0,
-					CallBackData,
+					callBackBlockReady,
 					NULL);
 
 		if (status != PICO_OK)

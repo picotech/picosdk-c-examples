@@ -151,9 +151,26 @@ typedef struct tUserProbeInfo
 
 // Function prototypes
 
-// Callback function
-void PREF4 CallBackData(int16_t handle, PICO_STATUS status, void* pParameter);
+// Callback functions
+void PREF4 callBackBlockReady(
+	int16_t				handle,
+	PICO_STATUS		status,
+	PICO_POINTER	pParameter);
 
+void PREF4 callBackDataReady(
+	int16_t    					handle,
+	PICO_STATUS					status,
+	uint64_t     				noOfSamples,
+	int16_t    					overflow,
+	PICO_POINTER				pParameter);
+
+void PREF4 callBackProbeInteractions(
+	int16_t							handle,
+	PICO_STATUS						status,
+	PICO_USER_PROBE_INTERACTIONS*	probes,
+	uint32_t						nProbes);
+
+// Request more data function
 void GetMoreDataHandler(GENERICUNIT* unit,
 								PICO_RATIO_MODE ratioMode,
 								uint64_t downSampleRatio,
