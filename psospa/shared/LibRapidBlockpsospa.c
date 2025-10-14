@@ -221,7 +221,7 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 		timebase,
 		&timeIndisposed,
 		0,
-		CallBackData,
+		callBackBlockReady,
 		NULL);
 
 	if (status != PICO_OK)
@@ -323,19 +323,22 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 		}
 		// Print first 3 trigger timestamps
 		uint64_t maxprintCaptures = min(nCaptures, 3);
+		PICO_STATUS rapidStatus;
 		for (capture = 0; capture < maxprintCaptures; capture++)
 		{
 			if (triggerInfo != NULL)
 			{
+				rapidStatus = triggerInfo[capture].status & PICO_DEVICE_TIME_STAMP_RESET;
 				printf("\nCapture/segment: %llu, Trigger Timestamp: %llu", capture, triggerInfo[capture].timeStampCounter);
-				if(triggerInfo[capture].status == PICO_DEVICE_TIME_STAMP_RESET || capture == 0)
-				{
-					printf(" Delta: NA");
-				}
-				else //NOTE: PICO_DEVICE_TIME_STAMP_RESET/counter wrap around is NOT accounted for. (counter is a unsigned 2^56 bits)
+				if(  (rapidStatus * (uint32_t)(capture != 0)) == 0   ) // Ignore Seg #0 PICO_STATUS
 				{
 					printf(" Delta Samples: %llu, ", triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter);
-					printf("Delta (seconds): %3.3e", (triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter) * unit->timeInterval);
+					printf("Delta (seconds): %3.3e", (triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter)* unit->timeInterval);
+				}
+				else
+				{
+					//NOTE: PICO_DEVICE_TIME_STAMP_RESET/counter wrap around is NOT accounted for. (counter is a unsigned 2^56 bits)
+					printf("PICO_DEVICE_TIME_STAMP_RESET--- 0x%08x, Capture %llu", triggerInfo[capture].status, capture);
 				}
 			}
 		}
