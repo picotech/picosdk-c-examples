@@ -113,7 +113,8 @@ int16_t   		g_ready = FALSE;
 * See ps6000aProbeInteractions (callback)
 *
 ****************************************************************************/
-void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status, PICO_USER_PROBE_INTERACTIONS *probes, uint32_t	nProbes)
+void PREF4 callBackProbeInteractions(int16_t handle,
+	PICO_STATUS status, PICO_USER_PROBE_INTERACTIONS *probes, uint32_t	nProbes)
 {
 	uint32_t i = 0;
 
@@ -154,17 +155,36 @@ void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status, PICO_US
 }
 
 /****************************************************************************
-* CallbackData
+* callBackBlockReady
 * used by ps6000a data block collection calls, on receipt of data.
 * used to set global flags etc checked by user routines
 ****************************************************************************/
-//void PREF4 CallBackBlock( int16_t handle, PICO_STATUS status, void * pParameter)
-void PREF4 CallBackData(int16_t handle, PICO_STATUS status, void* pParameter)
+void PREF4 callBackBlockReady(
+	int16_t				handle,
+	PICO_STATUS		status,
+	PICO_POINTER	pParameter)
 {
 	if (status != PICO_CANCELLED)
 	{
 		g_ready = TRUE;
-		///*((BOOL*)pParameter) = TRUE;
+	}
+}
+
+/****************************************************************************
+* callBackDataReady
+* used by ps6000a for Async data collection calls, on receipt of data.
+* used to set global flags etc checked by user routines
+****************************************************************************/
+void PREF4 callBackDataReady(
+	int16_t    					handle,
+	PICO_STATUS					status,
+	uint64_t     				noOfSamples,
+	int16_t    					overflow,
+	PICO_POINTER				pParameter)
+{
+	if (status != PICO_CANCELLED)
+	{
+		g_ready = TRUE;
 	}
 }
 
@@ -1123,7 +1143,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 			downSampleRatio,
 			ratioMode,
 			0,				// segmentIndex
-			CallBackData,	// pointer to Data callback
+			callBackDataReady,	// pointer to Data callback
 			NULL);			// pParameter
 
 		if (status != PICO_OK)
@@ -1141,7 +1161,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 			nCaptures - 1,	// To Segment
 			downSampleRatio,
 			ratioMode,
-			CallBackData,	// pointer to Data callback
+			callBackDataReady,	// pointer to Data callback
 			NULL);			// pParameter
 
 		if (status != PICO_OK)
