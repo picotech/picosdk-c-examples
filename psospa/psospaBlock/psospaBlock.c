@@ -126,7 +126,7 @@ return (fp>0)?0:-1;
 * Refernce Global Variables
 ***************************************************************************/
 extern BOOL				scaleVoltages;
-extern const uint64_t	constBufferSize; //defined and used in Libps6000a.c
+extern const uint64_t	constBufferSize; //defined and used in Libpsopsa.c
 /***************************************************************************/
 
 /****************************************************************************
@@ -151,7 +151,7 @@ static void mainMenu(GENERICUNIT *unit)
 		printf("B - Immediate Block                           V - Set Voltages\n");
 		printf("T - Triggered Block                           I - SetTimebase\n");
 		printf("J - Get Data More                             A - ADC counts/mV\n");	
-		printf("                                              D - Set Resolution\n");
+		printf("O - Triggered BlockOverlapped (looped blocks) D - Set Resolution\n");
 		if(unit->digitalPortCount != 0)
 			printf("                                              M - Set Digital Ports (MSO)\n");
 		printf("                                              X - Exit\n");
@@ -167,6 +167,17 @@ static void mainMenu(GENERICUNIT *unit)
 				// Trigger disabled
 				PICO_STATUS status = psospaSetSimpleTrigger(unit->handle, 0, PICO_CHANNEL_A, 0, PICO_RISING, 0, 0);
 				blockDataHandler(unit,
+									0,						// noOfPreTriggerSamples - on Device
+									constBufferSize,		// noOfPostTriggerSamples - on Device
+									0,						// idealTimeInterval - 0 find max. sample rate
+									constBufferSize,		// nSamples - PC buffer size
+									PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
+									1);						// downSampleRatio - Used by Buffer
+				break;
+
+			case 'O':
+				SetupTrigger(unit);
+				blockOverlappedDataHandler(unit,
 									0,						// noOfPreTriggerSamples - on Device
 									constBufferSize,		// noOfPostTriggerSamples - on Device
 									0,						// idealTimeInterval - 0 find max. sample rate
