@@ -26,7 +26,7 @@
 #include <ctype.h>
 
 #ifndef PICO_STATUS
-#include <libps6000a/PicoStatus.h>
+#include <PicoStatus.h>
 #endif
 
 #define Sleep(a) usleep(1000*a)
