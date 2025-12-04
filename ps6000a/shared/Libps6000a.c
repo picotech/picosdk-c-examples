@@ -205,7 +205,6 @@ void setDefaults(GENERICUNIT* unit)
 				(PICO_CONNECT_PROBE_RANGE)unit->channelSettings[PICO_CHANNEL_A + i].range,
 				unit->channelSettings[PICO_CHANNEL_A + i].analogueOffset,
 				unit->channelSettings[PICO_CHANNEL_A + i].bandwithLimit);
-				//PICO_BW_FULL);
 			printf(status ? "SetDefaults:ps6000aSetChannelOn------ 0x%08lx \n" : "", status);
 		}
 		else
@@ -554,7 +553,7 @@ void setDigitalPorts(GENERICUNIT* unit)
 		//{
 			// Ask the user to select a range
 		printf("Please connect MSO pods before setting port and pins!\n");
-		printf("Specify voltage pin threshold -5V to +5V\n");
+		printf("Specify voltage pin threshold -8V to +8V\n");
 		printf("99 - switches pin off\n");
 
 		for (ch = 0; ch < numValidChannels; ch++)
@@ -572,8 +571,8 @@ void setDigitalPorts(GENERICUNIT* unit)
 					// Set the threshold for the digital channel
 
 				} while (((unit->digitalChannelSettings[ch].threshold[i] > 99.1f) || (unit->digitalChannelSettings[ch].threshold[i] < 98.9f)) &&
-					((unit->digitalChannelSettings[ch].threshold[i] > 5.0f) ||
-						(unit->digitalChannelSettings[ch].threshold[i] < -5.0f))
+					((unit->digitalChannelSettings[ch].threshold[i] > 8.0f) ||
+						(unit->digitalChannelSettings[ch].threshold[i] < -8.0f))
 					);
 
 				if ((unit->digitalChannelSettings[ch].threshold[i] > 99.1f) || (unit->digitalChannelSettings[ch].threshold[i] < 98.9f))
