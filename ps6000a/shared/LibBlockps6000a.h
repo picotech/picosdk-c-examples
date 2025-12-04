@@ -105,4 +105,13 @@ void blockDataHandler(GENERICUNIT* unit,
 							uint64_t downSampleRatio			// Used by SetDataBuffers()
 							);
 
+void blockOverlappedDataHandler(GENERICUNIT* unit,
+	uint64_t noOfPreTriggerSamples,		// Used by RunBlock()
+	uint64_t noOfPostTriggerSamples,	// Used by RunBlock()
+	double idealTimeInterval,			// Used by RunBlock()
+	uint64_t nSamples,					// Used by SetDataBuffers()
+	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+	uint64_t downSampleRatio			// Used by SetDataBuffers()
+);
+
 #endif

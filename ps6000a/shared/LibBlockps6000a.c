@@ -302,9 +302,10 @@ void blockDataHandler(GENERICUNIT* unit,
 
 /****************************************************************************
 * BlockOverlappedDataHandler
-* - Used by all block data routines
-* - acquires data (user sets trigger mode before calling), displays 10 items
-*   and saves all to text file.
+* - acquires data (user sets trigger mode before calling),
+* - saves all data to text file and repeats in a loop.
+* (repeated block captures, used to save calls to the unit
+* (deferred requests for data))
 * Inputs :
 * - unit : the unit to use.
 * - noOfPreTriggerSamples : number of samples to capture before trigger.
@@ -324,7 +325,6 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 	uint64_t downSampleRatio			// Used by SetDataBuffers()
 )
 {
-	int16_t retry;
 	int16_t triggerEnabled = 0;
 	int16_t pwqEnabled = 0;
 
@@ -395,13 +395,25 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 	if (ratioMode != PICO_RATIO_MODE_RAW)
 		printf("\nDownSampling Ratio is set to: %llu\n", downSampleRatio);
 
-	/* Start it collecting, then wait for completion*/
+
+	int16_t overflow = 0;
+	// Setup deferred request for data
+	// Can retrieve data using different ratios and ratio modes from driver
+	status = ps6000aGetValuesOverlapped(unit->handle,
+										0,
+										(uint64_t*)&nSamples,
+										downSampleRatio,
+										ratioMode,
+										0, 0,
+										&overflow);
+
+	// Start capture
 	g_ready = FALSE;
-
-	do
+	/////////////////////// Loop for overlapped captures ////////////////////
+	uint16_t NumOverlapped = 3;
+	printf("NumOverlapped captures: %d \n", NumOverlapped);
+	for (uint16_t OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped; OverlappedtestNo++)
 	{
-		retry = 0;
-
 		status = ps6000aRunBlock(unit->handle,
 			noOfPreTriggerSamples,
 			noOfPostTriggerSamples,
@@ -413,86 +425,60 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf("BlockDataHandler:ps5000aRunBlock ------ 0x%08lx \n", status);
+			printf("BlockDataHandler:ps6000aRunBlock ------ 0x%08lx \n", status);
 			return;
 		}
-	} while (retry);
 
-	//status = ps6000aIsTriggerOrPulseWidthQualifierEnabled(unit->handle, &triggerEnabled, &pwqEnabled);
-
-	if (triggerEnabled || pwqEnabled)
-	{
-		printf("Waiting for trigger... Press any key to abort\n");
-	}
-	else
-	{
 		printf("Press any key to abort\n");
-	}
 
-	//wait for capture to complete or for user to abort
-	while (!g_ready && !_kbhit())
-	{
-		Sleep(1);
-	}
-
-	if (g_ready)
-	{
-		// Can retrieve data using different ratios and ratio modes from driver
-		int16_t overflow = 0;
-
-		status = ps6000aGetValues(unit->handle, 0, (uint64_t*)&nSamples, downSampleRatio, ratioMode, 0, &overflow);
-
-		if (status != PICO_OK)
+		//wait for capture to complete or for user to abort
+		while (!g_ready && !_kbhit())
 		{
-			printf("blockDataHandler:ps6000aGetValues ------ 0x%08lx \n", status);
+			Sleep(1);
+		}
+
+		if (g_ready)
+		{
+			if (status == PICO_OK)
+			{
+				//Get scaling Info for each channel
+				struct tPicoProbeScaling enabledChannelsScaling[PS6000A_MAX_CHANNELS] = { 0 };
+				struct tPicoProbeScaling channelRangeInfoTemp;
+				for (i = 0; i < unit->channelCount; i++)
+				{
+					if (unit->channelSettings[i].enabled)
+					{
+						getRangeScaling(unit->channelSettings[PICO_CHANNEL_A + 0].range, &channelRangeInfoTemp);
+						enabledChannelsScaling[i] = channelRangeInfoTemp;
+					}
+				}
+				unit->CapturesComplete = 1; // set to 1 to indicate complete
+
+				//Create file name string
+				char buf[58 + (3 * sizeof(int))];
+				size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+				snprintf(buf, buf_size, "%s%d_Segment", BlockFile, OverlappedtestNo);
+				printf("\nWriting capture %ld of channels to a file.\n", OverlappedtestNo);
+				//Write one segment to a file as captured
+				printf("\nWriting Capture of enabled channels to file.\n");
+				WriteArrayToFilesGeneric(
+					unit,
+					minBuffers,
+					maxBuffers,
+					multiBufferSizes,
+					enabledChannelsScaling,
+					buf,
+					0,						// Triggersample
+					&overflow,
+					NULL);
+			}
 		}
 		else
 		{
-			//Get scaling Info for each channel
-			struct tPicoProbeScaling enabledChannelsScaling[PS6000A_MAX_CHANNELS] = { 0 };
-			struct tPicoProbeScaling channelRangeInfoTemp;
-			for (i = 0; i < unit->channelCount; i++)
-			{
-				if (unit->channelSettings[i].enabled)
-				{
-					getRangeScaling(unit->channelSettings[PICO_CHANNEL_A + 0].range, &channelRangeInfoTemp);
-					enabledChannelsScaling[i] = channelRangeInfoTemp;
-				}
-			}
-			unit->CapturesComplete = 1; // set to 1 to indicate complete
-
-			//Write to console
-			WriteArrayToStdoutGeneric(
-				unit,
-				minBuffers,
-				maxBuffers,
-				multiBufferSizes,
-				enabledChannelsScaling,
-				(CAPTURE_MODE)BLOCK,
-				1,						// Number of buffers to write, 1 for block mode
-				10,						// Number of samples to write
-				0,						// Triggersample
-				&overflow);
-
-			//Write one segment to a file as captured
-			printf("\nWriting Capture of enabled channels to file.\n");
-			WriteArrayToFilesGeneric(
-				unit,
-				minBuffers,
-				maxBuffers,
-				multiBufferSizes,
-				enabledChannelsScaling,
-				BlockFile,
-				0,						// Triggersample
-				&overflow,
-				NULL);
+			printf("Data collection aborted\n");
+			_getch();
 		}
-	}
-	else
-	{
-		printf("Data collection aborted\n");
-		_getch();
-	}
+	}//////////////////////// End Overlapped loop ///////////////////////////////////////
 
 	clearDataBuffers(unit);
 	pico_release_multibuffers(unit, &minBuffers, &maxBuffers, &multiBufferSizes);
