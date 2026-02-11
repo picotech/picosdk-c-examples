@@ -1,25 +1,17 @@
 /*******************************************************************************
  *
- * Filename: psospaStreaming.c
+ * Filename: psospaTemplate.c
  *
  * Description:
- *   This is a console mode program that demonstrates how to use some of 
- *	 the PicoScope 3000E Series (psospa) driver API functions to perform operations
- *	 using a PicoScope ospa Oscilloscope.
+ * 
+ * Main code for template example for PicoScope 3000E Series (psospa) driver.
+ * THIS FILE IS NOT INTENDED TO BE MODIFIED BY THE USER.
+ * For User Setup See UserSetup.c file to set up devicce and capture parameters
  *
  *	Supported PicoScope models:
  *
  *      All 3000E model numbers and any
  *		PicoScope ospa API units
- *
- * Examples:
- *   Collect a block of samples immediately
- *   Collect a block of samples when a trigger event occurs
- * 
- *   With the following options:
- *   -Change timebase & voltage scales
- *   -Display data in mV or ADC counts
- *	 -Handle power source changes
  *
  *	To build this application:-
  *
@@ -37,7 +29,7 @@
  *			 Add psospaApi.h and PicoStatus.h to the project
  *			 Build the project
  *
- * Copyright (C) 2025 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2026 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 
@@ -47,6 +39,7 @@
 #include "../shared/Libpsospa.h"
 #include "../shared/LibStreamingpsospa.h"
 #include "../../shared/PicoScaling.h"
+#include "./UserSetup.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
@@ -131,59 +124,6 @@ extern BOOL		scaleVoltages; //defined and used in Libpsospa.c
 /***************************************************************************/
 
 /****************************************************************************
-* mainMenu
-* Controls default functions of the seelected unit
-* Parameters
-* - unit        pointer to the UNIT structure
-*
-* Returns       none
-***************************************************************************/
-static void mainMenu(GENERICUNIT* unit)
-{
-	// Add/remove C files in shared folder to include different functionality
-	// 
-	// Override default channel settings - Enable Channel A only
-	unit->channelSettings[0].enabled = TRUE;									// ChA
-	unit->channelSettings[0].range = PICO_X1_PROBE_2V;							// Set range
-	unit->channelSettings[0].rangeMax = inputRanges[PICO_X1_PROBE_2V] * 1000000;// convert mV to nV
-	unit->channelSettings[0].rangeMin = inputRanges[PICO_X1_PROBE_2V] * -1000000;
-	unit->channelSettings[0].rangeType = PICO_X1_PROBE_NV;						// x1 probe
-	unit->channelSettings[0].analogueOffset = 0.0f;
-	unit->channelSettings[0].bandwithLimit = PICO_BW_FULL; // PICO_BW_FULL, PICO_BW_20MHZ, PICO_BW_200MHZ
-
-	unit->channelSettings[1].enabled = FALSE;	// ChB
-	unit->channelSettings[2].enabled = FALSE;
-	unit->channelSettings[3].enabled = FALSE;	// ChD
-
-	// Apply default settings and Channels Settings above
-	setDefaults(unit);							
-	displaySettings(unit);						// Display the settings
-	printf("\nTemplate Demo - Fast Streaming Example\n");
-	SetupTrigger(unit);							// Set up a basic trigger on Channel A
-
-	///////////////////// Add data Aquisition functions here /////////////////////
-	// Streaming example
-	// recommended buffer size for max/fast streaming rates (streaming mode only)
-	const uint64_t BufferSizeFast = pow(2,20); // 2^20 -> 1MB (MiB)
-
-	// Collect data in streaming mode
-	streamDataHandler(unit,
-		1024,					// noOfPreTriggerSamples - Used by RunStreaming() // trigger point at 1k samples
-		BufferSizeFast - 1024,	// noOfPostTriggerSamples - Used by RunStreaming()
-		3400,					// idealTimeInterval - Used by RunStreaming() // (300MS/s = 3400ps)
-		PICO_PS,				// sampleIntervalTimeUnits - Used by RunStreaming()
-		BufferSizeFast,			// nSamples - Set the number of samples per capture - Used by SetDataBuffers()
-		PICO_RATIO_MODE_RAW,	// ratioMode - Used by SetDataBuffers()
-		1,						// downSampleRatio - Used by SetDataBuffers()
-		1);						// autostop - stop after trigger event
-
-	// Device stopped, Now get more data
-	// Pull Downsampled max. and min. data from the device
-	GetMoreDataHandler(unit, PICO_RATIO_MODE_AGGREGATE, 64, BufferSizeFast);
-	// You can ask for more samples (nSamples) if they are available
-}
-
-/****************************************************************************
 * main
 *
 ***************************************************************************/
@@ -242,7 +182,7 @@ int32_t main(void)
 			return 1;
 		}
 
-		mainMenu(&allUnits[0]);
+		userSetup(&allUnits[0]);
 
 		closeDevice(&allUnits[0]);
 		printf("Exit...\n");
@@ -293,7 +233,7 @@ int32_t main(void)
 			return 1;
 		}
 		
-		mainMenu(&allUnits[listIter]);
+		userSetup(&allUnits[listIter]);
 		closeDevice(&allUnits[listIter]);
 		printf("Exit...\n");
 		free(allUnits);
@@ -339,7 +279,7 @@ int32_t main(void)
 					return 1;
 				}
 
-				mainMenu(&allUnits[listIter]);
+				userSetup(&allUnits[listIter]);
 
 				printf("Found %d devices, pick one to open from the list:\n",devCount);
 				

@@ -25,6 +25,7 @@
     <ClCompile Include="..\shared\Libpsospa.c" />
     <ClCompile Include="..\shared\LibStreamingpsospa.c" />
     <ClCompile Include="psospaTemplate.c" />
+    <ClCompile Include="UserSetup.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{ADE1130D-380E-4BAF-B414-24BB49BE02CE}</ProjectGuid>
