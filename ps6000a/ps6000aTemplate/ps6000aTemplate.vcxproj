@@ -25,6 +25,7 @@
     <ClCompile Include="..\shared\Libps6000a.c" />
     <ClCompile Include="..\shared\LibStreamingps6000a.c" />
     <ClCompile Include="ps6000aTemplate.c" />
+    <ClCompile Include="UserSetup.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C9B36CB3-7552-4036-8D9A-66D2F63CCBE6}</ProjectGuid>

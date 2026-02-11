@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps6000aRapidBlock", "ps6000
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps6000aAWG", "ps6000aAWG\ps6000aAWG.vcxproj", "{EA91AECE-B468-4412-ABE0-CCE2400C249E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps6000aTemplate", "..\..\..\sdk-Working\picosdk-c-examples\ps6000a\ps6000aTemplate\ps6000aTemplate.vcxproj", "{C9B36CB3-7552-4036-8D9A-66D2F63CCBE6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ps6000aTemplate", "ps6000aTemplate\ps6000aTemplate.vcxproj", "{C9B36CB3-7552-4036-8D9A-66D2F63CCBE6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
