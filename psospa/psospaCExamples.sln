@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psospaStreaming", "psospaSt
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psospaAWG", "psospaAWG\psospaAWG.vcxproj", "{EA9CF181-17A3-4C50-BEE4-FBFC5EAD9BAC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psospaTemplate", "..\..\..\sdk-Working\picosdk-c-examples\psospa\psospaTemplate\psospaTemplate.vcxproj", "{ADE1130D-380E-4BAF-B414-24BB49BE02CE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psospaTemplate", "psospaTemplate\psospaTemplate.vcxproj", "{ADE1130D-380E-4BAF-B414-24BB49BE02CE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
