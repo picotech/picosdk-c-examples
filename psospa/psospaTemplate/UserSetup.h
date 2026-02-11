@@ -5,7 +5,7 @@
  * Description:
  *
  * This header defines shared functions and structures for
- * UserSetup function in ps6000a example code.
+  * UserSetup function in psospa example code.
  *
  ****************************************************************************/
 
@@ -29,9 +29,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include <libps6000a/ps6000aApi.h>
+#include <libpsospa/psospaApi.h>
 #ifndef PICO_STATUS
-#include <libps6000a/PicoStatus.h>
+#include <libpsospa/PicoStatus.h>
 #endif
 
 #define Sleep(a) usleep(1000*a)
