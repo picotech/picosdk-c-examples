@@ -1,4 +1,4 @@
-picosdk# picosdk-c-examples psospa API examples
+# picosdk-c-examples psospa API examples
 
 Project files have been created to demo and test acquisition modes and the signal generate.  
 Projects are;  
