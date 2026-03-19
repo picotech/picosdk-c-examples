@@ -111,7 +111,10 @@ static const uint16_t inputRanges[PICO_X1_PROBE_RANGES] = {
 												2000,
 												5000,
 												10000,
-												20000 };
+												20000,
+												50000,
+												100000,
+												200000 };
 
 static const uint16_t inputRangesx10[PICO_X10_PROBE_RANGES] = {
 												100,
@@ -122,7 +125,9 @@ static const uint16_t inputRangesx10[PICO_X10_PROBE_RANGES] = {
 												5000,
 												10000,
 												20000,
-												50000 };
+												50000,
+												100000,
+												200000 };
 
 static const PICO_PROBE_SCALING PicoProbeScaling[] = {
 // x1

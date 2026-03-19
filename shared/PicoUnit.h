@@ -92,9 +92,19 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 
 typedef enum
 {
+	BADKEY = -1,
 	MODEL_NONE = 0,//this is used
-	//models values not used in the code
-}MODEL_TYPE; 
+	MODEL_4444 = 1,
+	MODEL_4224 = 2,
+	MODEL_4224A = MODEL_4224,
+	MODEL_4424 = 3,
+	MODEL_4424A = MODEL_4424,
+	MODEL_4824 = 4,
+	MODEL_4824A = MODEL_4824,
+	MODEL_4225A = 5,
+	MODEL_4425A = 6,
+	MODEL_4825A = 7
+}MODEL_TYPE;
 
 typedef enum enSigGenFeature
 {
@@ -148,7 +158,8 @@ typedef struct tGenericUnit
 	int16_t						digitalPortCount;
 	MSO_CHANNEL_SETTINGS		digitalChannelSettings[2];
 	uint64_t					CapturesComplete; // Used in all capture modes
-}GENERICUNIT;
+	uint16_t					hasIntelligentProbes;
+} GENERICUNIT;
 
 // Function prototypes
 
