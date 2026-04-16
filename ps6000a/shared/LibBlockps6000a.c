@@ -123,7 +123,8 @@ void blockDataHandler(GENERICUNIT* unit,
 						double idealTimeInterval,			// Used by RunBlock()
 						uint64_t nSamples,					// Used by SetDataBuffers()
 						PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
-						uint64_t downSampleRatio			// Used by SetDataBuffers()
+						uint64_t downSampleRatio,			// Used by SetDataBuffers()
+						FILE_TYPE filetype
 						)
 {
 	int16_t retry;
@@ -276,18 +277,36 @@ void blockDataHandler(GENERICUNIT* unit,
 				0,						// Triggersample
 				&overflow);
 
+
+
 			//Write one segment to a file as captured
 			printf("\nWriting Capture of enabled channels to file.\n");
-			WriteArrayToFilesGeneric(
-				unit,
-				minBuffers,
-				maxBuffers,
-				multiBufferSizes,
-				enabledChannelsScaling,
-				BlockFile,
-				0,						// Triggersample
-				&overflow,
-				NULL);
+			if (filetype == FILE_TXT)
+			{
+				WriteArrayToFilesGeneric(
+					unit,
+					minBuffers,
+					maxBuffers,
+					multiBufferSizes,
+					enabledChannelsScaling,
+					BlockFile,
+					0,						// Triggersample
+					&overflow,
+					NULL);
+			}
+			if (filetype == FILE_BIN)
+			{
+				WriteArrayToFilesBinary(
+					unit,
+					minBuffers,
+					maxBuffers,
+					multiBufferSizes,
+					enabledChannelsScaling,
+					BlockFile,
+					0,						// Triggersample
+					&overflow,
+					NULL);
+			}
 		}
 	}
 	else

@@ -1083,7 +1083,8 @@ void closeDevice(GENERICUNIT* unit)
 void GetMoreDataHandler(GENERICUNIT* unit,
 						PICO_RATIO_MODE ratioMode,
 						uint64_t downSampleRatio,
-						uint64_t nSamples) // Set the number of raw samples
+						uint64_t nSamples,
+						FILE_TYPE filetype) // Set the number of raw samples
 {
 	int32_t index = 0;
 	int16_t channel = 0;

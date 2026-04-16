@@ -131,7 +131,8 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 							uint64_t nSamples,					// Used by SetDataBuffers()
 							uint64_t nCaptures,
 							PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
-							uint64_t downSampleRatio			// Used by SetDataBuffers()
+							uint64_t downSampleRatio,			// Used by SetDataBuffers()
+							FILE_TYPE filetype
 )
 {
 	PICO_STATUS status = 0; 
@@ -307,17 +308,33 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 			overflowArray);
 		// Print each segment capture to a file
 		printf("\nWriting each of: %lld channel buffer sets to a file.\n", multiBufferSizes.numberOfBuffers);
-		WriteArrayToFilesGeneric(
-			unit,
-			minBuffers,
-			maxBuffers,
-			multiBufferSizes,
-			enabledChannelsScaling,
-			RapidBlockFile,
-			noOfPreTriggerSamples,	// Triggersample
-			overflowArray,
-			NULL);	
 
+		if (filetype == FILE_TXT)
+		{
+			WriteArrayToFilesGeneric(
+				unit,
+				minBuffers,
+				maxBuffers,
+				multiBufferSizes,
+				enabledChannelsScaling,
+				RapidBlockFile,
+				noOfPreTriggerSamples,	// Triggersample
+				overflowArray,
+				NULL);
+		}
+		if (filetype == FILE_BIN)
+		{
+			WriteArrayToFilesBinary(
+				unit,
+				minBuffers,
+				maxBuffers,
+				multiBufferSizes,
+				enabledChannelsScaling,
+				RapidBlockFile,
+				noOfPreTriggerSamples,	// Triggersample
+				overflowArray,
+				NULL);
+		}
 		// Get relative segment trigger timestamps (in samples)
 		PICO_TRIGGER_INFO* triggerInfo;
 		triggerInfo = (PICO_TRIGGER_INFO*)calloc(nCaptures, sizeof(PICO_TRIGGER_INFO));

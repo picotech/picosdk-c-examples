@@ -174,7 +174,8 @@ void PREF4 callBackProbeInteractions(
 void GetMoreDataHandler(GENERICUNIT* unit,
 								PICO_RATIO_MODE ratioMode,
 								uint64_t downSampleRatio,
-								uint64_t nSamples);
+								uint64_t nSamples,
+								FILE_TYPE filetype);
 
 // Unit setup and management functions
 void setDefaults(GENERICUNIT* unit);

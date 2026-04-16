@@ -173,7 +173,8 @@ static void mainMenu(GENERICUNIT *unit)
 											constBufferSize,		// nSamples - PC buffer size
 											3,						// nCaptures	
 											PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
-											1);						// downSampleRatio - Used by Buffer
+											1,						// downSampleRatio - Used by Buffer
+											FILE_TXT);						// filetype to save
 				break;
 
 			case 'O':
@@ -197,14 +198,16 @@ static void mainMenu(GENERICUNIT *unit)
 											constBufferSize,		// nSamples - PC buffer size
 											3,						// nCaptures	
 											PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
-											1);						// downSampleRatio - Used by Buffer
+											1,						// downSampleRatio - Used by Buffer
+											FILE_TXT);				// filetype to save
 				break;
 
 			case 'J':
 				GetMoreDataHandler(unit,
 											PICO_RATIO_MODE_AGGREGATE,
 											16,
-											constBufferSize);
+											constBufferSize,
+											FILE_TXT);						// filetype to save
 				break;
 
 			case 'V':

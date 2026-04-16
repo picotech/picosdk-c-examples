@@ -174,7 +174,8 @@ static void mainMenu(GENERICUNIT*unit)
 					constBufferSize,		// nSamples - Set the number of samples per capture - Used by SetDataBuffers()
 					PICO_RATIO_MODE_RAW,	// ratioMode - Used by SetDataBuffers()
 					1,						// downSampleRatio - Used by SetDataBuffers()
-					0);						// autostop
+					0,						// autostop
+					FILE_TXT);				// Save data as CSV file
 				break;
 
 			case 'T':
@@ -187,14 +188,16 @@ static void mainMenu(GENERICUNIT*unit)
 					constBufferSize,		// nSamples - Set the number of samples per capture - Used by SetDataBuffers()
 					PICO_RATIO_MODE_RAW,	// ratioMode - Used by SetDataBuffers()
 					1,						// downSampleRatio - Used by SetDataBuffers()
-					1);						// autostop
+					1,						// autostop
+					FILE_TXT);				// Save data as CSV file
 				break;
 
 			case 'J':
 				GetMoreDataHandler(unit,
 					PICO_RATIO_MODE_RAW,
 					1,
-					constBufferSize);
+					constBufferSize,
+					FILE_TXT);
 				break;
 
 			case 'V':

@@ -59,10 +59,11 @@ void userSetup(GENERICUNIT* unit)
 		BufferSizeFast,			// nSamples - Set the number of samples per capture - Used by SetDataBuffers()
 		PICO_RATIO_MODE_RAW,	// ratioMode - Used by SetDataBuffers()
 		1,						// downSampleRatio - Used by SetDataBuffers()
-		0);						// autostop - 0: Off or 1: Stop after trigger event
+		0,						// autostop - 0: Off or 1: Stop after trigger event
+		FILE_BIN);						// Save data as Binary file				
 
 	// Device stopped, Now get more data
 	// Pull Downsampled max. and min. data from the device
-	GetMoreDataHandler(unit, PICO_RATIO_MODE_AGGREGATE, 64, BufferSizeFast);
+	GetMoreDataHandler(unit, PICO_RATIO_MODE_DECIMATE, 64, BufferSizeFast, FILE_TXT);
 	// You can ask for more samples (nSamples) if they are available
 }
