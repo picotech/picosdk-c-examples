@@ -90,7 +90,14 @@ int32_t fopen_s(FILE** a, const char* b, const char* c)
 #define min(a,b) ((a) < (b) ? a : b)
 #endif
 
-typedef enum
+typedef enum enFileType
+{
+	FILE_NONE = 0,
+	FILE_BIN = 1,
+	FILE_TXT = 2
+}FILE_TYPE;
+
+typedef enum enModelType
 {
 	BADKEY = -1,
 	MODEL_NONE = 0,//this is used

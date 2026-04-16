@@ -9,6 +9,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <time.h>
 #include "./PicoUnit.h"
 #include "./PicoFileFunctions.h"
 #include "./PicoScaling.h"
@@ -93,13 +94,12 @@ return (fp>0)?0:-1;
 /***************************************************************************/
 
 /****************************************************************************
-* WriteArrayToFilesGeneric
+* WriteMetaDataToFile
 *
 * Writes scope data to a file (one file per waveform)
 * Writes header info- waveform number, ttrigger sample, Over range flags
 * Write sample time vaules and data as ADC counts and voltage
 * Inputs:
-* - pointer to double - "scaled" values of 3D arrays ADC counts (Max and Min values if used)
 * - Channel scaling info "enabledChannelsScaling",
 * - File name,
 * - Triggersample number,
@@ -108,25 +108,21 @@ return (fp>0)?0:-1;
 *   can be set to NULL for full range
 * 
 * Outputs:
-* Writes files to disk of current path
+* Write a text file to disk of current path
 ****************************************************************************/
 
-void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
-int16_t*** minBuffers,
-int16_t*** maxBuffers,
+void WriteMetaDataToFile(struct tGenericUnit* unit,
 struct tmultiBufferSizes multiBufferSizes,
 struct tPicoProbeScaling* enabledChannelsScaling,
 char startOfFileName[],
 uint64_t Triggersample,
-int16_t* overflow,
 struct tcaptures_range* captures_rangeIp)
 {   
     FILE* fp = NULL;
     if(startOfFileName == NULL)
-        startOfFileName = "Pico_BufferCaptureN_";
+        startOfFileName = "PicoMetaData_";
 
     uint64_t i;
-    uint64_t capture;
     struct tcaptures_range captures_range;
 
 	if (captures_rangeIp == NULL) //Set default full range if NULL
@@ -141,7 +137,161 @@ struct tcaptures_range* captures_rangeIp)
 
     char buf[58 + (3 * sizeof(int))]= { '\0' }; // null terminate the string
     size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-        
+
+        // Get the current time
+        time_t now = time(NULL);
+        // Convert to local time
+        struct tm* local_time = localtime(&now);
+        //printf("Local time: %s", asctime(local_time));
+        // Format the time
+        char formatted_time[100];
+        strftime(formatted_time, sizeof(formatted_time), "%d-%m-%Y %H:%M:%S %Z", local_time);
+        //printf("\nFormatted time: %s\n", formatted_time);
+        //strftime(formatted_time, sizeof(formatted_time), "%S", local_time);
+		// Create file name with number of buffer sets and the seconds from the PC clock.
+        snprintf(buf, buf_size, "%s_BufferSets-%d.txt", startOfFileName, (int)multiBufferSizes.numberOfBuffers);
+        //snprintf(buf, buf_size, "%s_BufferSets-%d_Sec_%s.txt", startOfFileName, (int)multiBufferSizes.numberOfBuffers, formatted_time);
+        fopen_s(&fp, buf, "w");
+        if (fp != NULL)
+        {
+            fprintf(fp, "Formatted time: %s\n", formatted_time);
+            //Write header lines
+            if (multiBufferSizes.numberOfBuffers != 1)
+            {
+                fprintf(fp, "Number of Segments: %lld\n",
+                    multiBufferSizes.numberOfBuffers);
+                fprintf(fp, "From Seg: %lld to Seg: %lld\n",
+                    captures_range.from, captures_range.to);
+            }
+
+            fprintf(fp, "SampleRate %3.3e SamplesPerBlock %lld Trigger@Sample %lld \n",
+                unit->timeInterval, multiBufferSizes.maxBufferSize, Triggersample);
+
+            // Write channel headings - Aggredated Data?
+            if (multiBufferSizes.minBufferSize != 0)
+            {
+                fprintf(fp, "Aggredated Datasample data (Max. Min. values for each channel)");
+            }
+			// Write channel headings - channel names
+            for (i = 0; i < unit->channelCount; i++)
+            {
+                if (unit->channelSettings[i].enabled)
+                {
+                    fprintf(fp, "Ch: %C\t\t", 'A' + (int)i);
+                }
+            }
+            fprintf(fp, "\n");
+
+            // Write channel headings - channel units
+            for (i = 0; i < unit->channelCount; i++)
+            {
+                if (unit->channelSettings[i].enabled)
+                {
+                    fprintf(fp, "Units: %s\t", enabledChannelsScaling[i].Unit_text);
+                }
+            }
+            fprintf(fp, "\n");
+
+            // Write channel headings - channel ProbeEnum range
+            for (i = 0; i < unit->channelCount; i++)
+            {
+
+                if (unit->channelSettings[i].enabled)
+                {
+                    fprintf(fp, "ProbeEnum: %d\t", enabledChannelsScaling[i].ProbeEnum);
+                }
+            }
+            fprintf(fp, "\n");
+
+			// Write channel headings - channel MaxScale and MinScale (values corresponding to Scaled max and min range)
+            for (i = 0; i < unit->channelCount; i++)
+            {
+
+                if (unit->channelSettings[i].enabled)
+                {
+                    fprintf(fp, "+FS:  %4.2f\t", enabledChannelsScaling[i].MaxScale);
+                }
+            }
+            fprintf(fp, "\n");
+
+            for (i = 0; i < unit->channelCount; i++)
+            {
+
+                if (unit->channelSettings[i].enabled)
+                {
+                    fprintf(fp, "-FS: %4.2f\t", enabledChannelsScaling[i].MinScale);
+                }
+            }
+            fprintf(fp, "\n");
+
+			// Write digital port headings
+            for (i = 0; i < unit->digitalPortCount; i++)
+            {
+                if (unit->digitalChannelSettings[i].enabled)
+                {
+                    fprintf(fp, "Port%d_Max\t", (int)i);
+                    if (multiBufferSizes.minBufferSize != 0)
+                    {
+                        fprintf(fp, "Port%d_Min\t", (int)i);
+                    }
+                }
+            }
+            fprintf(fp, "\n");
+            fclose(fp);
+        }
+    
+}
+
+/****************************************************************************
+* WriteArrayToFilesGeneric
+*
+* Writes scope data to a file (one file per waveform)
+* Writes header info- waveform number, ttrigger sample, Over range flags
+* Write sample time vaules and data as ADC counts and voltage
+* Inputs:
+* - pointer to double - "scaled" values of 3D arrays ADC counts (Max and Min values if used)
+* - Channel scaling info "enabledChannelsScaling",
+* - File name,
+* - Triggersample number,
+* - Over range flags - "overflow"
+* - CAPTURES_RANGE* - pointer to structure defining the range of captures to write, (from, to)
+*   can be set to NULL for full range
+*
+* Outputs:
+* Writes text files to disk of current path
+****************************************************************************/
+
+void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
+    int16_t*** minBuffers,
+    int16_t*** maxBuffers,
+    struct tmultiBufferSizes multiBufferSizes,
+    struct tPicoProbeScaling* enabledChannelsScaling,
+    char startOfFileName[],
+    uint64_t Triggersample,
+    int16_t* overflow,
+    struct tcaptures_range* captures_rangeIp)
+{
+    FILE* fp = NULL;
+    if (startOfFileName == NULL)
+        startOfFileName = "Pico_BufferCaptureN_";
+
+    uint64_t i;
+    uint64_t capture;
+    struct tcaptures_range captures_range;
+
+    if (captures_rangeIp == NULL) //Set default full range if NULL
+    {
+        captures_range.from = 0;
+        captures_range.to = multiBufferSizes.numberOfBuffers - 1;
+    }
+    else
+    {
+        captures_range = *captures_rangeIp; // Use the provided range
+    }
+
+    char buf[58 + (3 * sizeof(int))] = { '\0' }; // null terminate the string
+    size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+
     for (capture = captures_range.from; capture <= captures_range.to; capture++)
     {
         //Goto next file
@@ -150,14 +300,14 @@ struct tcaptures_range* captures_rangeIp)
         if (fp != NULL)
         {
             //Write 2 header lines (one for Info, one for Channels)
-            if(multiBufferSizes.numberOfBuffers != 1)
+            if (multiBufferSizes.numberOfBuffers != 1)
                 fprintf(fp, "Segment: %lld of %lld Segment(s)\n",
                     capture, multiBufferSizes.numberOfBuffers);
 
             fprintf(fp, "SampleRate %3.3e SamplesPerBlock %lld Trigger@Sample %lld \n",
                 unit->timeInterval, multiBufferSizes.maxBufferSize, Triggersample);
 
-			//overrange flags
+            //overrange flags
             if (overflow != NULL)
             {
                 fprintf(fp, "OverRange flag: ");
@@ -183,7 +333,7 @@ struct tcaptures_range* captures_rangeIp)
                     }
                 }
             }
-			// Write digital port headings
+            // Write digital port headings
             for (i = 0; i < unit->digitalPortCount; i++)
             {
                 if (unit->digitalChannelSettings[i].enabled)
@@ -223,7 +373,7 @@ struct tcaptures_range* captures_rangeIp)
                         }
                     }
                 }
-				// Print digital port data
+                // Print digital port data
                 for (int j = 0; j < unit->digitalPortCount; j++)
                 {
                     if (unit->digitalChannelSettings[j].enabled)
@@ -238,6 +388,106 @@ struct tcaptures_range* captures_rangeIp)
                 fprintf(fp, "\n");
             }
             fclose(fp);
+        }
+    }
+}
+
+/****************************************************************************
+* WriteArrayToFilesBinary
+*
+* Writes scope ADC values data to a binary file (one file per waveform)
+* Inputs:
+* - pointer to double - "scaled" values of 3D arrays ADC counts (Max and Min values if used)
+* - Channel scaling info "enabledChannelsScaling",
+* - File name,
+* - Triggersample number,
+* - Over range flags - "overflow"
+* - CAPTURES_RANGE* - pointer to structure defining the range of captures to write, (from, to)
+*   can be set to NULL for full range
+*
+* Outputs:
+* Writes binary files to disk of current path
+****************************************************************************/
+
+void WriteArrayToFilesBinary(struct tGenericUnit* unit,
+    int16_t*** minBuffers,
+    int16_t*** maxBuffers,
+    struct tmultiBufferSizes multiBufferSizes,
+    struct tPicoProbeScaling* enabledChannelsScaling,
+    char startOfFileName[],
+    uint64_t Triggersample,
+    int16_t* overflow,
+    struct tcaptures_range* captures_rangeIp)
+{
+    FILE* fp = NULL;
+    if (startOfFileName == NULL)
+        startOfFileName = "Pico_BufferCaptureBinaryN_";
+
+    uint64_t capture;
+    struct tcaptures_range captures_range;
+
+    if (captures_rangeIp == NULL) //Set default full range if NULL
+    {
+        captures_range.from = 0;
+        captures_range.to = multiBufferSizes.numberOfBuffers - 1;
+    }
+    else
+    {
+        captures_range = *captures_rangeIp; // Use the provided range
+    }
+
+    char buf[58 + (3 * sizeof(int))] = { '\0' }; // null terminate the string
+    size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+    size_t result = 0;
+
+    for (capture = captures_range.from; capture <= captures_range.to; capture++)
+    {
+        //Goto next file
+        snprintf(buf, buf_size, "%s%d.bin", startOfFileName, (int)capture);
+        fopen_s(&fp, buf, "wb");
+        if (fp != NULL)
+        {
+            // Write channel data
+			// Add fwrite for overflow flags?
+                for (int j = 0; j < unit->channelCount; j++)
+                {
+                    if (unit->channelSettings[j].enabled)
+                    {
+                        result = fwrite( (maxBuffers)[capture][j], sizeof(int16_t), multiBufferSizes.maxBufferSize, fp);
+                        if (!result)
+							break; // Check if fwrite was successful, break if not
+                        //printf("maxBuffers fwrite result: %zu\n", result); // Check if fwrite was successful
+
+                        if (multiBufferSizes.minBufferSize != 0)
+                        {
+                            result = fwrite((minBuffers)[capture][j], sizeof(int16_t), multiBufferSizes.minBufferSize, fp);
+                            if (!result)
+                                break; // Check if fwrite was successful, break if not
+                            //printf("minBuffers fwrite result: %zu\n", result); // Check if fwrite was successful
+                        }
+                    }
+                // digital port data
+                for (int j = 0; j < unit->digitalPortCount; j++)
+                {
+                    if (unit->digitalChannelSettings[j].enabled)
+                    {
+                        result = fwrite((maxBuffers)[capture][unit->channelCount + j], sizeof(int16_t), multiBufferSizes.maxBufferSize, fp);
+                        if (!result)
+                            break; // Check if fwrite was successful, break if not
+                        //printf("maxBuffers fwrite result: %zu\n", result); // Check if fwrite was successful
+                        if (multiBufferSizes.minBufferSize != 0)
+                        {
+                            result = fwrite((minBuffers)[capture][unit->channelCount + j], sizeof(int16_t), multiBufferSizes.minBufferSize, fp);
+                            if (!result)
+                                break; // Check if fwrite was successful, break if not
+                            //printf("minBuffers fwrite result: %zu\n", result); // Check if fwrite was successful
+                        }
+                    }
+                }
+            }
+            fclose(fp);
+            if (!result)
+                printf("fwrite result failed: %zu\n", result);
         }
     }
 }

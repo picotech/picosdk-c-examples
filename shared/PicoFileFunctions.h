@@ -115,6 +115,23 @@ void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
 	int16_t* overflow,
 	struct tcaptures_range* captures_range);
 
+void WriteMetaDataToFile(struct tGenericUnit* unit,
+	struct tmultiBufferSizes multiBufferSizes,
+	struct tPicoProbeScaling* enabledChannelsScaling,
+	char startOfFileName[],
+	uint64_t Triggersample,
+	struct tcaptures_range* captures_range);
+
+void WriteArrayToFilesBinary(struct tGenericUnit* unit,
+	int16_t*** minBuffers,
+	int16_t*** maxBuffers,
+	struct tmultiBufferSizes multiBufferSizes,
+	struct tPicoProbeScaling* enabledChannelsScaling,
+	char startOfFileName[],
+	uint64_t Triggersample,
+	int16_t* overflow,
+	struct tcaptures_range* captures_range);
+
 void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
 	int16_t*** minBuffers,
 	int16_t*** maxBuffers,
