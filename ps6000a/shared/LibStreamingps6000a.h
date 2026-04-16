@@ -98,6 +98,8 @@ void streamDataHandler(GENERICUNIT* unit,
 	uint64_t nSamples,					// Set the number of samples per capture - Used by SetDataBuffers()
 	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
 	uint64_t downSampleRatio,			// Used by SetDataBuffers()
-	int16_t autostop);
+	int16_t autostop,
+	FILE_TYPE filetype
+	);
 
 #endif

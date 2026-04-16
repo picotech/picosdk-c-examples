@@ -7,7 +7,7 @@
  *   PicoScope 6XXXE Series (ps6000a) devices,
  *   for Streaming captures.
  *
- * Copyright (C) 2013-2025 Pico Technology Ltd. See LICENSE file for terms.
+ * Copyright (C) 2013-2026 Pico Technology Ltd. See LICENSE file for terms.
  *
  ******************************************************************************/
 
@@ -106,8 +106,11 @@ extern int16_t   g_ready;
 /****************************************************************************
 * streamDataHandler
 * - Used by all streaming data routines
+* - Uses multiple buffers (ping-pong) to capture and save data in streaming mode.
 * - acquires data (user sets trigger mode before calling), displays 10 items
 *   and saves all data to a file.
+* - If file type is set to FILE_BIN, a metadata file is also created with
+*   the capture settings and Channel settings.
 * Input :
 * - unit : the unit to use.
 * - noOfPreTriggerSamples : number of samples to capture before trigger.
@@ -118,16 +121,18 @@ extern int16_t   g_ready;
 * - ratioMode : Set the downsampling mode - Used by SetDataBuffers()
 * - downSampleRatio : Set the downsampling ratio - Used by SetDataBuffers()
 * - autostop : 1 to stop when trigger condition is met, 0 to continue until user stops.
+* - filetype : Set the file type to save data, FILE_BIN or FILE_CSV or FILE_NONE to not save.
 ****************************************************************************/ 
 void streamDataHandler(GENERICUNIT* unit,
-						uint64_t noOfPreTriggerSamples,		// Used by RunStreaming()
-						uint64_t noOfPostTriggerSamples,	// Used by RunStreaming()
-						double idealTimeInterval,			// Used by RunStreaming()
-						uint32_t sampleIntervalTimeUnits,	// Used by RunStreaming()
-						uint64_t nSamples,					// Set the number of samples per capture - Used by SetDataBuffers()
-						PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
-						uint64_t downSampleRatio,			// Used by SetDataBuffers()
-						int16_t autostop)
+	uint64_t noOfPreTriggerSamples,		// Used by RunStreaming()
+	uint64_t noOfPostTriggerSamples,	// Used by RunStreaming()
+	double idealTimeInterval,			// Used by RunStreaming()
+	uint32_t sampleIntervalTimeUnits,	// Used by RunStreaming()
+	uint64_t nSamples,					// Set the number of samples per capture - Used by SetDataBuffers()
+	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
+	uint64_t downSampleRatio,			// Used by SetDataBuffers()
+	int16_t autostop,
+	FILE_TYPE filetype)
 {
 	uint16_t Triggered = 0;
 	uint64_t triggeredAt = 0;
@@ -148,7 +153,7 @@ void streamDataHandler(GENERICUNIT* unit,
 
 	//Buffers settings (Set DownSampling mode and ratio)
 	//Use scope acquisition settings for first data download
-	struct tbuffer_settings bufferSettings = {0};
+	struct tbuffer_settings bufferSettings = { 0 };
 	bufferSettings.startIndex = 0;
 	bufferSettings.downSampleRatioMode = ratioMode;
 	bufferSettings.downSampleRatio = downSampleRatio;
@@ -158,13 +163,13 @@ void streamDataHandler(GENERICUNIT* unit,
 	struct tmultiBufferSizes multiBufferSizes;// to store buffer sizes
 	int16_t*** minBuffers;
 	int16_t*** maxBuffers;
-	if(pico_create_multibuffers(unit, bufferSettings, nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes))
-	printf("\nCreated Buffers");
+	if (pico_create_multibuffers(unit, bufferSettings, nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes))
+		printf("\nCreated Buffers");
 
 	printf("\nNumber of PreTriggerSamples: %lld", noOfPreTriggerSamples);
 
 	//Get scaling Info for each channel
-	struct tPicoProbeScaling enabledChannelsScaling[PS6000A_MAX_CHANNELS] = {0};
+	struct tPicoProbeScaling enabledChannelsScaling[PS6000A_MAX_CHANNELS] = { 0 };
 	struct tPicoProbeScaling channelRangeInfoTemp;
 	for (channel = 0; channel < unit->channelCount; channel++)
 	{
@@ -181,6 +186,17 @@ void streamDataHandler(GENERICUNIT* unit,
 		{
 			NoEnabledchannels++;
 		}
+	}
+	// Write Metadata to file
+	if (filetype == FILE_BIN)
+	{
+		WriteMetaDataToFile(
+			unit,
+			multiBufferSizes,
+			enabledChannelsScaling,
+			"PicoMetaData_Streaming",
+			0, // Triggersample
+			NULL); // captures_range set to NULL to write full range
 	}
 
 	//Save and print Sample Internal set (in seconds)
@@ -353,31 +369,48 @@ void streamDataHandler(GENERICUNIT* unit,
 			// If buffers full move to next bufferSet, or continue if autoStop triggered
 			if ((status == PICO_WAITING_FOR_DATA_BUFFERS) | (streamingDataTriggerInfoTemp.autoStop_ == 1))
 			{
-				//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"
-				if ((unit->timeInterval) > 0.9e-06)  // Only write to file if sample interval is > 0.9us (1.1MS/s) for demo purposes
+				//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"			
+				if (filetype != FILE_NONE)
 				{
-					// FOR HIGH SPEED SAMPLING WRITE TO BINARY FILE OR COPY TO ANOTHER BUFFER
+					// Create file name string
+					char buf[58 + (3 * sizeof(int))];
+					size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+					snprintf(buf, buf_size, "%s%d_SubSet", startOfFileName, counter);
+					printf(".");
+					struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
+
 					if (streamingDataTriggerInfoArray && FileOverflow) // Check for dereferencing null pointers
 					{
-						//Create file name string
-						char buf[58 + (3 * sizeof(int))];
-						size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-						snprintf(buf, buf_size, "%s%d_SubSet", startOfFileName, counter);
-						printf("\nWriting capture %ld (Buffer Set %lld) of channels to a file.\n", counter, capture);
-						struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
-						WriteArrayToFilesGeneric(
-							unit,
-							minBuffers,
-							maxBuffers,
-							multiBufferSizes,
-							enabledChannelsScaling,
-							buf,
-							streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
-							(int16_t*)(FileOverflow),
-							&captures_range);
+						// Only write to binary file if sample interval is < 0.9us (1.1MS/s) and is requested
+						if ( ( (unit->timeInterval) < 0.9e-06) && (filetype == FILE_BIN) )
+						{
+							WriteArrayToFilesBinary(
+								unit,
+								minBuffers,
+								maxBuffers,
+								multiBufferSizes,
+								enabledChannelsScaling,
+								buf,
+								streamingDataTriggerInfoTemp.triggerAt_,
+								(int16_t*)(FileOverflow),
+								&captures_range);
+						}
+						else // For slower sampling rates write to text file (csv), if file writing is requested
+						{
+							printf("\nWriting capture %ld (Buffer Set %lld) of channels to a file.\n", counter, capture);
+							WriteArrayToFilesGeneric(
+								unit,
+								minBuffers,
+								maxBuffers,
+								multiBufferSizes,
+								enabledChannelsScaling,
+								buf,
+								streamingDataTriggerInfoTemp.triggerAt_,
+								(int16_t*)(FileOverflow),
+								&captures_range);
+						}
 					}
 				}
-
 				if(streamingDataTriggerInfoTemp.autoStop_ == 1)
 				{
 					printTriggerSample = streamingDataTriggerInfoTemp.triggerAt_;
