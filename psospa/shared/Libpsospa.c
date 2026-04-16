@@ -1046,11 +1046,13 @@ void closeDevice(GENERICUNIT* unit)
 void GetMoreDataHandler(GENERICUNIT* unit,
 						PICO_RATIO_MODE ratioMode,
 						uint64_t downSampleRatio,
-						uint64_t nSamples) // Set the number of raw samples
+						uint64_t nSamples,
+						FILE_TYPE filetype) // Set the number of raw samples
 {
 	int32_t index = 0;
 	int16_t channel = 0;
 	PICO_STATUS status = PICO_OK;
+	
 	//Set the number buffers from previous Rapid block capture.
 	if (unit->CapturesComplete == 0)
 	{
@@ -1058,6 +1060,9 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 		return;
 	}
 	uint64_t nCaptures = unit->CapturesComplete;
+	// Create Overflow Array Buffer(s)
+	int16_t* FileOverflow;
+	FileOverflow = (int16_t*)calloc(nCaptures, sizeof(int16_t));
 	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);	// bitwise OR flags for first buffer that is set
 
 	//Define acquisition Settings
@@ -1110,7 +1115,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf(status ? "blockDataHandler:psospaGetValuesAsync ------ 0x%08lx \n" : "", status);
+			printf(status ? "blockDataHandler:psospaGetValues ------ 0x%08lx \n" : "", status);
 			return;
 		}
 	}

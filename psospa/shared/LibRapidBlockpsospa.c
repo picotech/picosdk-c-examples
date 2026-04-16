@@ -131,7 +131,8 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 							uint64_t nSamples,					// Used by SetDataBuffers()
 							uint64_t nCaptures,
 							PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
-							uint64_t downSampleRatio			// Used by SetDataBuffers()
+							uint64_t downSampleRatio,			// Used by SetDataBuffers()
+							FILE_TYPE filetype
 )
 {
 	PICO_STATUS status = 0; 
@@ -299,17 +300,33 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 			overflowArray);
 		// Print each segment capture to a file
 		printf("\nWriting each of: %lld channel buffer sets to a file.\n", multiBufferSizes.numberOfBuffers);
-		WriteArrayToFilesGeneric(
-			unit,
-			minBuffers,
-			maxBuffers,
-			multiBufferSizes,
-			enabledChannelsScaling,
-			"RapidBlockCaptureNo_",
-			noOfPreTriggerSamples,	// Triggersample
-			overflowArray,
-			NULL);	
 
+		if (filetype == FILE_TXT)
+		{
+			WriteArrayToFilesGeneric(
+				unit,
+				minBuffers,
+				maxBuffers,
+				multiBufferSizes,
+				enabledChannelsScaling,
+				RapidBlockFile,
+				noOfPreTriggerSamples,	// Triggersample
+				overflowArray,
+				NULL);
+		}
+		if (filetype == FILE_BIN)
+		{
+			WriteArrayToFilesBinary(
+				unit,
+				minBuffers,
+				maxBuffers,
+				multiBufferSizes,
+				enabledChannelsScaling,
+				RapidBlockFile,
+				noOfPreTriggerSamples,	// Triggersample
+				overflowArray,
+				NULL);
+		}
 		// Get relative segment trigger timestamps (in samples)
 		PICO_TRIGGER_INFO* triggerInfo;
 		triggerInfo = (PICO_TRIGGER_INFO*)calloc(nCaptures, sizeof(PICO_TRIGGER_INFO));
@@ -578,6 +595,32 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 			if (status != PICO_OK)
 			{
 				printf("RapidBlockDataHandler:psospaGetTriggerInfo ------ 0x%08x \n", status);
+			}
+
+			if (status != PICO_OK)
+			{
+				printf("RapidBlockDataHandler:psospaGetTriggerInfo ------ 0x%08x \n", status);
+			}
+			// Print first 3 trigger timestamps
+			uint64_t maxprintCaptures = min(nCaptures, 3);
+			PICO_STATUS rapidStatus;
+			for (capture = 0; capture < maxprintCaptures; capture++)
+			{
+				if (triggerInfo != NULL)
+				{
+					rapidStatus = triggerInfo[capture].status & PICO_DEVICE_TIME_STAMP_RESET;
+					printf("\nCapture/segment: %llu, Trigger Timestamp: %llu", capture, triggerInfo[capture].timeStampCounter);
+					if ((rapidStatus * (uint32_t)(capture != 0)) == 0) // Ignore Seg #0 PICO_STATUS
+					{
+						printf(" Delta Samples: %llu, ", triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter);
+						printf("Delta (seconds): %3.3e", (triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter) * unit->timeInterval);
+					}
+					else
+					{
+						//NOTE: PICO_DEVICE_TIME_STAMP_RESET/counter wrap around is NOT accounted for. (counter is a unsigned 2^56 bits)
+						printf("PICO_DEVICE_TIME_STAMP_RESET--- 0x%08x, Capture %llu", triggerInfo[capture].status, capture);
+					}
+				}
 			}
 			
 			printf("\n");

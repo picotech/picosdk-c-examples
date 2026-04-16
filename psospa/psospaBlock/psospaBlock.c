@@ -172,7 +172,8 @@ static void mainMenu(GENERICUNIT *unit)
 									0,						// idealTimeInterval - 0 find max. sample rate
 									constBufferSize,		// nSamples - PC buffer size
 									PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
-									1);						// downSampleRatio - Used by Buffer
+									1,
+									FILE_TXT);						// downSampleRatio - Used by Buffer
 				break;
 
 			case 'O':
@@ -183,7 +184,8 @@ static void mainMenu(GENERICUNIT *unit)
 									0,						// idealTimeInterval - 0 find max. sample rate
 									constBufferSize,		// nSamples - PC buffer size
 									PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
-									1);						// downSampleRatio - Used by Buffer
+									1						// downSampleRatio - Used by Buffer
+									);						
 				break;
 
 			case 'T':
@@ -194,14 +196,16 @@ static void mainMenu(GENERICUNIT *unit)
 									0,						// idealTimeInterval - 0 find max. sample rate
 									constBufferSize,		// nSamples - PC buffer size
 									PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
-									1);						// downSampleRatio - Used by Buffer
+									1,						// downSampleRatio - Used by Buffer
+									FILE_TXT);						
 				break;
 
 			case 'J':	
 				GetMoreDataHandler(unit,
 									PICO_RATIO_MODE_DECIMATE,	// ratioMode - Used by Buffer
 									16,						// downSampleRatio - Used by Buffer
-									constBufferSize);       // nSamples - PC buffer size
+									constBufferSize,		// nSamples - PC buffer size
+									FILE_TXT);
 				break;
 
 			case 'V':
