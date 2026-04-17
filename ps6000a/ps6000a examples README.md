@@ -56,7 +56,8 @@ Call the function with following parameters;
 						`double idealTimeInterval,`			    // in seconds use 0 to find the max. sample rate, (Used by RunBlock())  
 						`uint64_t nSamples,`					      // PC buffer size (Used by SetDataBuffers())  
 						`PICO_RATIO_MODE ratioMode,`			  // See enum for downsampling modes (Used by SetDataBuffers())  
-						`uint64_t downSampleRatio)`			    // (Used by SetDataBuffers())  
+						`uint64_t downSampleRatio`			    // (Used by SetDataBuffers())  
+						`FILE_BIN)`					// Save data as Binary / txt OR off (see enum FILE_TYPE)	
 
 Data is then to scaled to voltage and some written the to console and all data is written to a text file.  
 Using the functions `WriteArrayToStdoutGeneric()` to write to the console and  
@@ -79,7 +80,8 @@ Call the function with following parameters;
 							`uint64_t nSamples,`					      // PC buffer size (Used by SetDataBuffers())  
 							`uint64_t nCaptures,`               // Number of Captures on device and to download  
 							`PICO_RATIO_MODE ratioMode,`			  // see enum (Used by SetDataBuffers())  
-							`uint64_t downSampleRatio)`          // (Used by SetDataBuffers())  
+							`uint64_t downSampleRatio`          // (Used by SetDataBuffers())  
+							`FILE_BIN)`					// Save data as Binary / txt OR off (see enum FILE_TYPE)	
 
 Data is then to scaled to voltage and some written the to console and all data is written to a text file.  
 Using the functions `WriteArrayToStdoutGeneric()` to write to the console and  
@@ -103,7 +105,8 @@ Call the function with following parameters;
 						`uint64_t nSamples,`					      // Set the number of samples per capture - Used by SetDataBuffers()  
 						`PICO_RATIO_MODE ratioMode,`			  // // See enum for downsampling modes (Used by SetDataBuffers())  
 						`uint64_t downSampleRatio,`			    // (Used by SetDataBuffers())  
-						`int16_t autostop)`                 // autostop - 0: Off OR 1: Stop after trigger event  
+						`int16_t autostop`                 // autostop - 0: Off OR 1: Stop after trigger event  
+						`FILE_BIN)`					// Save data as Binary / txt OR off (see enum FILE_TYPE)	 
 
 Data is then to scaled to voltage and some written the to console.  
 Data is only written to a text file when sample rate is greater than 0.9us ( less than 1.1MS/s). This is to not slow down the streaming code processing data at high data rates, which will result in data lost.
@@ -121,7 +124,8 @@ With all data modes you can request more data after data capture has stopped usi
 `void GetMoreDataHandler(GENERICUNIT* unit,`  
 						`PICO_RATIO_MODE ratioMode,`    // See enum for downsampling modes  
 						`uint64_t downSampleRatio,`     // Ratio, is inorged if RAW mode  
-						`uint64_t nSamples)`            // Set the number of raw samples  
+						`uint64_t nSamples`            // Set the number of raw samples  
+						`FILE_BIN)`					// Save data as Binary / txt OR off (see enum FILE_TYPE)	
 
 #### Notes when using Streaming functions
 
