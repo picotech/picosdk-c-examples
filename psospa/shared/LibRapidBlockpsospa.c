@@ -316,6 +316,15 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 		}
 		if (filetype == FILE_BIN)
 		{
+			// Write Metadata to file
+			WriteMetaDataToFile(
+				unit,
+				multiBufferSizes,
+				enabledChannelsScaling,
+				"PicoMetaData_RapidBlock",
+				noOfPreTriggerSamples, // Triggersample
+				NULL); // captures_range set to NULL to write full range
+			
 			WriteArrayToFilesBinary(
 				unit,
 				minBuffers,
@@ -608,7 +617,9 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 			{
 				if (triggerInfo != NULL)
 				{
+					printf("\nDEBUG STATUS, Capture No.--- 0x%08x, Capture %llu", triggerInfo[capture].status, capture);
 					rapidStatus = triggerInfo[capture].status & PICO_DEVICE_TIME_STAMP_RESET;
+					printf("\nDEBUG STATUS, Capture No.--- 0x%08x, Capture %llu", rapidStatus, capture);
 					printf("\nCapture/segment: %llu, Trigger Timestamp: %llu", capture, triggerInfo[capture].timeStampCounter);
 					if ((rapidStatus * (uint32_t)(capture != 0)) == 0) // Ignore Seg #0 PICO_STATUS
 					{
