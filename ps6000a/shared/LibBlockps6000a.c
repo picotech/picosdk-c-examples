@@ -290,12 +290,20 @@ void blockDataHandler(GENERICUNIT* unit,
 					multiBufferSizes,
 					enabledChannelsScaling,
 					BlockFile,
-					0,						// Triggersample
+					noOfPreTriggerSamples,
 					&overflow,
 					NULL);
 			}
 			if (filetype == FILE_BIN)
 			{
+				// Write Metadata to file
+				WriteMetaDataToFile(
+					unit,
+					multiBufferSizes,
+					enabledChannelsScaling,
+					"PicoMetaData_Block",
+					noOfPreTriggerSamples,
+					NULL);
 				WriteArrayToFilesBinary(
 					unit,
 					minBuffers,
@@ -303,7 +311,7 @@ void blockDataHandler(GENERICUNIT* unit,
 					multiBufferSizes,
 					enabledChannelsScaling,
 					BlockFile,
-					0,						// Triggersample
+					noOfPreTriggerSamples,
 					&overflow,
 					NULL);
 			}

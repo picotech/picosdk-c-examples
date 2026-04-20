@@ -324,6 +324,15 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 		}
 		if (filetype == FILE_BIN)
 		{
+			// Write Metadata to file
+			WriteMetaDataToFile(
+				unit,
+				multiBufferSizes,
+				enabledChannelsScaling,
+				"PicoMetaData_RapidBlock",
+				noOfPreTriggerSamples, // Triggersample
+				NULL); // captures_range set to NULL to write full range
+			
 			WriteArrayToFilesBinary(
 				unit,
 				minBuffers,
