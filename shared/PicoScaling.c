@@ -101,7 +101,7 @@ return (fp>0)?0:-1;
 
 BOOL getRangeScaling(PICO_CONNECT_PROBE_RANGE ChannelRange, PICO_PROBE_SCALING *ChannelRangeInfo)
 {
-    uint32_t max_index = (uint32_t)(sizeof(PicoProbeScaling) - 1);
+    uint32_t max_index = (uint32_t) ( sizeof(PicoProbeScaling)/sizeof(PicoProbeScaling[0] ) );
 
     //Create Unknown_Range and set default to return if not found
     PICO_PROBE_SCALING Unknown_UnitLess = { PICO_X1_PROBE_1V,//ProbeEnum
@@ -161,16 +161,20 @@ double adc_to_scaled_value(int16_t raw, PICO_PROBE_SCALING ChannelRangeInfo, int
 ****************************************************************************/
 double adc_to_mv(int16_t raw, PICO_CONNECT_PROBE_RANGE ChannelRange, int16_t maxADCValue)
 {
-    if (0 < ChannelRange < PICO_X10_PROBE_RANGES)
+
+    if ((PICO_X1_PROBE_10MV <= ChannelRange) && (ChannelRange <= PICO_X1_PROBE_200V)) //PICO_X1_PROBE_RANGES
     {
-        if (0 < ChannelRange < PICO_X1_PROBE_RANGES) //PICO_X1_PROBE_RANGES
-            return(double)(((double)raw * (double)inputRanges[ChannelRange]) / (double)maxADCValue);
-        else // PICO_X10_PROBE_RANGES
-            return(double)(((double)raw * (double)inputRangesx10[ChannelRange]) / (double)maxADCValue);
+        ChannelRange -= PICO_X1_PROBE_10MV; //to get the index for x1 ranges
+        return(double)(((double)raw * (double)inputRanges[ChannelRange]) / (double)maxADCValue);
+    }
+    else if ((PICO_X10_PROBE_100MV <= ChannelRange) && (ChannelRange <= PICO_X10_PROBE_200V)) //PICO_X10_PROBE_RANGES
+    {
+		ChannelRange -= PICO_X10_PROBE_100MV; //to get the index for x10 ranges
+        return(double)(((double)raw * (double)inputRangesx10[ChannelRange]) / (double)maxADCValue);
     }
     else
     {
-        return 0;
+        return 0.0f;
     }
 }
 

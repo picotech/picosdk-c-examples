@@ -326,7 +326,7 @@ void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
 
                 if (unit->channelSettings[i].enabled)
                 {
-                    fprintf(fp, "Ch%C_Max-ADC Max_%s ", 'A' + (int)i, enabledChannelsScaling[i].Unit_text);
+                    fprintf(fp, "Ch%C_Max-ADC Max_%s ", 'A' + (int16_t)i, enabledChannelsScaling[i].Unit_text);
                     if (multiBufferSizes.minBufferSize != 0)
                     {
                         fprintf(fp, "Min-ADC Min_V ");//fprintf(fp, "Min-ADC Min_mV ");
@@ -555,7 +555,7 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
 
             for (i = 0; i < unit->channelCount; i++)
             {
-                printf("Ch:%C Max %s\t", 'A' + (int)i, enabledChannelsScaling[i].Unit_text);
+                printf("Ch:%C Max %s\t", 'A' + (uint16_t)i, (enabledChannelsScaling[i].Unit_text));
             }
             printf("\n");
             // Write time and channel data

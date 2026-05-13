@@ -96,8 +96,8 @@ typedef struct tPicoProbeScaling   //tPicoTriggerChannelProperties
 	//char						Probe_Range_text[256]; //const char	Probe_Range_text[256];
 	double						MinScale;
 	double						MaxScale;
-	int8_t						Unit_text[8];
-	//char						Unit_text[8]; //const char	Unit_text[8];
+	int8_t						Unit_text[10];
+	//char						Unit_text[10]; //const char	Unit_text[10];
 } PICO_PROBE_SCALING;
 
 static const uint16_t inputRanges[PICO_X1_PROBE_RANGES] = {
