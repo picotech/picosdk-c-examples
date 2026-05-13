@@ -24,14 +24,15 @@
     <ClCompile Include="..\..\shared\PicoScaling.c" />
     <ClCompile Include="..\shared\Libps4000a.c" />
     <ClCompile Include="..\shared\LibStreamingps4000a.c" />
-    <ClCompile Include="ps4000aStreaming.c" />
+    <ClCompile Include="ps4000aTemplate.c" />
+    <ClCompile Include="UserSetup.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{481F9863-B30E-411C-B3E8-1FBF07882C2A}</ProjectGuid>
+    <ProjectGuid>{C9B36CB3-7552-4036-8D9A-66D2F63CCBE6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ps5000aCon</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>ps4000aStreaming</ProjectName>
+    <ProjectName>ps4000aTemplate</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
