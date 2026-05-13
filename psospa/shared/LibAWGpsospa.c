@@ -352,8 +352,11 @@ void AWG(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
     int16_t myAWGwaveformtest[] =
     { -32768, -32768, 0, 0, 1024, 1024, 0, 0, 2048, 2048, 0, 0, 4096, 4096, 0, 0, 8192, 8192, 0, 0, 16384, 16384, 0, 0, 32767, 32767 };
 
-    sigGenSettings->AWGBuffer = &myAWGwaveformtest[0];
-	sigGenSettings->AWGBufferSize = (uint64_t)(sizeof(myAWGwaveformtest) / sizeof(myAWGwaveformtest[0]));
+    //Copy myAWGwaveformtest waveform into myAWGwaveform buffer
+    memcpy_s(&myAWGwaveform[0], sizeof(myAWGwaveform),
+        &myAWGwaveformtest[0], sizeof(myAWGwaveformtest));
+    sigGenSettings->AWGBuffer = &myAWGwaveform[0];
+    sigGenSettings->AWGBufferSize = (int32_t)((sizeof(myAWGwaveformtest)) / (sizeof(myAWGwaveformtest[0])));
     SigGenAWG(unit, sigGenSettings);
 }
 
