@@ -32,9 +32,6 @@ Change the #include lines at the top of UserSetup.c and add the related .c file(
   - unit->channelSettings[0].enabled
   - unit->channelSettings[0].DCcoupled
   - unit->channelSettings[0].range
-  - unit->channelSettings[0].rangeMax - (in +nV) Must match range selected for unit->channelSettings[0].range
-  - unit->channelSettings[0].rangeMin - (in -nV) Must match range selected for unit->channelSettings[0].range
-  - unit->channelSettings[0].rangeType - use PICO_X1_PROBE_NV
   - unit->channelSettings[0].analogueOffset - Voltage (double datatype). The allowable analog offset for a given input voltage range can be read using psospaGetAnalogueOffsetLimits().
   - unit->channelSettings[0].bandwithLimit
 
@@ -135,7 +132,7 @@ This PICO_STATUS code is returned-
 
 ### Signal Generator and AWG
 
-See `\picosdk-c-examples\psospaNewTeleplate\shared\LibAWGps6000a.c` for example function calls.  
+See `\picosdk-c-examples\ps6000a\shared\LibAWGps6000a.c` for example function calls.  
 All example functions pass a pointer to a `SIG_GEN_SETTINGS` structure and call, `SigGenAWG()`, to write down changes to the unit.
 
 The function `AWGLoadFile()` is hard coded to load the file; PicoScope7AWG_Demo.csv but can be changed to use any file saved from the PicoScope 7 AWG editor.

@@ -32,9 +32,6 @@ void userSetup(GENERICUNIT* unit)
 	unit->channelSettings[0].enabled = TRUE;									// ChA
 	unit->channelSettings[0].range = PICO_X1_PROBE_2V;							// Set range
 	unit->channelSettings[0].DCcoupled = PICO_DC;								// AC, DC or 50 Ohm coupling
-	unit->channelSettings[0].rangeMax = inputRanges[PICO_X1_PROBE_2V] * 1000000;// convert mV to nV
-	unit->channelSettings[0].rangeMin = inputRanges[PICO_X1_PROBE_2V] * -1000000;
-	unit->channelSettings[0].rangeType = PICO_X1_PROBE_NV;						// x1 probe
 	unit->channelSettings[0].analogueOffset = 0.0f;								// Set analogue offset voltage
 	unit->channelSettings[0].bandwithLimit = PICO_BW_FULL; // Options: PICO_BW_20MHZ, PICO_BW_200MHZ
 
