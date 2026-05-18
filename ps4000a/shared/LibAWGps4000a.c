@@ -363,7 +363,7 @@ int8_t AWGLoadFile(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
     sigGenSettings->isArbitrary = TRUE;
 	sigGenSettings->AWGBufferSize = 0; // Initialize the buffer size to 0
 
-    char* filename = "./PicoScope7AWG_Demo.csv";
+    char* filename = "../../PicoScope7AWG_Demo.csv";
     FILE* fp = fopen(filename, "r");
 
     if (fp == NULL)
