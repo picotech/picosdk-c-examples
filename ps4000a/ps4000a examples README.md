@@ -126,7 +126,7 @@ With all data modes you can request more data after data capture has stopped usi
 
 ### Signal Generator and AWG
 
-See `\picosdk-c-examples\psospaNewTeleplate\shared\LibAWGps4000a.c` for example function calls.  
+See `\picosdk-c-examples\ps4000a\shared\LibAWGps4000a.c` for example function calls.  
 All example functions pass a pointer to a `SIG_GEN_SETTINGS` structure and call, `SigGenAWG()`, to write down changes to the unit.
 
 The function `AWGLoadFile()` is hard coded to load the file; PicoScope7AWG_Demo.csv but can be changed to use any file saved from the PicoScope 7 AWG editor.
