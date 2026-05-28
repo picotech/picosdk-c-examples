@@ -29,66 +29,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include <libps4000a/ps4000aApi.h>
+#include <ps4000aApi.h>
 #ifndef PICO_STATUS
-#include <libps4000a/PicoStatus.h>
+#include <PicoStatus.h>
 #endif
 
-#define Sleep(a) usleep(1000*a)
-#define scanf_s scanf
-#define fscanf_s fscanf
-#define memcpy_s(a,b,c,d) memcpy(a,c,d)
-
-typedef enum enBOOL{FALSE,TRUE} BOOL;
-
-/* A function to detect a keyboard press on Linux */
-int32_t _getch()
-{
-        struct termios oldt, newt;
-        int32_t ch;
-        int32_t bytesWaiting;
-        tcgetattr(STDIN_FILENO, &oldt);
-        newt = oldt;
-        newt.c_lflag &= ~( ICANON | ECHO );
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        setbuf(stdin, NULL);
-        do {
-                ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-                if (bytesWaiting)
-                        getchar();
-        } while (bytesWaiting);
-
-        ch = getchar();
-
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-        return ch;
-}
-
-int32_t _kbhit()
-{
-        struct termios oldt, newt;
-        int32_t bytesWaiting;
-        tcgetattr(STDIN_FILENO, &oldt);
-        newt = oldt;
-        newt.c_lflag &= ~( ICANON | ECHO );
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        setbuf(stdin, NULL);
-        ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-        return bytesWaiting;
-}
-
-int32_t fopen_s(FILE ** a, const char * b, const char * c)
-{
-FILE * fp = fopen(b,c);
-*a = fp;
-return (fp>0)?0:-1;
-}
-
-/* A function to get a single character on Linux */
-#define max(a,b) ((a) > (b) ? a : b)
-#define min(a,b) ((a) < (b) ? a : b)
 #endif
 
 /****************************************************************************

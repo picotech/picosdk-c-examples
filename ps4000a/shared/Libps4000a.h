@@ -29,63 +29,11 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include <libps4000a/ps4000aApi.h>
+#include <ps4000aApi.h>
 #ifndef PICO_STATUS
-#include <libps4000a/PicoStatus.h>
+#include <PicoStatus.h>
 #endif
 
-#define Sleep(a) usleep(1000 * a)
-#define scanf_s scanf
-#define fscanf_s fscanf
-#define memcpy_s(a, b, c, d) memcpy(a, c, d)
-
-typedef enum enBOOL { FALSE, TRUE } BOOL;
-
-/* A function to detect a keyboard press on Linux */
-int32_t _getch() {
-  struct termios oldt, newt;
-  int32_t ch;
-  int32_t bytesWaiting;
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  setbuf(stdin, NULL);
-  do {
-    ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-    if (bytesWaiting)
-      getchar();
-  } while (bytesWaiting);
-
-  ch = getchar();
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  return ch;
-}
-
-int32_t _kbhit() {
-  struct termios oldt, newt;
-  int32_t bytesWaiting;
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  setbuf(stdin, NULL);
-  ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  return bytesWaiting;
-}
-
-int32_t fopen_s(FILE **a, const char *b, const char *c) {
-  FILE *fp = fopen(b, c);
-  *a = fp;
-  return (fp > 0) ? 0 : -1;
-}
-
-/* A function to get a single character on Linux */
-#define max(a, b) ((a) > (b) ? a : b)
-#define min(a, b) ((a) < (b) ? a : b)
 #endif
 
 #define OCTA_SCOPE 8
@@ -155,7 +103,7 @@ typedef struct tSigGenSettings {
 // Struct to store intelligent probe information
 typedef struct tUserProbeInfo {
   PICO_STATUS status;
-  PICO_USER_PROBE_INTERACTIONS userProbeInteractions[PS4000A_MAX_CHANNELS];
+  PS4000A_USER_PROBE_INTERACTIONS userProbeInteractions[PS4000A_MAX_CHANNELS]; //PICO_USER_PROBE_INTERACTIONS
   uint32_t numberOfProbes;
 
 } USER_PROBE_INFO;
@@ -180,7 +128,7 @@ void PREF4 callBackStreaming(int16_t handle,
                                 void* pParameter);
 
 void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status,
-                                     PICO_USER_PROBE_INTERACTIONS *probes,
+                                     PS4000A_USER_PROBE_INTERACTIONS *probes,
                                      uint32_t nProbes);
 
 // Request more data function
@@ -207,7 +155,7 @@ void setTimebase(GENERICUNIT *unit);
 
 // Resolution functions
 void setResolution(GENERICUNIT *unit);
-void printResolution(PICO_DEVICE_RESOLUTION *resolution);
+void printResolution(PS4000A_DEVICE_RESOLUTION *resolution);
 
 // Data buffer functions
 void SetAllDataBuffers(GENERICUNIT *unit,

@@ -31,63 +31,11 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include <libps4000a/ps4000aApi.h>
+#include <ps4000aApi.h>
 #ifndef PICO_STATUS
-#include <libps4000a/PicoStatus.h>
+#include <PicoStatus.h>
 #endif
 
-#define Sleep(a) usleep(1000 * a)
-#define scanf_s scanf
-#define fscanf_s fscanf
-#define memcpy_s(a, b, c, d) memcpy(a, c, d)
-
-typedef enum enBOOL { FALSE, TRUE } BOOL;
-
-/* A function to detect a keyboard press on Linux */
-int32_t _getch() {
-  struct termios oldt, newt;
-  int32_t ch;
-  int32_t bytesWaiting;
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  setbuf(stdin, NULL);
-  do {
-    ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-    if (bytesWaiting)
-      getchar();
-  } while (bytesWaiting);
-
-  ch = getchar();
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  return ch;
-}
-
-int32_t _kbhit() {
-  struct termios oldt, newt;
-  int32_t bytesWaiting;
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  setbuf(stdin, NULL);
-  ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  return bytesWaiting;
-}
-
-int32_t fopen_s(FILE **a, const char *b, const char *c) {
-  FILE *fp = fopen(b, c);
-  *a = fp;
-  return (fp > 0) ? 0 : -1;
-}
-
-/* A function to get a single character on Linux */
-#define max(a, b) ((a) > (b) ? a : b)
-#define min(a, b) ((a) < (b) ? a : b)
 #endif
 
 /****************************************************************************
@@ -142,7 +90,7 @@ MODEL_TYPE keyfromstring(char* key)
  * 
  ****************************************************************************/
 void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status,
-    PICO_USER_PROBE_INTERACTIONS* probes,
+    PS4000A_USER_PROBE_INTERACTIONS * probes, // PICO_USER_PROBE_INTERACTIONS
     uint32_t nProbes)
 {
     uint32_t i = 0;
@@ -154,7 +102,7 @@ void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status,
     // Copy probe interactions to global struct for user access, using channel as index
     for (i = 0; i < nProbes; ++i)
     {
-        userProbeInfo.userProbeInteractions[probes[i].channel_] = probes[i];
+        userProbeInfo.userProbeInteractions[probes[i].channel] = probes[i];
     }
     g_probeStateChanged = 1;
 
@@ -319,7 +267,7 @@ void ProbestoSettings(GENERICUNIT* unit) {
 
     for (i = 0; i < unit->channelCount; i++)
     {
-        if (userProbeInfo.userProbeInteractions[i].connected_ == FALSE)
+        if (userProbeInfo.userProbeInteractions[i].connected == FALSE)
         {
             if (!(unit->firstRange <= unit->channelSettings[PS4000A_CHANNEL_A + i].range &&
                 unit->channelSettings[PS4000A_CHANNEL_A + i].range <= unit->lastRange) )
@@ -328,7 +276,7 @@ void ProbestoSettings(GENERICUNIT* unit) {
                 // printf("DEBUG: CH%c No probe, Out of range Or PICO_CONNECT_PROBE_OFF\n", (char)('A' + i));
             }
         }
-        if (userProbeInfo.userProbeInteractions[i].connected_ == TRUE) // if probe connected
+        if (userProbeInfo.userProbeInteractions[i].connected == TRUE) // if probe connected
         {
             if (unit->channelSettings[PS4000A_CHANNEL_A + i].enabled == TRUE)
             {
@@ -641,9 +589,9 @@ void setVoltages(GENERICUNIT *unit) {
                 getRangeScaling(unit->channelSettings[ch].range, &chRangeInfoTempLast); 
                 printf("Channel: %c\n", (char)('A' + ch));
 
-                if (userProbeInfo.userProbeInteractions[ch].connected_)
+                if (userProbeInfo.userProbeInteractions[ch].connected)
                 {   //Print Probe name and its current range
-                    printf("Probe connected : %d", userProbeInfo.userProbeInteractions[ch].probeName_);
+                    printf("Probe connected : %d", userProbeInfo.userProbeInteractions[ch].probeName);
                     printf("\t\tProbe Range : %s\n", chRangeInfoTempLast.Probe_Range_text);
                 }
                 else if (unit->channelSettings[ch].enabled)
@@ -657,7 +605,7 @@ void setVoltages(GENERICUNIT *unit) {
                 _lastRange = unit->lastRange;
 
                 //Print available, standard voltage ranges OR PicoConnectProbes ranges
-                if (!userProbeInfo.userProbeInteractions[ch].connected_)
+                if (!userProbeInfo.userProbeInteractions[ch].connected)
                 {
                     //muiltple enums for the same value, just cast to standard voltage ranges-
                     getRangeScaling(_firstRange, &chRangeInfoTempFirst);
@@ -743,7 +691,7 @@ int8_t ValidateChannelRange(GENERICUNIT* unit, uint8_t channelIndex, PICO_CONNEC
     struct tPicoProbeScaling chRangeInfoTempLast;
 
     /* If an intelligent probe is connected for this channel, use its reported range limits */
-    if (userProbeInfo.userProbeInteractions[channelIndex].connected_ == TRUE)
+    if (userProbeInfo.userProbeInteractions[channelIndex].connected == TRUE)
     {
         _firstRange = userProbeInfo.userProbeInteractions[channelIndex].rangeFirst_;
         _lastRange = userProbeInfo.userProbeInteractions[channelIndex].rangeLast_;
@@ -873,34 +821,34 @@ void setTimebase(GENERICUNIT *unit) {
  *
  * Outputs the resolution in text format to the console window
  ****************************************************************************/
-void printResolution(PICO_DEVICE_RESOLUTION *resolution) {
+void printResolution(PS4000A_DEVICE_RESOLUTION *resolution) {
   switch (*resolution) {
-  case PICO_DR_8BIT:
+  case (PS4000A_DEVICE_RESOLUTION)PICO_DR_8BIT:
 
     printf("8 bits");
     break;
 
-  case PICO_DR_10BIT:
+  case (PS4000A_DEVICE_RESOLUTION)PICO_DR_10BIT:
 
     printf("10 bits");
     break;
 
-  case PICO_DR_12BIT:
+  case (PS4000A_DEVICE_RESOLUTION)PICO_DR_12BIT:
 
     printf("12 bits");
     break;
 
-  case PICO_DR_14BIT:
+  case (PS4000A_DEVICE_RESOLUTION)PICO_DR_14BIT:
 
     printf("14 bits");
     break;
 
-  case PICO_DR_15BIT:
+  case (PS4000A_DEVICE_RESOLUTION)PICO_DR_15BIT:
 
     printf("15 bits");
     break;
 
-  case PICO_DR_16BIT:
+  case (PS4000A_DEVICE_RESOLUTION)PICO_DR_16BIT:
 
     printf("16 bits");
     break;
@@ -926,8 +874,8 @@ void setResolution(GENERICUNIT *unit) {
   int32_t resolutionInput = -1;
 
   PICO_STATUS status;
-  PICO_DEVICE_RESOLUTION resolution = PICO_DR_12BIT;
-  PICO_DEVICE_RESOLUTION newResolution = PICO_DR_12BIT;
+  PS4000A_DEVICE_RESOLUTION resolution = (PS4000A_DEVICE_RESOLUTION)PICO_DR_12BIT;
+  PS4000A_DEVICE_RESOLUTION newResolution = (PS4000A_DEVICE_RESOLUTION)PICO_DR_12BIT;
 
   // Determine number of channels enabled
   for (i = 0; i < unit->channelCount; i++) {
@@ -970,14 +918,14 @@ void setResolution(GENERICUNIT *unit) {
     else
         resolutionInput = -1;
 
-    newResolution = (PICO_DEVICE_RESOLUTION)resolutionInput;
+    newResolution = (PS4000A_DEVICE_RESOLUTION)resolutionInput;
 
     // Verify if resolution can be selected for number of channels enabled
     if (resolutionInput == -1)
     {
         printf("Invalid resolution.\n");
     }
-    else if ((newResolution == PICO_DR_14BIT) && !MODEL_4444)
+    else if ((newResolution == (PS4000A_DEVICE_RESOLUTION)PICO_DR_14BIT) && !MODEL_4444)
     {
         printf("setResolution: 14 bit resolution is only supported on the PS4444 model.\n");
     }
@@ -989,14 +937,14 @@ void setResolution(GENERICUNIT *unit) {
 
   printf("\n");
 
-  status = ps4000aSetDeviceResolution(unit->handle, (PICO_DEVICE_RESOLUTION)newResolution);
+  status = ps4000aSetDeviceResolution(unit->handle, (PS4000A_DEVICE_RESOLUTION)newResolution);
   if (status != PICO_OK)
   {
       printf("setResolution:ps4000aSetDeviceResolution ------ 0x%08lx \n", status);
   }
   else
   {
-    unit->resolution = newResolution;
+    unit->resolution = (PS4000A_DEVICE_RESOLUTION)newResolution;
 
     printf("Resolution selected: ");
     printResolution(&newResolution);
@@ -1023,7 +971,7 @@ void displaySettings(GENERICUNIT *unit) {
   int32_t ch;
   int32_t voltage;
   PICO_STATUS status = PICO_OK;
-  PICO_DEVICE_RESOLUTION resolution = PICO_DR_12BIT;
+  PS4000A_DEVICE_RESOLUTION resolution = (PS4000A_DEVICE_RESOLUTION)PICO_DR_12BIT; //PICO_DEVICE_RESOLUTION
   struct tPicoProbeScaling chRangeInfoTemp;
 
   printf("\nTrigger values will be scaled in %s\n",
@@ -1182,7 +1130,7 @@ PICO_STATUS handleDevice(GENERICUNIT *unit, SIG_GEN_SETTINGS *sigGenSettings) {
       if (i % TURN_ON_EVERY_N_CH == 0 && i < enabled_chs_limit)
       {
           unit->channelSettings[i].enabled = TRUE;
-          if (unit->hasIntelligentProbes && userProbeInfo.userProbeInteractions[i].connected_)
+          if (unit->hasIntelligentProbes && userProbeInfo.userProbeInteractions[i].connected)
               unit->channelSettings[i].range = userProbeInfo.userProbeInteractions[i].rangeLast_;
           else
               unit->channelSettings[i].range = PICO_X1_PROBE_1V;
@@ -1394,9 +1342,9 @@ void GetMoreDataHandler(GENERICUNIT *unit, PICO_RATIO_MODE ratioMode,
   } else // > 1 segment
   {
     status = ps4000aGetValuesBulk(unit->handle,
-                                  &(bufferSettings.nSamples), // noOfSamples
+                                  (uint32_t *)&(bufferSettings.nSamples), // noOfSamples
                                   0,                          // From Segment
-                                  nCaptures - 1,              // To Segment
+                                  (uint32_t)nCaptures - 1,              // To Segment
                                   downSampleRatio, ratioMode,
                                   NULL); // overflow (int16_t*)
 

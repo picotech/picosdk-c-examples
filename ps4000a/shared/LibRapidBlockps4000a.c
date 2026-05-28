@@ -33,67 +33,11 @@
 #include <unistd.h>
 
 
-#include <libps4000a/ps4000aApi.h>
+#include <ps4000aApi.h>
 #ifndef PICO_STATUS
-#include <libps4000a/PicoStatus.h>
+#include <PicoStatus.h>
 #endif
-#include "../../shared/PicoBuffers.h"
-#include "../../shared/PicoFileFunctions.h"
-#include "../../shared/PicoScaling.h"
 
-
-#define Sleep(a) usleep(1000 * a)
-#define scanf_s scanf
-#define fscanf_s fscanf
-#define memcpy_s(a, b, c, d) memcpy(a, c, d)
-
-typedef enum enBOOL { FALSE, TRUE } BOOL;
-
-/* A function to detect a keyboard press on Linux */
-int32_t _getch() {
-  struct termios oldt, newt;
-  int32_t ch;
-  int32_t bytesWaiting;
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  setbuf(stdin, NULL);
-  do {
-    ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-    if (bytesWaiting)
-      getchar();
-  } while (bytesWaiting);
-
-  ch = getchar();
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  return ch;
-}
-
-int32_t _kbhit() {
-  struct termios oldt, newt;
-  int32_t bytesWaiting;
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  setbuf(stdin, NULL);
-  ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  return bytesWaiting;
-}
-
-int32_t fopen_s(FILE **a, const char *b, const char *c) {
-  FILE *fp = fopen(b, c);
-  *a = fp;
-  return (fp > 0) ? 0 : -1;
-}
-
-/* A function to get a single character on Linux */
-#define max(a, b) ((a) > (b) ? a : b)
-#define min(a, b) ((a) < (b) ? a : b)
 #endif
 
 int8_t RapidBlockFile[] = "rapidBlock_Segment";
@@ -136,15 +80,14 @@ void rapidblockDataHandler(
     FILE_TYPE filetype) {
   PICO_STATUS status = 0;
   int16_t i;
-  uint64_t capture;
 
-  int64_t nMaxSamples = 0;
-  double timeIndisposed = 0;
+  int32_t nMaxSamples = 0;
+  int32_t timeIndisposed = 0;
 
   int16_t ***minBuffers;
   int16_t ***maxBuffers;
 
-  uint64_t nCompletedCaptures = 0;
+  uint32_t nCompletedCaptures = 0;
   PICO_ACTION action_flag =
       (PICO_CLEAR_ALL |
        PICO_ADD); // bitwise OR flags for first buffer that is set
@@ -155,7 +98,7 @@ void rapidblockDataHandler(
   bufferSettings.startIndex = 0;
   bufferSettings.downSampleRatioMode = ratioMode;
   bufferSettings.downSampleRatio = downSampleRatio;
-  bufferSettings.nSamples = nSamples;
+  bufferSettings.nSamples = (uint32_t)nSamples;
 
   // printf(scaleVoltages ? "Volts\n" : "ADC Counts\n");
   printf("Press any key to abort\n");
@@ -261,7 +204,7 @@ void rapidblockDataHandler(
   // Get data from device
   status = ps4000aGetValuesBulk(
       unit->handle,
-      &nSamples,                          // Number of samples for each segment
+      (uint32_t *)&nSamples,                // Number of samples for each segment
       0,                                  // From Segment
       nCaptures - 1,                      // To Segment
       bufferSettings.downSampleRatio,     // Down Sample Ratio
@@ -361,15 +304,14 @@ void rapidblockOverlappedDataHandler(
 ) {
   PICO_STATUS status = 0;
   int16_t i;
-  uint64_t capture;
 
-  int64_t nMaxSamples = 0;
-  double timeIndisposed = 0;
+  int32_t nMaxSamples = 0;
+  int32_t timeIndisposed = 0;
 
   int16_t ***minBuffers;
   int16_t ***maxBuffers;
 
-  uint64_t nCompletedCaptures = 0;
+  uint32_t nCompletedCaptures = 0;
   PICO_ACTION action_flag =
       (PICO_CLEAR_ALL |
        PICO_ADD); // bitwise OR flags for first buffer that is set
@@ -448,7 +390,7 @@ void rapidblockOverlappedDataHandler(
   status = ps4000aGetValuesOverlappedBulk(
       unit->handle,
       0,                                  // Start Index for each segment
-      (uint64_t *)&nSamples,              // Number of samples for each segment
+      (uint32_t *)&nSamples,              // Number of samples for each segment
       bufferSettings.downSampleRatio,     // Down Sample Ratio
       bufferSettings.downSampleRatioMode, // Down Sample Ratio mode
       0,                                  // From Segment
