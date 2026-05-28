@@ -43,13 +43,13 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "ps6000aApi.h"
 #include "../shared/Libps6000a.h"
 #include "../shared/LibStreamingps6000a.h"
 #include "../shared/LibAWGps6000a.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
+#include "ps6000aApi.h"
 #include "windows.h"
 #include <conio.h>
 #else
@@ -60,66 +60,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <libps6000a/ps6000aApi.h>
+#include <ps6000aApi.h>
 #ifndef PICO_STATUS
-#include <libps6000a/PicoStatus.h>
+#include <PicoStatus.h>
 #endif
 
-#define Sleep(a) usleep(1000*a)
-#define scanf_s scanf
-#define fscanf_s fscanf
-#define memcpy_s(a,b,c,d) memcpy(a,c,d)
-
-typedef enum enBOOL{FALSE,TRUE} BOOL;
-
-/* A function to detect a keyboard press on Linux */
-int32_t _getch()
-{
-        struct termios oldt, newt;
-        int32_t ch;
-        int32_t bytesWaiting;
-        tcgetattr(STDIN_FILENO, &oldt);
-        newt = oldt;
-        newt.c_lflag &= ~( ICANON | ECHO );
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        setbuf(stdin, NULL);
-        do {
-                ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-                if (bytesWaiting)
-                        getchar();
-        } while (bytesWaiting);
-
-        ch = getchar();
-
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-        return ch;
-}
-
-int32_t _kbhit()
-{
-        struct termios oldt, newt;
-        int32_t bytesWaiting;
-        tcgetattr(STDIN_FILENO, &oldt);
-        newt = oldt;
-        newt.c_lflag &= ~( ICANON | ECHO );
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        setbuf(stdin, NULL);
-        ioctl(STDIN_FILENO, FIONREAD, &bytesWaiting);
-
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-        return bytesWaiting;
-}
-
-int32_t fopen_s(FILE ** a, const int8_t * b, const int8_t * c)
-{
-FILE * fp = fopen(b,c);
-*a = fp;
-return (fp>0)?0:-1;
-}
-
-/* A function to get a single character on Linux */
-#define max(a,b) ((a) > (b) ? a : b)
-#define min(a,b) ((a) < (b) ? a : b)
 #endif
 
 /****************************************************************************
