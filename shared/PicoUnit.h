@@ -10,15 +10,16 @@
 #ifndef __PICOUNIT_H__
 #define __PICOUNIT_H__
 
-#include "PicoConnectProbes.h"
 
-//#include <stdint.h>
+
  /* Headers for Windows */
 #ifdef _WIN32
 #include "windows.h"
 #include <conio.h>
+#include "PicoConnectProbes.h"
 #include "PicoDeviceStructs.h"
 #else
+#include <stdio.h>
 #include <sys/types.h>
 #include <string.h>
 #include <termios.h>
@@ -28,10 +29,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include <shared/PicoDeviceStructs.h>
+#include <PicoConnectProbes.h>
+#include <PicoDeviceStructs.h>
 #ifndef PICO_STATUS
 #include <PicoStatus.h>
 #endif
+
+/* Non-Windows platforms; Linux, MacOS */
 
 #define Sleep(a) usleep(1000*a)
 #define scanf_s scanf
