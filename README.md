@@ -15,7 +15,7 @@ Examples are provided as Microsoft Visual Studio Express 2015 for Windows Deskto
 #### Linux
 
 * A suitable IDE such as [Eclipse](https://www.eclipse.org/downloads/?)
-* Alternatively, ensure that the `autoconf` and `libtool` packages are installed for your operating system if building applications from the terminal.
+* Alternatively, ensure that the `autoconf` and `libtool` packages are installed for your operating system if building applications from the terminal. (for example "sudo apt-get install `build-essential autoconf automake make libtool`")
 
 #### macOS
 
@@ -35,7 +35,7 @@ Drivers are available for the following platforms. Refer to the subsections belo
 
 #### macOS
 
-* Visit our [Downloads page](https://www.picotech.com/downloads) and download the *PicoScope Beta for macOS* application.
+* Download the PicoSDK driver package installer (for your MacOS system x86-64 or ARM64) from our [Downloads page](https://www.picotech.com/downloads).
 
 ### Programmer's Guides
 
@@ -51,11 +51,33 @@ You can download Programmer's Guides providing a description of the API function
 
 #### Linux and macOS
 
-* Copy the required source code C file (e.g. ps3000aCon.c) into the corresponding `linux-build-files` sub-folder for the driver or copy the files to another folder 
-* Open a terminal window
+<ins>For older console examples located in the format /psXXXXCon/psXXXXCon.c</ins>
+
+(For example /ps3000aCon/ps3000aCon.c)
+* Copy the required source code C file (e.g. ps3000aCon.c) into the corresponding `linux-build-files` sub-folder for the driver or copy the files to another folder.  
+* Copy the PicoSDK header file `PicoStatus.h` into the same folder from-  
+`/opt/picoscope/include/libps3000a/`.  
+Note other Pico header files maybe required (`PicoDeviceEnums`, `PicoDeviceStructs.h`, `PicoConnectProbes.h`)
+
+* Open a terminal window from the example folder, for example `/ps3000a`:
 * Run the following commands:
   * `./autogen.sh`
   * `make`
+* Run the executable, for example; `./ps3000aCon`
+
+<ins>For console examples that have a CMakeLists.txt</ins>
+
+(For example /psospa/CMakeLists.txt)
+* Open a terminal window from the example folder, for example `/psospa`:  
+* Run the following commands:
+  * `mkdir build`
+  * `cd build`
+  * `cmake ..`
+  * `make`  
+  
+* Run one of the executables, for example; `./psospaBlock`, `./psospaRapidBlock`, `./psospaStreaming`
+* See the `psXXXX README.md` in the example folder for more information and setting up the template example in `./XXXXXTemplate/`.  
+(psospa template example- `./psospa/psospaTemplate/`)
 
 ## Obtaining support
 
@@ -77,5 +99,5 @@ See [LICENSE.md](LICENSE.md) for license terms.
 
 *Linux* is the registered trademark of Linus Torvalds in the U.S. and other countries.
 
-Copyright © 2004-2019 Pico Technology Ltd. All rights reserved. 
+Copyright © 2004-2026 Pico Technology Ltd. All rights reserved.
 
