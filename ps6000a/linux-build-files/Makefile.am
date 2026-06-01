@@ -1,4 +1,0 @@
-ACLOCAL_AMFLAGS = -I m4
-
-bin_PROGRAMS = ps6000aCon
-ps5000aCon_SOURCES = ps6000aCon.c
