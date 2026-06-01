@@ -59,7 +59,7 @@ You can download Programmer's Guides providing a description of the API function
 `/opt/picoscope/include/libps3000a/`.  
 Note other Pico header files maybe required (`PicoDeviceEnums`, `PicoDeviceStructs.h`, `PicoConnectProbes.h`)
 
-* Open a terminal window from the example folder, for example `/ps3000a`:
+* Open a terminal window from the linux example folder. For example `/ps3000a/linux-build-files/`:
 * Run the following commands:
   * `./autogen.sh`
   * `make`
