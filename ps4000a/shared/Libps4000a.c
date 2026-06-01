@@ -605,29 +605,16 @@ void setVoltages(GENERICUNIT *unit) {
                 _lastRange = unit->lastRange;
 
                 //Print available, standard voltage ranges OR PicoConnectProbes ranges
-                if (!userProbeInfo.userProbeInteractions[ch].connected)
-                {
-                    //muiltple enums for the same value, just cast to standard voltage ranges-
-                    getRangeScaling(_firstRange, &chRangeInfoTempFirst);
-                    getRangeScaling(_lastRange, &chRangeInfoTempLast);
-                    printf("Specify voltage range (%s..%s)", chRangeInfoTempFirst.Probe_Range_text, chRangeInfoTempLast.Probe_Range_text);
-                    printf("                Enter (%d..%d) ", (int)_firstRange, (int)_lastRange);
-                }
-                else
+                if (userProbeInfo.userProbeInteractions[ch].connected)
                 {
                     _firstRange = userProbeInfo.userProbeInteractions[ch].rangeFirst_; //copy probe settings to use
                     _lastRange = userProbeInfo.userProbeInteractions[ch].rangeLast_;
-                    //muiltple enums for the same value, just cast to standard voltage ranges-
-                    if (userProbeInfo.userProbeInteractions[ch].rangeLast_ <= PICO_X1_PROBE_50V)
-                        printf("Specify voltage range (%d..%d)\n", unit->firstRange, unit->lastRange);
-                    else
-                    { // Print connected probe "rangeFirst" and "rangeLast" enum Text
-                        getRangeScaling(_firstRange, &chRangeInfoTempFirst);
-                        getRangeScaling(_lastRange, &chRangeInfoTempLast);
-                        printf("Specify Probe range (%s..%s))", chRangeInfoTempFirst.Probe_Range_text, chRangeInfoTempLast.Probe_Range_text);         
-                    }
-                    printf("        Enter (%d..%d)) ", (int)_firstRange, (int)_lastRange);
                 }
+                getRangeScaling(_firstRange, &chRangeInfoTempFirst);
+                getRangeScaling(_lastRange, &chRangeInfoTempLast);
+                printf("Specify Probe range (%s..%s))", chRangeInfoTempFirst.Probe_Range_text, chRangeInfoTempLast.Probe_Range_text);
+                printf("        Enter (%d..%d)) ", (int)_firstRange, (int)_lastRange);
+
                 // Keyboard input to range value
                 fflush(stdin);
                 scanf_s("%d", &rangeinput);
@@ -925,7 +912,7 @@ void setResolution(GENERICUNIT *unit) {
     {
         printf("Invalid resolution.\n");
     }
-    else if ((newResolution == (PS4000A_DEVICE_RESOLUTION)PICO_DR_14BIT) && !MODEL_4444)
+    else if (newResolution == ((PS4000A_DEVICE_RESOLUTION)(PICO_DR_14BIT && !MODEL_4444)) )
     {
         printf("setResolution: 14 bit resolution is only supported on the PS4444 model.\n");
     }
@@ -944,7 +931,7 @@ void setResolution(GENERICUNIT *unit) {
   }
   else
   {
-    unit->resolution = (PS4000A_DEVICE_RESOLUTION)newResolution;
+    unit->resolution = (PICO_DEVICE_RESOLUTION)newResolution;
 
     printf("Resolution selected: ");
     printResolution(&newResolution);
@@ -1130,7 +1117,7 @@ PICO_STATUS handleDevice(GENERICUNIT *unit, SIG_GEN_SETTINGS *sigGenSettings) {
       if (i % TURN_ON_EVERY_N_CH == 0 && i < enabled_chs_limit)
       {
           unit->channelSettings[i].enabled = TRUE;
-          if (unit->hasIntelligentProbes && userProbeInfo.userProbeInteractions[i].connected)
+          if (userProbeInfo.userProbeInteractions[i].connected && (userProbeInfo.userProbeInteractions[i].rangeLast_ > PICO_X1_PROBE_200V) )
               unit->channelSettings[i].range = userProbeInfo.userProbeInteractions[i].rangeLast_;
           else
               unit->channelSettings[i].range = PICO_X1_PROBE_1V;
