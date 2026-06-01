@@ -115,22 +115,19 @@ void blockDataHandler(GENERICUNIT *unit,
           enabledChannelOrPortFlags | (PICO_CHANNEL_FLAGS)(1 << ch);
     }
   }
-  /////////
-  if (!unit->hasIntelligentProbes) ////////////////////////////////////////////////
-  {
-      status = ps4000aNearestSampleIntervalStateless(
-          unit->handle, enabledChannelOrPortFlags, idealTimeInterval,
-          unit->resolution,
-          0, // useEts
-          &timebase, &(unit->timeInterval));
-      if (status != PICO_OK) {
-          printf("BlockDataHandler:ps4000aNearestSampleIntervalStateless ------ "
-              "0x%08x \n",
-              status);
-          return;
-      }
-  }
-  ///////
+
+    status = ps4000aNearestSampleIntervalStateless(
+        unit->handle, enabledChannelOrPortFlags, idealTimeInterval,
+        unit->resolution,
+        0, // useEts
+        &timebase, &(unit->timeInterval));
+    if (status != PICO_OK) {
+        printf("BlockDataHandler:ps4000aNearestSampleIntervalStateless ------ "
+            "0x%08x \n",
+            status);
+        return;
+    }
+
   printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase,
          unit->timeInterval);
 
