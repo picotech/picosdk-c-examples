@@ -105,16 +105,42 @@ typedef enum enModelType
 {
 	BADKEY = -1,
 	MODEL_NONE = 0,//this is used
-	MODEL_4444 = 1,
-	MODEL_4224 = 2,
+	// ps4000a API models
+	MODEL_4444,
+	MODEL_4224,
 	MODEL_4224A = MODEL_4224,
-	MODEL_4424 = 3,
+	MODEL_4424,
 	MODEL_4424A = MODEL_4424,
-	MODEL_4824 = 4,
+	MODEL_4824,
 	MODEL_4824A = MODEL_4824,
-	MODEL_4225A = 5,
-	MODEL_4425A = 6,
-	MODEL_4825A = 7
+	MODEL_4225A,
+	MODEL_4425A,
+	MODEL_4825A,
+	// 34XXE models (8-bit & 10-bit)
+	MODEL_3415E,
+	MODEL_3415E_MSO,
+	MODEL_3416E,
+	MODEL_3416E_MSO,
+	MODEL_3417E,
+	MODEL_3417E_MSO,
+	MODEL_3418E,
+	MODEL_3418E_MSO,
+	// 54XXE models (16-bit)
+	MODEL_5462E,
+	MODEL_5462E_MSO,
+	MODEL_5463E,
+	MODEL_5463E_MSO,
+	MODEL_5464E, 
+	MODEL_5464E_MSO,
+	// 54XXE+ models (16-bit & 8-bit)
+	MODEL_5462Ep,
+	MODEL_5462Ep_MSO,
+	MODEL_5463Ep,
+	MODEL_5463Ep_MSO,
+	MODEL_5464Ep,
+	MODEL_5464Ep_MSO
+
+	// Add more models here
 }MODEL_TYPE;
 
 typedef enum enSigGenFeature
@@ -149,7 +175,7 @@ typedef struct tGenericUnit
 {
 	int16_t						handle;
 	MODEL_TYPE					model;
-	int8_t						modelString[8];
+	int8_t						modelString[10];
 	int8_t						serial[10];
 	int16_t						complete;
 	int16_t						openStatus;
@@ -165,6 +191,7 @@ typedef struct tGenericUnit
 	uint16_t					awgBufferSize;
 	CHANNEL_SETTINGS			channelSettings[8];
 	PICO_DEVICE_RESOLUTION		resolution;
+	PICO_USB_POWER_DETAILS		powerDetails;
 	double						timeInterval;
 	int16_t						digitalPortCount;
 	MSO_CHANNEL_SETTINGS		digitalChannelSettings[2];
