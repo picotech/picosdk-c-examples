@@ -4,7 +4,7 @@
  *
  * Description:
  *   This is a C Library file to use with the
- *   PicoScope 3XXXE Series (psospa) devices.
+ *   PicoScope Series for (psospa) devices.
  *
  * Copyright (C) 2025 Pico Technology Ltd. See LICENSE file for terms.
  *
@@ -51,6 +51,44 @@ uint32_t	timebase = 0;
 const uint64_t constBufferSize = 131072; //128kB
 int16_t   		g_ready = FALSE;
 /***************************************************************************/
+
+/****************************************************************************
+ * Model Lookup Table and function to return model enum from string
+ ***************************************************************************/
+typedef struct { char* key; MODEL_TYPE val; } t_symstruct;
+t_symstruct lookuptable[] = {
+	{ "3415E",		MODEL_3415E }, // 3415E, 3415E MSO
+	{ "3415EMSO",	MODEL_3415E_MSO },
+	{ "3416E",		MODEL_3416E }, // 3416E, 3416E MSO
+	{ "3416EMSO",	MODEL_3416E_MSO },
+	{ "3417E",		MODEL_3417E }, // 3417E, 3417E MSO
+	{ "3417EMSO",	MODEL_3417E_MSO },
+	{ "3418E",		MODEL_3418E }, // 3418E, 3418E MSO
+	{ "3418EMSO",	MODEL_3418E_MSO },
+	{ "5462E",		MODEL_5462E }, // 5462E, 5462E MSO
+	{ "5462EMSO",	MODEL_5462E_MSO },
+	{ "5463E",		MODEL_5463E }, // 5463E, 5463E MSO
+	{ "5463EMSO",	MODEL_5463E_MSO },
+	{ "5464E",		MODEL_5464E }, // 5464E, 5464E MSO
+	{ "5464EMSO",	MODEL_5464E_MSO },
+	{ "5462+",		MODEL_5462Ep }, // 5462Ep, 5462Ep MSO
+	{ "5462E+MSO",	MODEL_5462Ep_MSO },
+	{ "5463E+",		MODEL_5463Ep }, // 5463Ep, 5463Ep MSO
+	{ "5463E+MSO",	MODEL_5463Ep_MSO },
+	{ "5464E+",		MODEL_5464Ep }, // 5464Ep, 5464Ep MSO
+	{ "5464E+MSO",	MODEL_5464Ep_MSO}
+};
+
+#define NKEYS (sizeof(lookuptable)/sizeof(t_symstruct))
+MODEL_TYPE keyfromstring(char* key)
+{
+	int i;
+	for (i = 0; i < NKEYS; i++) {
+		if (strcmp(lookuptable[i].key, key) == 0)
+			return lookuptable[i].val;
+	}
+	return BADKEY;
+}
 
 /****************************************************************************
 * Callback Probe Interaction
@@ -309,7 +347,6 @@ void set_info(GENERICUNIT* unit)
 	int16_t i = 0;
 	int16_t requiredSize = 0;
 	int8_t line[80];
-	int32_t variant;
 	PICO_STATUS status = PICO_OK;
 
 	// Variables used for arbitrary waveform parameters
@@ -336,10 +373,10 @@ void set_info(GENERICUNIT* unit)
 			// info = 3 - PICO_VARIANT_INFO
 			if (i == PICO_VARIANT_INFO)
 			{
-				variant = atoi(line);
-				memcpy(&(unit->modelString), line, sizeof(unit->modelString) == 5 ? 5 : sizeof(unit->modelString));
-				//memcpy(&(unit->modelString), line, sizeof(unit->modelString));
+				memcpy(unit->modelString, line, sizeof(unit->modelString));
+				unit->modelString[sizeof(unit->modelString) - 1] = '\0'; // Ensure null termination
 
+				// Extract channel count from the variant info string
 				unit->channelCount = (int16_t)line[1];
 				unit->channelCount = unit->channelCount - 48; // Subtract ASCII 0 (48)
 
@@ -361,6 +398,94 @@ void set_info(GENERICUNIT* unit)
 			printf("%s: %s\n", description[i], line);
 		}
 		printf("\n");
+
+		switch (keyfromstring(unit->modelString))
+		{
+		case MODEL_3415E: /* 4Ch,  Scope */
+			printf("Model is 3415E\n");
+			unit->model = MODEL_3415E;
+			break;
+		case MODEL_3415E_MSO: /* 4Ch,  MSO */
+			printf("Model is 3415E_MSO\n");
+			unit->model = MODEL_3415E_MSO;
+			break;
+		case MODEL_3416E: /* 4Ch,  Scope */
+			printf("Model is 3416E\n");
+			unit->model = MODEL_3416E;
+			break;
+		case MODEL_3416E_MSO: /* 4Ch,  MSO */
+			printf("Model is 3416E_MSO\n");
+			unit->model = MODEL_3416E_MSO;
+			break;
+		case MODEL_3417E: /* 4Ch,  Scope */
+			printf("Model is 3417E\n");
+			unit->model = MODEL_3417E;
+			break;
+		case MODEL_3417E_MSO: /* 4Ch,  MSO */
+			printf("Model is 3417E_MSO\n");
+			unit->model = MODEL_3417E_MSO;
+			break;
+		case MODEL_3418E: /* 4Ch,  Scope */
+			printf("Model is 3418E\n");
+			unit->model = MODEL_3418E;
+			break;
+		case MODEL_3418E_MSO: /* 4Ch,  MSO */
+			printf("Model is 3418E_MSO\n");
+			unit->model = MODEL_3418E_MSO;
+			break;
+		case MODEL_5462E: /* 4Ch,  Scope */
+			printf("Model is 5462E\n");
+			unit->model = MODEL_5462E;
+			break;
+		case MODEL_5462E_MSO: /* 4Ch,  MSO */
+			printf("Model is 5462E_MSO\n");
+			unit->model = MODEL_5462E_MSO;
+			break;
+		case MODEL_5463E: /* 4Ch,  Scope */
+			printf("Model is 5463E\n");
+			unit->model = MODEL_5463E;
+			break;
+		case MODEL_5463E_MSO: /* 4Ch,  MSO */
+			printf("Model is 5463E_MSO\n");
+			unit->model = MODEL_5463E_MSO;
+			break;
+		case MODEL_5464E: /* 4Ch,  Scope */
+			printf("Model is 5464E\n");
+			unit->model = MODEL_5464E;
+			break;
+		case MODEL_5464E_MSO: /* 4Ch,  MSO */
+			printf("Model is 5464E_MSO\n");
+			unit->model = MODEL_5464E_MSO;
+			break;
+		case MODEL_5462Ep: /* 4Ch+,  Scope */
+			printf("Model is 5462E+\n");
+			unit->model = MODEL_5462Ep;
+			break;
+		case MODEL_5462Ep_MSO: /* 4Ch+,  MSO */
+			printf("Model is 5462E+ MSO\n");
+			unit->model = MODEL_5462Ep_MSO;
+			break;
+		case MODEL_5463Ep: /* 4Ch+,  Scope */
+			printf("Model is 5463E+\n");
+			unit->model = MODEL_5463Ep;
+			break;
+		case MODEL_5463Ep_MSO: /* 4Ch+,  MSO */
+			printf("Model is 5463E+ MSO\n");
+			unit->model = MODEL_5463Ep_MSO;
+			break;
+		case MODEL_5464Ep: /* 4Ch+,  Scope */
+			printf("Model is 5464E+\n");
+			unit->model = MODEL_5464Ep;
+			break;
+		case MODEL_5464Ep_MSO: /* 4Ch+,  MSO */
+			printf("Model is 5464E+ MSO\n");
+			unit->model = MODEL_5464Ep_MSO;
+			break;
+
+		case BADKEY: /* failed lookup */
+			printf("Model not found or not referenced!, using defaults\n");
+			break;
+		}
 
 		// Set sig gen parameters
 		// If device has Arbitrary Waveform Generator, find the maximum AWG buffer size
@@ -670,32 +795,89 @@ void setResolution(GENERICUNIT* unit)
 	printf("Select device resolution:\n");
 	printf("0: 8 bits\n");
 	printf("1: 10 bits\n");
+	printf("2: 16 bits\n");
 
 	retry = TRUE;
 	do
 	{
-		printf("Resolution [0...1]: ");
-
+		printf("Resolution [0...2]: ");
 		fflush(stdin);
 		scanf_s("%lud", &resolutionInput);
-		if (resolutionInput == 0)
-			resolutionInput = PICO_DR_8BIT;
-		if (resolutionInput == 1)
-			resolutionInput = PICO_DR_10BIT;
-		newResolution = (PICO_DEVICE_RESOLUTION)resolutionInput;
 
-		if (newResolution < PICO_DR_8BIT && newResolution > PICO_DR_10BIT)
+		switch (resolutionInput)
 		{
-			printf("setResolution: Resolution index selected out of bounds.\n");
-		}
-		else
-		{
-			retry = FALSE;
+		case 0:
+			newResolution = PICO_DR_8BIT;
+			//if (unit->model == 3XXXE || unit->model == 5XXXE+)
+			if ((unit->model == MODEL_3415E ||
+				unit->model == MODEL_3415E_MSO ||
+				unit->model == MODEL_3416E ||
+				unit->model == MODEL_3416E_MSO ||
+				unit->model == MODEL_3417E ||
+				unit->model == MODEL_3417E_MSO ||
+				unit->model == MODEL_3418E ||
+				unit->model == MODEL_3418E_MSO ||
+				unit->model == MODEL_5462Ep ||
+				unit->model == MODEL_5462Ep_MSO ||
+				unit->model == MODEL_5463Ep ||
+				unit->model == MODEL_5463Ep_MSO ||
+				unit->model == MODEL_5464Ep ||
+				unit->model == MODEL_5464Ep_MSO
+				))
+			{
+				retry = FALSE;
+			}
+			else
+				printf("setResolution: Invalid resolution for this model.\n");
+			break;
+		case 1:
+			newResolution = PICO_DR_10BIT;
+			// if (unit->model == 3XXXE)
+			if ((unit->model == MODEL_3415E ||
+				unit->model == MODEL_3415E_MSO ||
+				unit->model == MODEL_3416E ||
+				unit->model == MODEL_3416E_MSO ||
+				unit->model == MODEL_3417E ||
+				unit->model == MODEL_3417E_MSO ||
+				unit->model == MODEL_3418E ||
+				unit->model == MODEL_3418E_MSO
+				))
+			{
+				retry = FALSE;
+			}
+			else
+				printf("setResolution: Invalid resolution for this model.\n");
+			break;
+		case 2:
+			newResolution = PICO_DR_16BIT;
+			//if(unit->model == 5XXXE || unit->model == 5XXXE+)
+			if ((unit->model == MODEL_5462E ||
+				unit->model == MODEL_5462E_MSO ||
+				unit->model == MODEL_5463E ||
+				unit->model == MODEL_5463E_MSO ||
+				unit->model == MODEL_5464E ||
+				unit->model == MODEL_5464E_MSO ||
+				unit->model == MODEL_5462Ep ||
+				unit->model == MODEL_5462Ep_MSO ||
+				unit->model == MODEL_5463Ep ||
+				unit->model == MODEL_5463Ep_MSO ||
+				unit->model == MODEL_5464Ep ||
+				unit->model == MODEL_5464Ep_MSO
+				))
+			{
+				retry = FALSE;
+			}
+			else
+				printf("setResolution: Invalid resolution for this model.\n");
+			break;
+		default:
+			printf("setResolution: Invalid resolution index.\n");
+			retry = TRUE;
+			break;
 		}
 	} while (retry);
 
 	printf("\n");
-
 	status = psospaSetDeviceResolution(unit->handle, (PICO_DEVICE_RESOLUTION)newResolution);
 
 	if (status == PICO_OK)
@@ -804,6 +986,46 @@ void displaySettings(GENERICUNIT* unit)
 }
 
 /****************************************************************************
+* print_pico_usb_power_delivery
+* Parameters
+* - pd        pointer to the PICO_USB_POWER_DELIVERY structure
+*
+* Returns       none
+***************************************************************************/
+void print_pico_usb_power_delivery(const PICO_USB_POWER_DELIVERY* pd) {
+	if (pd == NULL) {
+		printf("Error: Null structure pointer.\n");
+		return;
+	}
+	// uint8_t can be printed using %u (it promotes to int) or the PRIu8 macro
+	printf("Valid (= 0):             %u\n", pd->valid_);
+	printf("Bus Voltage (mV):        %lu mV\n", pd->busVoltagemV_);
+	printf("Rp Current Limit (mA):   %lu mA\n", pd->rpCurrentLimitmA_);
+	printf("Partner Connected:       %lu\n", pd->partnerConnected_);
+	printf("CC Polarity:             %lu\n", pd->ccPolarity_);
+	printf("Attached Device Type:    ");
+	switch(pd->attachedDevice_)
+	{
+	case 0:
+		printf("None\n");
+		break;
+	case 2:
+		printf("Source\n");
+		break;
+	case 3:
+		printf("Debug\n");
+		break;
+	default:
+		printf("Unknown\n");
+		break;
+	}
+	printf("Contract Exists:         %lu\n", pd->contractExists_);
+	printf("Current PDO:             0x%08X\n", pd->currentPdo_); // Printed in Hexadecimal format often used for registers/PDOs
+	printf("Current RDO:             0x%08X\n", pd->currentRdo_); // Printed in Hexadecimal format often used for registers/RDOs
+	printf("--------------------------------------\n");
+}
+
+/****************************************************************************
 * openDevice
 * Parameters
 * - unit        pointer to the UNIT structure, where the handle will be stored
@@ -816,19 +1038,41 @@ PICO_STATUS openDevice(GENERICUNIT* unit, int8_t* serial)
 {
 	PICO_STATUS status;
 	unit->resolution = PICO_DR_8BIT;
+	PICO_USB_POWER_DETAILS *powerDetails = &(unit->powerDetails);
 
 	if (serial == NULL)
 	{
-		status = psospaOpenUnit(&unit->handle, NULL, unit->resolution, NULL);
+		status = psospaOpenUnit(&unit->handle, NULL, unit->resolution, powerDetails);
 	}
 	else
 	{
-		status = psospaOpenUnit(&unit->handle, serial, unit->resolution, NULL);
+		status = psospaOpenUnit(&unit->handle, serial, unit->resolution, powerDetails);
+	}
+	// If the device doesn't support 8 bit resolution, try 16 bit as some devices only support 16 bit and not 8 bit
+	if (status == PICO_RESOLUTION_NOT_SUPPORTED_BY_VARIANT)
+	{
+		unit->resolution = PICO_DR_16BIT;
+		if (serial == NULL)
+		{
+			status = psospaOpenUnit(&unit->handle, NULL, unit->resolution, powerDetails);
+		}
+		else
+		{
+			status = psospaOpenUnit(&unit->handle, serial, unit->resolution, powerDetails);
+		}
+	}
+	// If USB power fails, print the information to the console
+	if (unit->powerDetails.powerErrorLikely_)
+	{
+		//printf("USB power Error Likely:  %u\n", unit->powerDetails.powerErrorLikely_);
+		printf("--- USB Power Delivery Status: DATA PORT---\n");
+		print_pico_usb_power_delivery(&(unit->powerDetails.dataPort_));
+		printf("--- USB Power Delivery Status: POWER PORT---\n");
+		print_pico_usb_power_delivery(&(unit->powerDetails.powerPort_));
 	}
 
 	unit->openStatus = (int16_t)status;
 	unit->complete = 1;
-
 	return status;
 }
 
