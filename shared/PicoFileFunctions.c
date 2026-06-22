@@ -1,7 +1,7 @@
 /****************************************************************************
  *
  * Filename:    PicoFileFunctions.c
- * Copyright:   Pico Technology Limited 2025
+ * Copyright:   Pico Technology Limited 2026
  * Description:
  *
  * This file defines file writing functions for PicoScope data.
@@ -30,9 +30,10 @@
 #include <PicoStatus.h>
 #endif
 
-
-
 #endif
+
+#define TEXT_FILE_EXTENSION ".csv"
+#define SEPARATOR ","
 
 /****************************************************************************
 * Gobal Variables
@@ -52,141 +53,145 @@
 * - Triggersample number,
 * - Over range flags - "overflow"
 * - CAPTURES_RANGE* - pointer to structure defining the range of captures to write, (from, to)
-*   can be set to NULL for full range
-* 
-* Outputs:
+* can be set to NULL for full range
+* * Outputs:
 * Write a text file to disk of current path
 ****************************************************************************/
 
+#include <stdio.h>
+#include <time.h>
+
 void WriteMetaDataToFile(struct tGenericUnit* unit,
-struct tmultiBufferSizes multiBufferSizes,
-struct tPicoProbeScaling* enabledChannelsScaling,
-char startOfFileName[],
-uint64_t Triggersample,
-struct tcaptures_range* captures_rangeIp)
-{   
+    struct tmultiBufferSizes multiBufferSizes,
+    struct tPicoProbeScaling* enabledChannelsScaling,
+    char startOfFileName[],
+    uint64_t Triggersample,
+    struct tcaptures_range* captures_rangeIp)
+{
+    const char* separator = SEPARATOR; // a string defining the delimiter (e.g., "," or "\t")
     FILE* fp = NULL;
-    if(startOfFileName == NULL)
+    if (startOfFileName == NULL)
         startOfFileName = "PicoMetaData_";
 
     uint64_t i;
     struct tcaptures_range captures_range;
 
-	if (captures_rangeIp == NULL) //Set default full range if NULL
-    {   
+    if (captures_rangeIp == NULL) //Set default full range if NULL
+    {
         captures_range.from = 0;
-		captures_range.to = multiBufferSizes.numberOfBuffers - 1;
+        captures_range.to = multiBufferSizes.numberOfBuffers - 1;
     }
     else
     {
-		captures_range = *captures_rangeIp; // Use the provided range
+        captures_range = *captures_rangeIp; // Use the provided range
     }
 
-    char buf[58 + (3 * sizeof(int))]= { '\0' }; // null terminate the string
+    char buf[58 + (3 * sizeof(int))] = { '\0' }; // null terminate the string
     size_t buf_size = sizeof(buf) / sizeof(buf[0]);
 
-        // Get the current time
-        time_t now = time(NULL);
-        // Convert to local time
-        struct tm* local_time = localtime(&now);
-        //printf("Local time: %s", asctime(local_time));
-        // Format the time
-        char formatted_time[100];
-        strftime(formatted_time, sizeof(formatted_time), "%d-%m-%Y %H:%M:%S %Z", local_time);
-        //printf("\nFormatted time: %s\n", formatted_time);
-        //strftime(formatted_time, sizeof(formatted_time), "%S", local_time);
-		// Create file name with number of buffer sets and the seconds from the PC clock.
-        snprintf(buf, buf_size, "%s_BufferSets-%d.txt", startOfFileName, (int)multiBufferSizes.numberOfBuffers);
-        //snprintf(buf, buf_size, "%s_BufferSets-%d_Sec_%s.txt", startOfFileName, (int)multiBufferSizes.numberOfBuffers, formatted_time);
-        fopen_s(&fp, buf, "w");
-        if (fp != NULL)
+    // Get the current time
+    time_t now = time(NULL);
+    // Convert to local time
+    struct tm* local_time = localtime(&now);
+
+    // Format the time
+    char formatted_time[100];
+    strftime(formatted_time, sizeof(formatted_time), "%d-%m-%Y %H:%M:%S %Z", local_time);
+
+    // Create file name with number of buffer sets
+    snprintf(buf, buf_size, "%s_BufferSets-%d" TEXT_FILE_EXTENSION, startOfFileName, (int)multiBufferSizes.numberOfBuffers);
+    fopen_s(&fp, buf, "w");
+
+    if (fp != NULL)
+    {
+        // Write time using the separator
+        fprintf(fp, "Formatted time:%s%s\n", separator, formatted_time);
+
+        // Write header lines
+        if (multiBufferSizes.numberOfBuffers != 1)
         {
-            fprintf(fp, "Formatted time: %s\n", formatted_time);
-            //Write header lines
-            if (multiBufferSizes.numberOfBuffers != 1)
-            {
-                fprintf(fp, "Number of Segments: %lld\n",
-                    multiBufferSizes.numberOfBuffers);
-                fprintf(fp, "From Seg: %lld to Seg: %lld\n",
-                    captures_range.from, captures_range.to);
-            }
-
-            fprintf(fp, "SampleRate %3.3e SamplesPerBlock %lld Trigger@Sample %lld \n",
-                unit->timeInterval, multiBufferSizes.maxBufferSize, Triggersample);
-
-            // Write channel headings - Aggredated Data?
-            if (multiBufferSizes.minBufferSize != 0)
-            {
-                fprintf(fp, "Aggredated Datasample data (Max. Min. values for each channel)");
-            }
-			// Write channel headings - channel names
-            for (i = 0; i < unit->channelCount; i++)
-            {
-                if (unit->channelSettings[i].enabled)
-                {
-                    fprintf(fp, "Ch: %C\t\t", 'A' + (int)i);
-                }
-            }
-            fprintf(fp, "\n");
-
-            // Write channel headings - channel units
-            for (i = 0; i < unit->channelCount; i++)
-            {
-                if (unit->channelSettings[i].enabled)
-                {
-                    fprintf(fp, "Units: %s\t", enabledChannelsScaling[i].Unit_text);
-                }
-            }
-            fprintf(fp, "\n");
-
-            // Write channel headings - channel ProbeEnum range
-            for (i = 0; i < unit->channelCount; i++)
-            {
-
-                if (unit->channelSettings[i].enabled)
-                {
-                    fprintf(fp, "ProbeEnum: %d\t", enabledChannelsScaling[i].ProbeEnum);
-                }
-            }
-            fprintf(fp, "\n");
-
-			// Write channel headings - channel MaxScale and MinScale (values corresponding to Scaled max and min range)
-            for (i = 0; i < unit->channelCount; i++)
-            {
-
-                if (unit->channelSettings[i].enabled)
-                {
-                    fprintf(fp, "+FS:  %4.2f\t", enabledChannelsScaling[i].MaxScale);
-                }
-            }
-            fprintf(fp, "\n");
-
-            for (i = 0; i < unit->channelCount; i++)
-            {
-
-                if (unit->channelSettings[i].enabled)
-                {
-                    fprintf(fp, "-FS: %4.2f\t", enabledChannelsScaling[i].MinScale);
-                }
-            }
-            fprintf(fp, "\n");
-
-			// Write digital port headings
-            for (i = 0; i < unit->digitalPortCount; i++)
-            {
-                if (unit->digitalChannelSettings[i].enabled)
-                {
-                    fprintf(fp, "Port%d_Max\t", (int)i);
-                    if (multiBufferSizes.minBufferSize != 0)
-                    {
-                        fprintf(fp, "Port%d_Min\t", (int)i);
-                    }
-                }
-            }
-            fprintf(fp, "\n");
-            fclose(fp);
+            fprintf(fp, "Number of Segments:%s%lld\n", separator, multiBufferSizes.numberOfBuffers);
+            fprintf(fp, "From Seg:%s%lld%sto Seg:%s%lld\n",
+                separator, captures_range.from, separator, separator, captures_range.to);
         }
-    
+
+        fprintf(fp, "SampleRate%s%3.3e%sSamplesPerBlock%s%lld%sTrigger@Sample%s%lld\n",
+            separator, unit->timeInterval, separator, separator, multiBufferSizes.maxBufferSize, separator, separator, Triggersample);
+
+        // Write channel headings - Aggregated Data
+        if (multiBufferSizes.minBufferSize != 0)
+        {
+            fprintf(fp, "Aggregated Datasample data (Max. Min. values for each channel)\n");
+        }
+
+        // Write channel headings - channel names
+        fprintf(fp, "Ch%s", separator);
+        for (i = 0; i < unit->channelCount; i++)
+        {
+            if (unit->channelSettings[i].enabled)
+            {
+                fprintf(fp, "%c%s", 'A' + (int)i, separator);
+            }
+        }
+        fprintf(fp, "\n");
+
+        // Write channel headings - channel units
+        fprintf(fp, "Units%s", separator);
+        for (i = 0; i < unit->channelCount; i++)
+        {
+            if (unit->channelSettings[i].enabled)
+            {
+                fprintf(fp, "%s%s", enabledChannelsScaling[i].Unit_text, separator);
+            }
+        }
+        fprintf(fp, "\n");
+
+        // Write channel headings - channel ProbeEnum range
+        fprintf(fp, "ProbeEnum%s", separator);
+        for (i = 0; i < unit->channelCount; i++)
+        {
+            if (unit->channelSettings[i].enabled)
+            {
+                fprintf(fp, "%d%s", enabledChannelsScaling[i].ProbeEnum, separator);
+            }
+        }
+        fprintf(fp, "\n");
+
+        // Write channel headings - channel MaxScale and MinScale 
+        fprintf(fp, "'+FS%s", separator);
+        for (i = 0; i < unit->channelCount; i++)
+        {
+            if (unit->channelSettings[i].enabled)
+            {
+                fprintf(fp, "%4.2f%s", enabledChannelsScaling[i].MaxScale, separator);
+            }
+        }
+        fprintf(fp, "\n");
+        fprintf(fp, "'-FS%s", separator);
+        for (i = 0; i < unit->channelCount; i++)
+        {
+            if (unit->channelSettings[i].enabled)
+            {
+                fprintf(fp, "%4.2f%s", enabledChannelsScaling[i].MinScale, separator);
+            }
+        }
+        fprintf(fp, "\n");
+
+        // Write digital port headings
+        for (i = 0; i < unit->digitalPortCount; i++)
+        {
+            if (unit->digitalChannelSettings[i].enabled)
+            {
+                fprintf(fp, "Port%d_Max%s", (int)i, separator);
+                if (multiBufferSizes.minBufferSize != 0)
+                {
+                    fprintf(fp, "Port%d_Min%s", (int)i, separator);
+                }
+            }
+        }
+        fprintf(fp, "\n");
+        fclose(fp);
+    }
 }
 
 /****************************************************************************
@@ -202,7 +207,7 @@ struct tcaptures_range* captures_rangeIp)
 * - Triggersample number,
 * - Over range flags - "overflow"
 * - CAPTURES_RANGE* - pointer to structure defining the range of captures to write, (from, to)
-*   can be set to NULL for full range
+* can be set to NULL for full range
 *
 * Outputs:
 * Writes text files to disk of current path
@@ -218,6 +223,7 @@ void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
     int16_t* overflow,
     struct tcaptures_range* captures_rangeIp)
 {
+    const char* separator = SEPARATOR; // a string defining the delimiter (e.g., "," or "\t")
     FILE* fp = NULL;
     if (startOfFileName == NULL)
         startOfFileName = "Pico_BufferCaptureN_";
@@ -242,41 +248,41 @@ void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
     for (capture = captures_range.from; capture <= captures_range.to; capture++)
     {
         //Goto next file
-        snprintf(buf, buf_size, "%s%d.txt", startOfFileName, (int)capture);
+        snprintf(buf, buf_size, "%s%d" TEXT_FILE_EXTENSION, startOfFileName, (int)capture);
         fopen_s(&fp, buf, "w");
         if (fp != NULL)
         {
             //Write 2 header lines (one for Info, one for Channels)
             if (multiBufferSizes.numberOfBuffers != 1)
-                fprintf(fp, "Segment: %lld of %lld Segment(s)\n",
-                    capture, multiBufferSizes.numberOfBuffers);
+                fprintf(fp, "Segment:%s% lld%sof%s%lld%sSegment(s)\n",
+                    separator, capture, separator, separator, multiBufferSizes.numberOfBuffers, separator);
 
-            fprintf(fp, "SampleRate %3.3e SamplesPerBlock %lld Trigger@Sample %lld \n",
-                unit->timeInterval, multiBufferSizes.maxBufferSize, Triggersample);
+            fprintf(fp, "SampleRate%s%3.3e%sSamplesPerBlock%s%lld%sTrigger@Sample%s%lld\n",
+                separator, unit->timeInterval, separator, separator, multiBufferSizes.maxBufferSize, separator, separator, Triggersample);
 
             //overrange flags
             if (overflow != NULL)
             {
-                fprintf(fp, "OverRange flag: ");
+                fprintf(fp, "OverRange flag:%s", separator);
                 i = 10; // upto 2 digital ports + 8 analog channels (CHAR_BIT * sizeof integer)
                 while (i--)
                 {
                     fprintf(fp, "%d", ((uint16_t)overflow[capture] >> i) & 1);
                 }
-                fprintf(fp, " (LSB ChA)\n");
+                fprintf(fp, "%s(LSB ChA)\n", separator);
             }
             // Write time and channel headings
-            fprintf(fp, "Time(s) ");
+            fprintf(fp, "Time(s)%s", separator);
 
             for (i = 0; i < unit->channelCount; i++)
             {
-
                 if (unit->channelSettings[i].enabled)
                 {
-                    fprintf(fp, "Ch%C_Max-ADC Max_%s ", 'A' + (int16_t)i, enabledChannelsScaling[i].Unit_text);
+                    // Note: Changed %C to %c for standard C compliance
+                    fprintf(fp, "Ch%c_Max-ADC%sMax_%s%s", 'A' + (int16_t)i, separator, enabledChannelsScaling[i].Unit_text, separator);
                     if (multiBufferSizes.minBufferSize != 0)
                     {
-                        fprintf(fp, "Min-ADC Min_V ");//fprintf(fp, "Min-ADC Min_mV ");
+                        fprintf(fp, "Min-ADC%sMin_V%s", separator, separator);
                     }
                 }
             }
@@ -285,37 +291,36 @@ void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
             {
                 if (unit->digitalChannelSettings[i].enabled)
                 {
-                    fprintf(fp, "Port%d_Max ", (int)i);  //fprintf(fp, "Ch%C_Max-ADC Max_mV ", 'A' + (int)i);
+                    fprintf(fp, "Port%d_Max%s", (int)i, separator);
                     if (multiBufferSizes.minBufferSize != 0)
                     {
-                        fprintf(fp, "Port%d_Min ", (int)i);
+                        fprintf(fp, "Port%d_Min%s", (int)i, separator);
                     }
                 }
             }
             fprintf(fp, "\n");
+
             // Write time and channel data
             for (i = 0; i < multiBufferSizes.maxBufferSize; i++)
             {
-                fprintf(fp, "%3.3e ", i * unit->timeInterval);
+                fprintf(fp, "%3.3e%s", i * unit->timeInterval, separator);
 
                 for (int j = 0; j < unit->channelCount; j++)
                 {
                     if (unit->channelSettings[j].enabled)
                     {
                         fprintf(fp,
-                            "%+5d %+3.3e ",
-                            maxBuffers[capture][j][i],
-                            //(double)adc_to_mv((maxBuffers)[capture][j][i], unit->channelSettings[PICO_CHANNEL_A + j].range, unit->maxADCValue)
-                            adc_to_scaled_value((maxBuffers)[capture][j][i], enabledChannelsScaling[PICO_CHANNEL_A + j], unit->maxADCValue)
+                            "%+5d%s%+3.3e%s",
+                            maxBuffers[capture][j][i], separator,
+                            adc_to_scaled_value((maxBuffers)[capture][j][i], enabledChannelsScaling[PICO_CHANNEL_A + j], unit->maxADCValue), separator
                         );
 
                         if (multiBufferSizes.minBufferSize != 0)
                         {
                             fprintf(fp,
-                                "%+5d %+3.3e ",
-                                minBuffers[capture][j][i],
-                                //(double)adc_to_mv((minBuffers)[capture][j][i], unit->channelSettings[PICO_CHANNEL_A + j].range, unit->maxADCValue)
-                                adc_to_scaled_value((minBuffers)[capture][j][i], enabledChannelsScaling[PICO_CHANNEL_A + j], unit->maxADCValue)
+                                "%+5d%s%+3.3e%s",
+                                minBuffers[capture][j][i], separator,
+                                adc_to_scaled_value((minBuffers)[capture][j][i], enabledChannelsScaling[PICO_CHANNEL_A + j], unit->maxADCValue), separator
                             );
                         }
                     }
@@ -325,10 +330,10 @@ void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
                 {
                     if (unit->digitalChannelSettings[j].enabled)
                     {
-                        fprintf(fp, "0x%02X ", (0x00FF & maxBuffers[capture][unit->channelCount + j][i]));
+                        fprintf(fp, "0x%02X%s", (0x00FF & maxBuffers[capture][unit->channelCount + j][i]), separator);
                         if (multiBufferSizes.minBufferSize != 0)
                         {
-                            fprintf(fp, "0x%02X ", (0x00FF & minBuffers[capture][unit->channelCount + j][i]));
+                            fprintf(fp, "0x%02X%s", (0x00FF & minBuffers[capture][unit->channelCount + j][i]), separator);
                         }
                     }
                 }
