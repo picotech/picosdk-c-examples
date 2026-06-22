@@ -79,6 +79,17 @@ Note other Pico header files maybe required (`PicoDeviceEnums`, `PicoDeviceStruc
 * See the `psXXXX README.md` in the example folder for more information and setting up the template example in `./XXXXXTemplate/`.  
 (psospa template example- `./psospa/psospaTemplate/`)
 
+## Notes on Examples
+
+### Data text files
+
+For newer examples like; `psospaBlock`, `psospaRapidBlock`, `psospaStreaming`  
+Data text files are written to csv file for format, these can be changed in-
+[PicoFileFunctions.c](https://github.com/picotech/picosdk-c-examples/blob/master/shared/PicoFileFunctions.c)  
+By changing the #define values-  
+`#define TEXT_FILE_EXTENSION ".csv"`  
+`#define SEPARATOR ","`  
+
 ## Obtaining support
 
 Please visit our [Support page](https://www.picotech.com/tech-support) to contact us directly or visit our [Test and Measurement Forum](https://www.picotech.com/support/forum19.html) to post questions.
