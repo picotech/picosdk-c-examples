@@ -394,31 +394,6 @@ void streamDataHandler(GENERICUNIT* unit,
 			10,						// Number of samples to write
 			printTriggerSample,		// passes Triggersample regardless of which buffer triggered,(0 if no trigger)
 			FileOverflow);
-		//
-		//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"
-		if ((unit->timeInterval) < 0.9e-06)  // Only write to file if sample interval is < 0.9us (1.1MS/s) for demo purposes
-		{
-			if (streamingDataTriggerInfoArray && FileOverflow) // Check for dereferencing null pointers
-			{
-				//Create file name string
-				char buf[58 + (3 * sizeof(int))];
-				size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-				snprintf(buf, buf_size, "%s%d_SubSet", startOfFileName, counter);
-				printf("\nWriting capture %ld (Buffer Set %lld) of channels to a file.\n", counter, capture);
-				struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
-				WriteArrayToFilesGeneric(
-					unit,
-					minBuffers,
-					maxBuffers,
-					multiBufferSizes,
-					enabledChannelsScaling,
-					buf,
-					streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
-					(int16_t*)(FileOverflow),
-					&captures_range);
-			}
-		}
-		//
 	}
 
 	printf("Stopping Streaming... ");
