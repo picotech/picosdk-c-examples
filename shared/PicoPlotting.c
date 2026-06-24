@@ -24,6 +24,12 @@ int PlotDataToImage(double* xData, double* yData, size_t dataLength, const char*
     settings->height = 600;
     settings->autoBoundaries = true;
     settings->autoPadding = true;
+    settings->xAxisAuto = false;
+    settings->xAxisBottom = true;
+    settings->xAxisTop = false;
+    settings->yAxisAuto = false;
+    settings->yAxisLeft = true;
+    settings->yAxisRight = false;
     
     // Convert generic title
     settings->title = L"PicoScope Data";
@@ -113,6 +119,12 @@ int PlotMultiDataToImage(double* xData, double** yDataArray, const int* channelI
     settings->height = 1080; // 600;
     settings->autoBoundaries = true;
     settings->autoPadding = true;
+    settings->xAxisAuto = false;
+    settings->xAxisBottom = true;
+    settings->xAxisTop = false;
+    settings->yAxisAuto = false;
+    settings->yAxisLeft = true;
+    settings->yAxisRight = false;
     
     settings->title = L"PicoScope Data";
     settings->titleLength = wcslen(settings->title);
