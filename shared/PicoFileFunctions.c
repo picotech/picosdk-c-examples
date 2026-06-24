@@ -14,6 +14,7 @@
 #include "./PicoFileFunctions.h"
 #include "./PicoScaling.h"
 #include "./PicoBuffers.h"
+#include "./PicoPlotting.h"
 
 /* Headers for Windows */
 #ifdef _WIN32
@@ -570,3 +571,170 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
             } 
         }
     }
+
+    /****************************************************************************
+* WriteArrayToImageGeneric
+*
+* Writes scope data to a file (one file per waveform)
+* Writes header info- waveform number, ttrigger sample, Over range flags
+* Write sample time vaules and data as ADC counts and voltage
+* Inputs:
+* - pointer to double - "scaled" values of 3D arrays ADC counts (Max and Min values if used)
+* - Channel scaling info "enabledChannelsScaling",
+* - File name,
+* - Triggersample number,
+* - Over range flags - "overflow"
+* - CAPTURES_RANGE* - pointer to structure defining the range of captures to write, (from, to)
+* can be set to NULL for full range
+*
+* Outputs:
+* Writes image files to disk of current path
+****************************************************************************/
+
+void WriteArrayToImageGeneric(struct tGenericUnit* unit,
+    int16_t*** minBuffers,
+    int16_t*** maxBuffers,
+    struct tmultiBufferSizes multiBufferSizes,
+    struct tPicoProbeScaling* enabledChannelsScaling,
+    char startOfFileName[],
+    uint64_t Triggersample,
+    int16_t* overflow,
+    uint32_t plotChannelMask,
+    struct tcaptures_range* captures_rangeIp)
+{
+    FILE* fp = NULL;
+    if (startOfFileName == NULL)
+        startOfFileName = "Pico_BufferCaptureN_";
+
+    uint64_t i;
+    uint64_t capture;
+    struct tcaptures_range captures_range;
+
+    if (captures_rangeIp == NULL) //Set default full range if NULL
+    {
+        captures_range.from = 0;
+        captures_range.to = multiBufferSizes.numberOfBuffers - 1;
+    }
+    else
+    {
+        captures_range = *captures_rangeIp; // Use the provided range
+    }
+
+    int numEnabledChannels = 0;
+    for (i = 0; i < unit->channelCount; i++) {
+        if (unit->channelSettings[i].enabled &&
+            (plotChannelMask == 0 || (plotChannelMask & (1u << i)))) {
+            numEnabledChannels++;
+        }
+    }
+
+    char buf[58 + (3 * sizeof(int))] = { '\0' }; // null terminate the string
+    size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+
+    for (capture = captures_range.from; capture <= captures_range.to; capture++)
+    {
+        //Goto next file
+        snprintf(buf, buf_size, "%s%d.png", startOfFileName, (int)capture);
+
+        //if (numEnabledChannels > 0) {
+            double** plotDataArray = (double**)malloc(numEnabledChannels * sizeof(double*));
+            int* channelIndices   = (int*)malloc(numEnabledChannels * sizeof(int));
+            if (plotDataArray && channelIndices) {
+                int activeIndex = 0;
+                for (i = 0; i < unit->channelCount; i++) {
+                    if (unit->channelSettings[i].enabled &&
+                        (plotChannelMask == 0 || (plotChannelMask & (1u << i)))) {
+                        channelIndices[activeIndex] = (int)i;
+                        plotDataArray[activeIndex] = (double*)malloc(multiBufferSizes.maxBufferSize * sizeof(double));
+                        if (plotDataArray[activeIndex]) {
+                            for (uint64_t s = 0; s < multiBufferSizes.maxBufferSize; s++) {
+                                plotDataArray[activeIndex][s] =
+                                    adc_to_scaled_value((maxBuffers)[0][i][s], enabledChannelsScaling[PICO_CHANNEL_A + i], unit->maxADCValue);
+                            }
+                        }
+                        activeIndex++;
+                    }
+                }
+
+                size_t numSamples = multiBufferSizes.maxBufferSize;
+
+                // Choose SI prefix for y-axis based on max absolute value across all series
+                double maxAbsY = 0.0;
+                for (int j = 0; j < numEnabledChannels; j++) {
+                    if (plotDataArray[j]) {
+                        for (size_t s = 0; s < numSamples; s++) {
+                            double v = plotDataArray[j][s];
+                            if (v < 0.0) v = -v;
+                            if (v > maxAbsY) maxAbsY = v;
+                        }
+                    }
+                }
+
+                double yScale;
+                const char *yLabel;
+                if (maxAbsY > 0.0 && maxAbsY < 1e-9) {
+                    yScale = 1e12; yLabel = "p";
+                } else if (maxAbsY > 0.0 && maxAbsY < 1e-6) {
+                    yScale = 1e9;  yLabel = "n";
+                } else if (maxAbsY > 0.0 && maxAbsY < 1e-3) {
+                    yScale = 1e6;  yLabel = "u";
+                } else if (maxAbsY > 0.0 && maxAbsY < 1.0) {
+                    yScale = 1e3;  yLabel = "m";
+                } else {
+                    yScale = 1.0;  yLabel = "";
+                }
+
+                if (yScale != 1.0) {
+                    for (int j = 0; j < numEnabledChannels; j++) {
+                        if (plotDataArray[j]) {
+                            for (size_t s = 0; s < numSamples; s++) {
+                                plotDataArray[j][s] *= yScale;
+                            }
+                        }
+                    }
+                }
+
+                // Choose SI time unit based on total capture duration
+                double maxTime = (numSamples > 0 ? numSamples - 1 : 0) * unit->timeInterval;
+                double timeScale;
+                const char *xLabel;
+                if (maxTime < 1e-9) {
+                    timeScale = 1e12; xLabel = "Time (ps)";
+                } else if (maxTime < 1e-6) {
+                    timeScale = 1e9;  xLabel = "Time (ns)";
+                } else if (maxTime < 1e-3) {
+                    timeScale = 1e6;  xLabel = "Time (us)";
+                } else if (maxTime < 1.0) {
+                    timeScale = 1e3;  xLabel = "Time (ms)";
+                } else {
+                    timeScale = 1.0;  xLabel = "Time (s)";
+                }
+
+                double *xTimeData = (double *)malloc(numSamples * sizeof(double));
+                if (xTimeData) {
+                    for (size_t s = 0; s < numSamples; s++) {
+                        xTimeData[s] = ((double)s - (double)Triggersample) * unit->timeInterval * timeScale;
+                    }
+                    PlotMultiDataToImage(xTimeData, plotDataArray, channelIndices, numEnabledChannels, numSamples, xLabel, yLabel, buf);
+                    free(xTimeData);
+                } else {
+                    PlotMultiYDataToImage(plotDataArray, numEnabledChannels, numSamples, buf);
+                }
+
+                printf("Saved multi-channel plot to %s\n", buf);
+
+                for (int j = 0; j < numEnabledChannels; j++) {
+                    free(plotDataArray[j]);
+                }
+            }
+            free(plotDataArray);
+            free(channelIndices);
+        //}
+        
+    }
+
+    
+
+
+
+}

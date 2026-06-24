@@ -51,6 +51,19 @@ typedef struct tcaptures_range
 }CAPTURES_RANGE;
 
 // Function prototypes
+// plotChannelMask selects which channels to plot: bit N = channel N (0=A, 1=B, ...).
+// Pass 0 to plot all enabled channels.
+void WriteArrayToImageGeneric(struct tGenericUnit* unit,
+	int16_t*** minBuffers,
+	int16_t*** maxBuffers,
+	struct tmultiBufferSizes multiBufferSizes,
+	struct tPicoProbeScaling* enabledChannelsScaling,
+	char startOfFileName[],
+	uint64_t Triggersample,
+	int16_t* overflow,
+	uint32_t plotChannelMask,
+	struct tcaptures_range* captures_range);
+
 void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
 	int16_t*** minBuffers,
 	int16_t*** maxBuffers,
