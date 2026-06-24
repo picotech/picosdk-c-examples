@@ -90,9 +90,9 @@ are written to csv file for format, these can be changed in the C file, by chang
 `#define TEXT_FILE_EXTENSION ".csv"`  
 `#define SEPARATOR ","` 
 
-### Plotting selected channels with WriteArrayToImageGeneric
+### Plotting selected channels with WriteArrayToImage
 
-`WriteArrayToImageGeneric()` (defined in `shared/PicoFileFunctions.c`) writes captured scope data to a PNG image file using the [pbPlots](https://github.com/InductiveComputerScience/pbPlots) library. The `plotChannelMask` parameter controls which channels are included in the plot.
+`WriteArrayToImage()` (defined in `shared/PicoFileFunctions.c`) writes captured scope data to a PNG image file using the [pbPlots](https://github.com/InductiveComputerScience/pbPlots) library. The `plotChannelMask` parameter controls which channels are included in the plot.
 
 Each bit in the mask corresponds to a channel, where bit 0 = Channel A, bit 1 = Channel B, and so on. Pass `0` to plot all enabled channels (default behaviour).
 
@@ -101,19 +101,19 @@ Each bit in the mask corresponds to a channel, where bit 0 = Channel A, bit 1 = 
 
 ```c
 // Plot all enabled channels
-WriteArrayToImageGeneric(unit, minBuffers, maxBuffers, multiBufferSizes,
+WriteArrayToImage(unit, minBuffers, maxBuffers, multiBufferSizes,
     enabledChannelsScaling, filename, triggerSample, &overflow,
     0,      // plotChannelMask: 0 = all enabled channels
     NULL);
 
 // Plot Channel B only
-WriteArrayToImageGeneric(unit, minBuffers, maxBuffers, multiBufferSizes,
+WriteArrayToImage(unit, minBuffers, maxBuffers, multiBufferSizes,
     enabledChannelsScaling, filename, triggerSample, &overflow,
     1u << PS4000A_CHANNEL_B,
     NULL);
 
 // Plot Channels A and C only
-WriteArrayToImageGeneric(unit, minBuffers, maxBuffers, multiBufferSizes,
+WriteArrayToImage(unit, minBuffers, maxBuffers, multiBufferSizes,
     enabledChannelsScaling, filename, triggerSample, &overflow,
     (1u << PS4000A_CHANNEL_A) | (1u << PS4000A_CHANNEL_C),
     NULL);
