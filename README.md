@@ -79,16 +79,47 @@ Note other Pico header files maybe required (`PicoDeviceEnums`, `PicoDeviceStruc
 * See the `psXXXX README.md` in the example folder for more information and setting up the template example in `./XXXXXTemplate/`.  
 (psospa template example- `./psospa/psospaTemplate/`)
 
-## Notes on Examples
+## Working with Examples
 
-### Data text files
+Note the below features only apply for newer examples like; `psospaBlock`, `psospaRapidBlock`, `psospaStreaming`. But could be added to other example code.
 
-For newer examples like; `psospaBlock`, `psospaRapidBlock`, `psospaStreaming`  
-Data text files are written to csv file for format, these can be changed in-
-[PicoFileFunctions.c](https://github.com/picotech/picosdk-c-examples/blob/master/shared/PicoFileFunctions.c)  
-By changing the #define values-  
+### Data text files with WriteArrayToFilesGeneric and WriteMetaDataToFile
+
+Data written by `WriteArrayToFilesGeneric()` and `WriteMetaDataToFile()` (defined in `shared/PicoFileFunctions.c`) 
+are written to csv file for format, these can be changed in the C file, by changing the #define values-  
 `#define TEXT_FILE_EXTENSION ".csv"`  
-`#define SEPARATOR ","`  
+`#define SEPARATOR ","` 
+
+### Plotting selected channels with WriteArrayToImageGeneric
+
+`WriteArrayToImageGeneric()` (defined in `shared/PicoFileFunctions.c`) writes captured scope data to a PNG image file. The `plotChannelMask` parameter controls which channels are included in the plot.
+
+Each bit in the mask corresponds to a channel, where bit 0 = Channel A, bit 1 = Channel B, and so on. Pass `0` to plot all enabled channels (default behaviour).
+
+
+**Examples:**
+
+```c
+// Plot all enabled channels
+WriteArrayToImageGeneric(unit, minBuffers, maxBuffers, multiBufferSizes,
+    enabledChannelsScaling, filename, triggerSample, &overflow,
+    0,      // plotChannelMask: 0 = all enabled channels
+    NULL);
+
+// Plot Channel B only
+WriteArrayToImageGeneric(unit, minBuffers, maxBuffers, multiBufferSizes,
+    enabledChannelsScaling, filename, triggerSample, &overflow,
+    1u << PS4000A_CHANNEL_B,
+    NULL);
+
+// Plot Channels A and C only
+WriteArrayToImageGeneric(unit, minBuffers, maxBuffers, multiBufferSizes,
+    enabledChannelsScaling, filename, triggerSample, &overflow,
+    (1u << PS4000A_CHANNEL_A) | (1u << PS4000A_CHANNEL_C),
+    NULL);
+```
+
+Requesting a channel that is not enabled is silently ignored. The x-axis is scaled to the most readable SI time unit (ps, ns, us, ms, or s) based on the total capture duration, with the trigger sample positioned at time zero. The y-axis is similarly scaled using SI prefixes (p, n, u, m) based on the peak signal amplitude.
 
 ## Obtaining support
 
