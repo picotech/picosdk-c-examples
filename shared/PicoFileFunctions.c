@@ -602,6 +602,12 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
         uint32_t plotChannelMask,
         struct tcaptures_range* captures_rangeIp)
 {
+    /* Maximum number of data points passed to the plot renderer.
+     * Samples are decimated to this count when the capture is larger,
+     * since the output image is 1920 px wide and extra points add render
+     * time without adding visible detail. Adjust to match image width. */
+    const size_t PLOT_MAX_POINTS = 1920;
+
     FILE* fp = NULL;
     if (startOfFileName == NULL)
         startOfFileName = "Pico_BufferCaptureN_";
@@ -641,8 +647,11 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
             int* channelIndices   = (int*)malloc(numEnabledChannels * sizeof(int));
             if (plotDataArray && channelIndices) {
                 size_t numSamples = multiBufferSizes.maxBufferSize;
-                size_t stride = (numSamples > 1920) ? numSamples / 1920 : 1;
-                size_t numPlotSamples = (numSamples + stride - 1) / stride;
+
+                /* Decimate: take every Nth sample so the plot array is no
+                 * larger than PLOT_MAX_POINTS. stride=1 means no decimation. */
+                size_t stride = (numSamples > PLOT_MAX_POINTS) ? numSamples / PLOT_MAX_POINTS : 1;
+                size_t numPlotSamples = (numSamples + stride - 1) / stride; // ceiling division
 
                 int activeIndex = 0;
                 for (i = 0; i < unit->channelCount; i++) {
@@ -651,6 +660,7 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
                         channelIndices[activeIndex] = (int)i;
                         plotDataArray[activeIndex] = (double*)malloc(numPlotSamples * sizeof(double));
                         if (plotDataArray[activeIndex]) {
+                            /* Fill decimated array: index p maps to raw sample p*stride */
                             for (size_t p = 0; p < numPlotSamples; p++) {
                                 size_t s = p * stride;
                                 plotDataArray[activeIndex][p] =
@@ -697,7 +707,8 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
                     }
                 }
 
-                // Choose SI time unit based on total capture duration
+                /* Choose SI time unit based on full capture duration (use numSamples,
+                 * not numPlotSamples, so the axis label reflects the real time span) */
                 double maxTime = (numSamples > 0 ? numSamples - 1 : 0) * unit->timeInterval;
                 double timeScale;
                 const char *xLabel;
