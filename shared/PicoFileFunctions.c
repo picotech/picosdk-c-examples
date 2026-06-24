@@ -573,7 +573,7 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
     }
 
     /****************************************************************************
-* WriteArrayToImageGeneric
+* WriteArrayToImage
 *
 * Writes scope data to a file (one file per waveform)
 * Writes header info- waveform number, ttrigger sample, Over range flags
@@ -591,16 +591,16 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
 * Writes image files to disk of current path
 ****************************************************************************/
 
-void WriteArrayToImageGeneric(struct tGenericUnit* unit,
-    int16_t*** minBuffers,
-    int16_t*** maxBuffers,
-    struct tmultiBufferSizes multiBufferSizes,
-    struct tPicoProbeScaling* enabledChannelsScaling,
-    char startOfFileName[],
-    uint64_t Triggersample,
-    int16_t* overflow,
-    uint32_t plotChannelMask,
-    struct tcaptures_range* captures_rangeIp)
+    void WriteArrayToImage(struct tGenericUnit* unit,
+        int16_t*** minBuffers,
+        int16_t*** maxBuffers,
+        struct tmultiBufferSizes multiBufferSizes,
+        struct tPicoProbeScaling* enabledChannelsScaling,
+        char startOfFileName[],
+        uint64_t Triggersample,
+        int16_t* overflow,
+        uint32_t plotChannelMask,
+        struct tcaptures_range* captures_rangeIp)
 {
     FILE* fp = NULL;
     if (startOfFileName == NULL)
@@ -640,15 +640,20 @@ void WriteArrayToImageGeneric(struct tGenericUnit* unit,
             double** plotDataArray = (double**)malloc(numEnabledChannels * sizeof(double*));
             int* channelIndices   = (int*)malloc(numEnabledChannels * sizeof(int));
             if (plotDataArray && channelIndices) {
+                size_t numSamples = multiBufferSizes.maxBufferSize;
+                size_t stride = (numSamples > 1920) ? numSamples / 1920 : 1;
+                size_t numPlotSamples = (numSamples + stride - 1) / stride;
+
                 int activeIndex = 0;
                 for (i = 0; i < unit->channelCount; i++) {
                     if (unit->channelSettings[i].enabled &&
                         (plotChannelMask == 0 || (plotChannelMask & (1u << i)))) {
                         channelIndices[activeIndex] = (int)i;
-                        plotDataArray[activeIndex] = (double*)malloc(multiBufferSizes.maxBufferSize * sizeof(double));
+                        plotDataArray[activeIndex] = (double*)malloc(numPlotSamples * sizeof(double));
                         if (plotDataArray[activeIndex]) {
-                            for (uint64_t s = 0; s < multiBufferSizes.maxBufferSize; s++) {
-                                plotDataArray[activeIndex][s] =
+                            for (size_t p = 0; p < numPlotSamples; p++) {
+                                size_t s = p * stride;
+                                plotDataArray[activeIndex][p] =
                                     adc_to_scaled_value((maxBuffers)[0][i][s], enabledChannelsScaling[PICO_CHANNEL_A + i], unit->maxADCValue);
                             }
                         }
@@ -656,13 +661,11 @@ void WriteArrayToImageGeneric(struct tGenericUnit* unit,
                     }
                 }
 
-                size_t numSamples = multiBufferSizes.maxBufferSize;
-
                 // Choose SI prefix for y-axis based on max absolute value across all series
                 double maxAbsY = 0.0;
                 for (int j = 0; j < numEnabledChannels; j++) {
                     if (plotDataArray[j]) {
-                        for (size_t s = 0; s < numSamples; s++) {
+                        for (size_t s = 0; s < numPlotSamples; s++) {
                             double v = plotDataArray[j][s];
                             if (v < 0.0) v = -v;
                             if (v > maxAbsY) maxAbsY = v;
@@ -687,7 +690,7 @@ void WriteArrayToImageGeneric(struct tGenericUnit* unit,
                 if (yScale != 1.0) {
                     for (int j = 0; j < numEnabledChannels; j++) {
                         if (plotDataArray[j]) {
-                            for (size_t s = 0; s < numSamples; s++) {
+                            for (size_t s = 0; s < numPlotSamples; s++) {
                                 plotDataArray[j][s] *= yScale;
                             }
                         }
@@ -710,15 +713,16 @@ void WriteArrayToImageGeneric(struct tGenericUnit* unit,
                     timeScale = 1.0;  xLabel = "Time (s)";
                 }
 
-                double *xTimeData = (double *)malloc(numSamples * sizeof(double));
+                double *xTimeData = (double *)malloc(numPlotSamples * sizeof(double));
                 if (xTimeData) {
-                    for (size_t s = 0; s < numSamples; s++) {
-                        xTimeData[s] = ((double)s - (double)Triggersample) * unit->timeInterval * timeScale;
+                    for (size_t p = 0; p < numPlotSamples; p++) {
+                        size_t s = p * stride;
+                        xTimeData[p] = ((double)s - (double)Triggersample) * unit->timeInterval * timeScale;
                     }
-                    PlotMultiDataToImage(xTimeData, plotDataArray, channelIndices, numEnabledChannels, numSamples, xLabel, yLabel, buf);
+                    PlotMultiDataToImage(xTimeData, plotDataArray, channelIndices, numEnabledChannels, numPlotSamples, xLabel, yLabel, buf);
                     free(xTimeData);
                 } else {
-                    PlotMultiYDataToImage(plotDataArray, numEnabledChannels, numSamples, buf);
+                    PlotMultiYDataToImage(plotDataArray, numEnabledChannels, numPlotSamples, buf);
                 }
 
                 printf("Saved multi-channel plot to %s\n", buf);
