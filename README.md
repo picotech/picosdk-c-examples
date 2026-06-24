@@ -92,7 +92,7 @@ are written to csv file for format, these can be changed in the C file, by chang
 
 ### Plotting selected channels with WriteArrayToImageGeneric
 
-`WriteArrayToImageGeneric()` (defined in `shared/PicoFileFunctions.c`) writes captured scope data to a PNG image file. The `plotChannelMask` parameter controls which channels are included in the plot.
+`WriteArrayToImageGeneric()` (defined in `shared/PicoFileFunctions.c`) writes captured scope data to a PNG image file using the [pbPlots](https://github.com/InductiveComputerScience/pbPlots) library. The `plotChannelMask` parameter controls which channels are included in the plot.
 
 Each bit in the mask corresponds to a channel, where bit 0 = Channel A, bit 1 = Channel B, and so on. Pass `0` to plot all enabled channels (default behaviour).
 
@@ -128,6 +128,14 @@ Please visit our [Support page](https://www.picotech.com/tech-support) to contac
 ## Contributing
 
 Contributions are welcome. Please refer to our [guidelines for contributing](.github/CONTRIBUTING.md) for further information.
+
+## Third-party libraries
+
+### pbPlots
+
+PNG image plotting is provided by [pbPlots](https://github.com/InductiveComputerScience/pbPlots), a portable plotting library developed using [progsbase](https://repo.progsbase.com).
+
+pbPlots is distributed under the MIT License. Copyright © InductiveComputerScience. The source files `shared/pbPlots.c`, `shared/pbPlots.h`, `shared/supportLib.c`, and `shared/supportLib.h` are reproduced here under the terms of that licence.
 
 ## Copyright and licensing
 
