@@ -121,6 +121,21 @@ WriteArrayToImageGeneric(unit, minBuffers, maxBuffers, multiBufferSizes,
 
 Requesting a channel that is not enabled is silently ignored. The x-axis is scaled to the most readable SI time unit (ps, ns, us, ms, or s) based on the total capture duration, with the trigger sample positioned at time zero. The y-axis is similarly scaled using SI prefixes (p, n, u, m) based on the peak signal amplitude.
 
+**Decimation:** when the capture contains more samples than the image is wide, the function automatically decimates the data before plotting — taking every Nth sample so that the number of plotted points does not exceed `PLOT_MAX_POINTS` (default 1920, matching the output image width). This keeps render time proportional to the image size rather than the capture depth. The x-axis labels always reflect the full capture time span regardless of decimation.
+
+**Changing the image size and decimation limit:** the output image dimensions are set in `PlotMultiDataToImage()` in `shared/PicoPlotting.c`:
+
+```c
+settings->width  = 1920;
+settings->height = 1080;
+```
+
+If you change the image width here, update `PLOT_MAX_POINTS` to match. It is defined as a `const size_t` at the top of `WriteArrayToImage()` in `shared/PicoFileFunctions.c`:
+
+```c
+const size_t PLOT_MAX_POINTS = 1920;
+```
+
 ## Obtaining support
 
 Please visit our [Support page](https://www.picotech.com/tech-support) to contact us directly or visit our [Test and Measurement Forum](https://www.picotech.com/support/forum19.html) to post questions.
