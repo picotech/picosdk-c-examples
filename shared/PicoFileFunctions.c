@@ -736,8 +736,6 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
                     PlotMultiYDataToImage(plotDataArray, numEnabledChannels, numPlotSamples, buf);
                 }
 
-                printf("Saved multi-channel plot to %s\n", buf);
-
                 for (int j = 0; j < numEnabledChannels; j++) {
                     free(plotDataArray[j]);
                 }
