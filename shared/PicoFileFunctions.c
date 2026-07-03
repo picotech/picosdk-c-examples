@@ -664,7 +664,7 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
                             for (size_t p = 0; p < numPlotSamples; p++) {
                                 size_t s = p * stride;
                                 plotDataArray[activeIndex][p] =
-                                    adc_to_scaled_value((maxBuffers)[0][i][s], enabledChannelsScaling[PICO_CHANNEL_A + i], unit->maxADCValue);
+                                    adc_to_scaled_value((maxBuffers)[capture][i][s], enabledChannelsScaling[PICO_CHANNEL_A + i], unit->maxADCValue);
                             }
                         }
                         activeIndex++;
