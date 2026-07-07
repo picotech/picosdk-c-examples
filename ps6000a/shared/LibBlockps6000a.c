@@ -69,8 +69,8 @@ void blockDataHandler(GENERICUNIT* unit,
 						uint64_t nSamples,					// Used by SetDataBuffers()
 						PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
 						uint64_t downSampleRatio,			// Used by SetDataBuffers()
-						FILE_TYPE filetype
-						)
+                      	FILE_TYPE filetype,         // Used to determine file type
+                      	BOOL imagefile)             // Used to determine to create image file
 {
 	int16_t retry;
 	int16_t triggerEnabled = 0;
@@ -222,8 +222,6 @@ void blockDataHandler(GENERICUNIT* unit,
 				0,						// Triggersample
 				&overflow);
 
-
-
 			//Write one segment to a file as captured
 			printf("\nWriting Capture of enabled channels to file.\n");
 			if (filetype == FILE_TXT)
@@ -259,6 +257,21 @@ void blockDataHandler(GENERICUNIT* unit,
 					noOfPreTriggerSamples,
 					&overflow,
 					NULL);
+			}
+	        if(imagefile == TRUE)
+	        {
+	            printf("\nWriting Capture to image file.\n"); 
+	            WriteArrayToImage(
+	                unit,
+	                minBuffers,
+	                maxBuffers,
+	                multiBufferSizes,
+	                enabledChannelsScaling,
+	                BlockFile,
+	                noOfPreTriggerSamples,
+	                &overflow,
+	                0,      // plotChannelMask: 0 = all enabled channels
+	                NULL);
 			}
 		}
 	}

@@ -120,7 +120,8 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 								PICO_RATIO_MODE ratioMode,
 								uint64_t downSampleRatio,
 								uint64_t nSamples,
-								FILE_TYPE filetype);
+								FILE_TYPE filetype,
+								BOOL imagefile);
 
 // Unit setup and management functions
 void setDefaults(GENERICUNIT* unit);

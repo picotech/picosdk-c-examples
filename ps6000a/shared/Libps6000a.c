@@ -53,6 +53,34 @@ int16_t   		g_ready = FALSE;
 /***************************************************************************/
 
 /****************************************************************************
+ * Model Lookup Table and function to return model enum from string
+ ***************************************************************************/
+typedef struct { char* key; MODEL_TYPE val; } t_symstruct;
+t_symstruct lookuptable[] = {
+	{ "6403E",		MODEL_6403E },
+	{ "6404E",		MODEL_6404E },
+	{ "6424E",		MODEL_6424E },
+	{ "6804E",		MODEL_6804E },
+	{ "6824E",		MODEL_6824E },
+	{ "6405E",		MODEL_6405E },
+	{ "6425E",		MODEL_6425E },
+	{ "6406E",		MODEL_6406E },
+	{ "6426E",		MODEL_6426E },
+	{ "6428E-D",	MODEL_6428E_D }
+};
+
+#define NKEYS (sizeof(lookuptable)/sizeof(t_symstruct))
+MODEL_TYPE keyfromstring(char* key)
+{
+	int i;
+	for (i = 0; i < NKEYS; i++) {
+		if (strcmp(lookuptable[i].key, key) == 0)
+			return lookuptable[i].val;
+	}
+	return BADKEY;
+}
+
+/****************************************************************************
 * Callback Probe Interaction
 *
 * See ps6000aProbeInteractions (callback)
@@ -66,36 +94,13 @@ void PREF4 callBackProbeInteractions(int16_t handle,
 	userProbeInfo.status = status;
 	userProbeInfo.numberOfProbes = nProbes;
 
-	for (i = 0; i < nProbes; ++i)
-	{
-		userProbeInfo.userProbeInteractions[i].connected_ = probes[i].connected_;
-
-		userProbeInfo.userProbeInteractions[i].channel_ = probes[i].channel_;
-		userProbeInfo.userProbeInteractions[i].enabled_ = probes[i].enabled_;
-
-		userProbeInfo.userProbeInteractions[i].probeName_ = probes[i].probeName_;
-
-		userProbeInfo.userProbeInteractions[i].requiresPower_ = probes[i].requiresPower_;
-		userProbeInfo.userProbeInteractions[i].isPowered_ = probes[i].isPowered_;
-
-		userProbeInfo.userProbeInteractions[i].status_ = probes[i].status_;
-
-		userProbeInfo.userProbeInteractions[i].probeOff_ = probes[i].probeOff_;
-
-		userProbeInfo.userProbeInteractions[i].rangeFirst_ = probes[i].rangeFirst_;
-		userProbeInfo.userProbeInteractions[i].rangeLast_ = probes[i].rangeLast_;
-		userProbeInfo.userProbeInteractions[i].rangeCurrent_ = probes[i].rangeLast_;
-
-		userProbeInfo.userProbeInteractions[i].couplingFirst_ = probes[i].couplingFirst_;
-		userProbeInfo.userProbeInteractions[i].couplingLast_ = probes[i].couplingLast_;
-		userProbeInfo.userProbeInteractions[i].couplingCurrent_ = probes[i].couplingCurrent_;
-
-		userProbeInfo.userProbeInteractions[i].filterFlags_ = probes[i].filterFlags_;
-		userProbeInfo.userProbeInteractions[i].filterCurrent_ = probes[i].filterCurrent_;
-		userProbeInfo.userProbeInteractions[i].defaultFilter_ = probes[i].defaultFilter_;
-	}
-
-	g_probeStateChanged = 1;
+    // Store probe interactions in global struct for user access
+    // Copy probe interactions to global struct for user access, using channel as index
+    for (i = 0; i < nProbes; ++i)
+    {
+        userProbeInfo.userProbeInteractions[probes[i].channel_] = probes[i];
+    }
+    g_probeStateChanged = 1;
 
 }
 
@@ -346,8 +351,8 @@ void set_info(GENERICUNIT* unit)
 			if (i == PICO_VARIANT_INFO)
 			{
 				variant = atoi(line);
-				memcpy(&(unit->modelString), line, sizeof(unit->modelString) == 5 ? 5 : sizeof(unit->modelString));
-				//memcpy(&(unit->modelString), line, sizeof(unit->modelString));
+				memcpy(unit->modelString, line, sizeof(unit->modelString));
+				unit->modelString[sizeof(unit->modelString) - 1] = '\0'; // Ensure null termination
 
 				unit->channelCount = (int16_t)line[1];
 				unit->channelCount = unit->channelCount - 48; // Subtract ASCII 0 (48)
@@ -364,6 +369,54 @@ void set_info(GENERICUNIT* unit)
 			printf("%s: %s\n", description[i], line);
 		}
 		printf("\n");
+
+		switch (keyfromstring(unit->modelString))
+		{
+		case MODEL_6403E: /* 4Ch */
+			printf("Model is 6403E\n");
+			unit->model = MODEL_6403E;
+			break;
+		case MODEL_6404E: /* 4Ch */
+			printf("Model is 6404E\n");
+			unit->model = MODEL_6404E;
+			break;
+		case MODEL_6424E: /* 4Ch */
+			printf("Model is 6424E\n");
+			unit->model = MODEL_6424E;
+			break;
+		case MODEL_6824E: /* 8Ch */
+			printf("Model is 6824E\n");
+			unit->model = MODEL_6824E;
+			break;
+		case MODEL_6804E: /* 4Ch */
+			printf("Model is 6804E\n");
+			unit->model = MODEL_6804E;
+			break;
+		case MODEL_6405E: /* 4Ch,  Scope */
+			printf("Model is MODEL_6405E\n");
+			unit->model = MODEL_6405E;
+			break;
+		case MODEL_6425E: /* 4Ch,  MSO */
+			printf("Model is MODEL_6425E\n");
+			unit->model = MODEL_6425E;
+			break;
+		case MODEL_6406E: /* 4Ch,  Scope */
+			printf("Model is 6406E\n");
+			unit->model = MODEL_6406E;
+			break;
+		case MODEL_6426E: /* 4Ch,  MSO */
+			printf("Model is 6426E\n");
+			unit->model = MODEL_6426E;
+			break;
+		case MODEL_6428E_D: /* 4Ch,  Scope */
+			printf("Model is 6428E-D\n");
+			unit->model = MODEL_6428E_D;
+			break;
+
+		case BADKEY: /* failed lookup */
+			printf("Model not found or not referenced!, using defaults\n");
+			break;
+		}
 
 		// Set sig gen parameters
 		// If device has Arbitrary Waveform Generator, find the maximum AWG buffer size
@@ -1029,7 +1082,9 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 						PICO_RATIO_MODE ratioMode,
 						uint64_t downSampleRatio,
 						uint64_t nSamples,
-						FILE_TYPE filetype) // Set the number of raw samples
+                        FILE_TYPE filetype, // Set the number of raw samples
+                        BOOL imagefile
+                        ) 
 {
 	int32_t index = 0;
 	int16_t channel = 0;
@@ -1156,6 +1211,21 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 		NULL,	// No overflow flags
 		NULL);	// Set default full range if NULL
 
+		if (imagefile == TRUE)
+		{
+		printf("\nWriting Capture to image file.\n");
+		WriteArrayToImage(
+		  unit,
+		  minBuffersStopped,
+		  maxBuffersStopped,
+		  multiBufferSizes,
+		  enabledChannelsScaling,
+		  buf,
+		  0, // streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
+		  NULL, // No overflow flags
+		  0, // plotChannelMask: 0 = all enabled channels
+		  NULL); // Set default full range if NULL
+		}
 	// Release Buffer memory from API
 	clearDataBuffers(unit);
 
