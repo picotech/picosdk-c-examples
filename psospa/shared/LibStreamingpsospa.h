@@ -48,7 +48,6 @@ void streamDataHandler(GENERICUNIT* unit,
 	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
 	uint64_t downSampleRatio,			// Used by SetDataBuffers()
 	int16_t autostop,
-	FILE_TYPE filetype
-	);
-
+	FILE_TYPE filetype,
+	BOOL imagefile);
 #endif

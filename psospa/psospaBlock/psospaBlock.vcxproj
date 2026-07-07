@@ -11,9 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\shared\pbPlots.c" />
     <ClCompile Include="..\..\shared\PicoBuffers.c" />
     <ClCompile Include="..\..\shared\PicoFileFunctions.c" />
+    <ClCompile Include="..\..\shared\PicoPlotting.c" />
     <ClCompile Include="..\..\shared\PicoScaling.c" />
+    <ClCompile Include="..\..\shared\supportLib.c" />
     <ClCompile Include="..\shared\LibBlockpsospa.c" />
     <ClCompile Include="..\shared\Libpsospa.c" />
     <ClCompile Include="psospaBlock.c" />

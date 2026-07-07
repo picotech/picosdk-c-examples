@@ -122,7 +122,8 @@ static void mainMenu(GENERICUNIT *unit)
 											3,						// nCaptures	
 											PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
 											1,						// downSampleRatio - Used by Buffer
-											FILE_TXT);						// filetype to save
+											FILE_TXT,
+											TRUE);					// imagefile - create image file of data	
 				break;
 
 			case 'O':
@@ -147,7 +148,8 @@ static void mainMenu(GENERICUNIT *unit)
 											3,						// nCaptures	
 											PICO_RATIO_MODE_RAW,	// ratioMode - Used by Buffer
 											1,						// downSampleRatio - Used by Buffer
-											FILE_TXT);				// filetype to save
+											FILE_TXT,
+											TRUE);					// imagefile - create image file of data
 				break;
 
 			case 'J':
@@ -155,7 +157,8 @@ static void mainMenu(GENERICUNIT *unit)
 											PICO_RATIO_MODE_AGGREGATE,
 											16,
 											constBufferSize,
-											FILE_TXT);						// filetype to save
+											FILE_TXT,
+											TRUE);					// imagefile - create image file of data	
 				break;
 
 			case 'V':

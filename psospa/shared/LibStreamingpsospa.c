@@ -52,8 +52,11 @@ extern int16_t   g_ready;
 /****************************************************************************
 * streamDataHandler
 * - Used by all streaming data routines
+* - Uses multiple buffers (ping-pong) to capture and save data in streaming mode.
 * - acquires data (user sets trigger mode before calling), displays 10 items
 *   and saves all data to a file.
+* - If file type is set to FILE_BIN, a metadata file is also created with
+*   the capture settings and Channel settings.
 * Input :
 * - unit : the unit to use.
 * - noOfPreTriggerSamples : number of samples to capture before trigger.
@@ -64,6 +67,7 @@ extern int16_t   g_ready;
 * - ratioMode : Set the downsampling mode - Used by SetDataBuffers()
 * - downSampleRatio : Set the downsampling ratio - Used by SetDataBuffers()
 * - autostop : 1 to stop when trigger condition is met, 0 to continue until user stops.
+* - filetype : Set the file type to save data, FILE_BIN or FILE_CSV or FILE_NONE to not save.
 ****************************************************************************/ 
 void streamDataHandler(GENERICUNIT* unit,
 	uint64_t noOfPreTriggerSamples,		// Used by RunStreaming()
@@ -74,7 +78,8 @@ void streamDataHandler(GENERICUNIT* unit,
 	PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
 	uint64_t downSampleRatio,			// Used by SetDataBuffers()
 	int16_t autostop,
-	FILE_TYPE filetype)
+    FILE_TYPE filetype,
+    BOOL imagefile)
 {
 	uint16_t Triggered = 0;
 	uint64_t triggeredAt = 0;
@@ -85,7 +90,7 @@ void streamDataHandler(GENERICUNIT* unit,
 	int16_t NoEnabledchannels = 0;
 	PICO_STATUS status = PICO_OK;
 	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);	// bitwise OR flags for first buffer that is set
-	int32_t counter = 0; // counter for number of waveform captures
+	uint64_t counter = 0; // counter for number of waveform captures
 	unit->CapturesComplete = 0; // clear number of captures done
 
 	//Set the number buffers needed (2 or greater) for this code.
@@ -95,7 +100,7 @@ void streamDataHandler(GENERICUNIT* unit,
 
 	//Buffers settings (Set DownSampling mode and ratio)
 	//Use scope acquisition settings for first data download
-	struct tbuffer_settings bufferSettings = {0};
+	struct tbuffer_settings bufferSettings = { 0 };
 	bufferSettings.startIndex = 0;
 	bufferSettings.downSampleRatioMode = ratioMode;
 	bufferSettings.downSampleRatio = downSampleRatio;
@@ -106,7 +111,7 @@ void streamDataHandler(GENERICUNIT* unit,
 	int16_t*** minBuffers;
 	int16_t*** maxBuffers;
 	if(pico_create_multibuffers(unit, bufferSettings, nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes))
-	printf("\nCreated Buffers");
+		printf("\nCreated Buffers");
 
 	printf("\nNumber of PreTriggerSamples: %lld", noOfPreTriggerSamples);
 
@@ -228,6 +233,10 @@ void streamDataHandler(GENERICUNIT* unit,
 		capture = 0;
 		uint64_t printTriggerSample = 0;
 
+		// Filename - we will append the buffer number as each buffer set is written to file in the streaming loop below
+		char buf[58 + 20] = { '\0' }; // 20 chars is enough for the largest uint64_t buffer-set number
+		size_t buf_size = sizeof(buf) / sizeof(buf[0]);
+
 		while(!_kbhit()) // loop for each buffer set created, exit if a key is pressed
 		{	
 			if (SetDataBufferFlag)
@@ -267,7 +276,7 @@ void streamDataHandler(GENERICUNIT* unit,
 				(uint64_t)numEnableCh,			// Number of elements in dataStreamInfo
 				&streamingDataTriggerInfoTemp); //pointer to streamingDataTriggerInfoTemp
 
-			///Copy returned Array and sturture to Arrays for each segement
+			//Copy returned Array and sturture to Arrays for each segement
 			int16_t tempNumofChs = 0;
 			for (channel = 0; channel < unit->channelCount; channel++)
 			{
@@ -311,20 +320,34 @@ void streamDataHandler(GENERICUNIT* unit,
 			// If buffers full move to next bufferSet, or continue if autoStop triggered
 			if ((status == PICO_WAITING_FOR_DATA_BUFFERS) | (streamingDataTriggerInfoTemp.autoStop_ == 1))
 			{
-				//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"			
-				if (filetype != FILE_NONE)
+				//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"
+				if (FileOverflow) // Check for dereferencing null pointer
 				{
-					// Create file name string
-					char buf[58 + (3 * sizeof(int))];
-					size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-					snprintf(buf, buf_size, "%s%d_SubSet", startOfFileName, counter);
 					printf(".");
+					// Setup filename for streaming capture -
+					snprintf(buf, buf_size, "%s%llu_SubSet", startOfFileName, counter);			
 					struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
 
-					if (streamingDataTriggerInfoArray && FileOverflow) // Check for dereferencing null pointers
+					if (((unit->timeInterval) > 0.9e-06) && (imagefile == TRUE))
+					{
+						printf("\nSaved plot to %s", buf);
+						WriteArrayToImage(
+							unit,
+							minBuffers,
+							maxBuffers,
+							multiBufferSizes,
+							enabledChannelsScaling,
+							buf,
+							streamingDataTriggerInfoTemp.triggerAt_,
+							(int16_t*)(FileOverflow),
+							0,      // plotChannelMask: 0 = all enabled channels
+							&captures_range);
+					}
+
+					if (filetype != FILE_NONE)
 					{
 						// Only write to binary file if sample interval is < 0.9us (1.1MS/s) and is requested
-						if ( ( (unit->timeInterval) < 0.9e-06) && (filetype == FILE_BIN) )
+						if (((unit->timeInterval) < 0.9e-06) && (filetype == FILE_BIN))
 						{
 							WriteArrayToFilesBinary(
 								unit,
@@ -339,7 +362,7 @@ void streamDataHandler(GENERICUNIT* unit,
 						}
 						else // For slower sampling rates write to text file (csv), if file writing is requested
 						{
-							printf("\nWriting capture %ld (Buffer Set %lld) of channels to a file.\n", counter, capture);
+							printf("\nWriting capture %llu (Buffer Set %llu) of channels to a file.\n", counter, capture);
 							WriteArrayToFilesGeneric(
 								unit,
 								minBuffers,

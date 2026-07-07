@@ -48,8 +48,9 @@ void blockDataHandler(GENERICUNIT* unit,
 							uint64_t nSamples,					// Used by SetDataBuffers()
 							PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
 							uint64_t downSampleRatio,			// Used by SetDataBuffers()
-							FILE_TYPE filetype
-							);
+							FILE_TYPE filetype,
+							BOOL imagefile
+);
 
 void blockOverlappedDataHandler(GENERICUNIT* unit,
 	uint64_t noOfPreTriggerSamples,		// Used by RunBlock()

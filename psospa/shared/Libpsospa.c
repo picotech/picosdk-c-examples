@@ -104,36 +104,13 @@ void PREF4 callBackProbeInteractions(int16_t handle,
 	userProbeInfo.status = status;
 	userProbeInfo.numberOfProbes = nProbes;
 
-	for (i = 0; i < nProbes; ++i)
-	{
-		userProbeInfo.userProbeInteractions[i].connected_ = probes[i].connected_;
-
-		userProbeInfo.userProbeInteractions[i].channel_ = probes[i].channel_;
-		userProbeInfo.userProbeInteractions[i].enabled_ = probes[i].enabled_;
-
-		userProbeInfo.userProbeInteractions[i].probeName_ = probes[i].probeName_;
-
-		userProbeInfo.userProbeInteractions[i].requiresPower_ = probes[i].requiresPower_;
-		userProbeInfo.userProbeInteractions[i].isPowered_ = probes[i].isPowered_;
-
-		userProbeInfo.userProbeInteractions[i].status_ = probes[i].status_;
-
-		userProbeInfo.userProbeInteractions[i].probeOff_ = probes[i].probeOff_;
-
-		userProbeInfo.userProbeInteractions[i].rangeFirst_ = probes[i].rangeFirst_;
-		userProbeInfo.userProbeInteractions[i].rangeLast_ = probes[i].rangeLast_;
-		userProbeInfo.userProbeInteractions[i].rangeCurrent_ = probes[i].rangeLast_;
-
-		userProbeInfo.userProbeInteractions[i].couplingFirst_ = probes[i].couplingFirst_;
-		userProbeInfo.userProbeInteractions[i].couplingLast_ = probes[i].couplingLast_;
-		userProbeInfo.userProbeInteractions[i].couplingCurrent_ = probes[i].couplingCurrent_;
-
-		userProbeInfo.userProbeInteractions[i].filterFlags_ = probes[i].filterFlags_;
-		userProbeInfo.userProbeInteractions[i].filterCurrent_ = probes[i].filterCurrent_;
-		userProbeInfo.userProbeInteractions[i].defaultFilter_ = probes[i].defaultFilter_;
-	}
-
-	g_probeStateChanged = 1;
+    // Store probe interactions in global struct for user access
+    // Copy probe interactions to global struct for user access, using channel as index
+    for (i = 0; i < nProbes; ++i)
+    {
+        userProbeInfo.userProbeInteractions[probes[i].channel_] = probes[i];
+    }
+    g_probeStateChanged = 1;
 
 }
 
@@ -360,7 +337,7 @@ void set_info(GENERICUNIT* unit)
 	unit->firstRange = PICO_X1_PROBE_10MV;
 	unit->lastRange = PICO_X1_PROBE_20V;
 	unit->channelCount = DUAL_SCOPE;
-	unit->digitalPortCount = 0;
+	unit->digitalPortCount = 2;
 
 	if (unit->handle)
 	{
@@ -1236,7 +1213,9 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 						PICO_RATIO_MODE ratioMode,
 						uint64_t downSampleRatio,
 						uint64_t nSamples,
-						FILE_TYPE filetype) // Set the number of raw samples
+                        FILE_TYPE filetype, // Set the number of raw samples
+                        BOOL imagefile
+                        ) 
 {
 	int32_t index = 0;
 	int16_t channel = 0;
@@ -1367,6 +1346,21 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 		NULL,	// No overflow flags
 		NULL);	// Set default full range if NULL
 
+		if (imagefile == TRUE)
+		{
+		printf("\nWriting Capture to image file.\n");
+		WriteArrayToImage(
+		  unit,
+		  minBuffersStopped,
+		  maxBuffersStopped,
+		  multiBufferSizes,
+		  enabledChannelsScaling,
+		  buf,
+		  0, // streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
+		  NULL, // No overflow flags
+		  0, // plotChannelMask: 0 = all enabled channels
+		  NULL); // Set default full range if NULL
+		}
 	// Release Buffer memory from API
 	clearDataBuffers(unit);
 
