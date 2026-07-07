@@ -132,8 +132,12 @@ void PREF4 CallBackProbeInteractions(int16_t handle, PICO_STATUS status,
                                      uint32_t nProbes);
 
 // Request more data function
-void GetMoreDataHandler(GENERICUNIT *unit, PICO_RATIO_MODE ratioMode,
-                        uint64_t downSampleRatio, uint64_t nSamples, FILE_TYPE filetype);
+void GetMoreDataHandler(GENERICUNIT *unit,
+						PICO_RATIO_MODE ratioMode,
+                        uint64_t downSampleRatio,
+						uint64_t nSamples,
+						FILE_TYPE filetype,
+						BOOL imagefile);
 
 // Unit setup and management functions
 void setDefaults(GENERICUNIT *unit);

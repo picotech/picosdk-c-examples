@@ -19,9 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\shared\pbPlots.c" />
     <ClCompile Include="..\..\shared\PicoBuffers.c" />
     <ClCompile Include="..\..\shared\PicoFileFunctions.c" />
+    <ClCompile Include="..\..\shared\PicoPlotting.c" />
     <ClCompile Include="..\..\shared\PicoScaling.c" />
+    <ClCompile Include="..\..\shared\supportLib.c" />
     <ClCompile Include="..\shared\Libps4000a.c" />
     <ClCompile Include="..\shared\LibStreamingps4000a.c" />
     <ClCompile Include="ps4000aStreaming.c" />

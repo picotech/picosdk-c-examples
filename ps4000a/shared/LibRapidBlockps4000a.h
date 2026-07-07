@@ -45,8 +45,10 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 									uint64_t nCaptures,
 									PICO_RATIO_MODE ratioMode,			// Used by SetDataBuffers()
 									uint64_t downSampleRatio,			// Used by SetDataBuffers()
-									FILE_TYPE filetype
+									FILE_TYPE filetype,
+									BOOL imagefile
 									);
+
 
 void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 									uint64_t noOfPreTriggerSamples,		// Used by RunBlock()

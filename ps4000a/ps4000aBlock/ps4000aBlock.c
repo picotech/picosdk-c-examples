@@ -131,7 +131,8 @@ static void mainMenu(GENERICUNIT *unit)
 									constBufferSize,		// nSamples - PC buffer size
 									PS4000A_RATIO_MODE_NONE,	// ratioMode - Used by Buffer
 									1,						// downSampleRatio - Used by Buffer
-									FILE_TXT);						
+									FILE_TXT,
+									TRUE);					// imagefile - create image file of data				
 				break;
 
 			case 'O':
@@ -154,7 +155,8 @@ static void mainMenu(GENERICUNIT *unit)
 									constBufferSize,		// nSamples - PC buffer size
 									PS4000A_RATIO_MODE_NONE,	// ratioMode - Used by Buffer
 									1,						// downSampleRatio - Used by Buffer
-									FILE_TXT);
+									FILE_TXT,
+									TRUE);					// imagefile - create image file of data	
 				break;
 
 			case 'J':	
@@ -162,7 +164,8 @@ static void mainMenu(GENERICUNIT *unit)
 									PS4000A_RATIO_MODE_DECIMATE,	// ratioMode - Used by Buffer
 									16,						// downSampleRatio - Used by Buffer
 									constBufferSize,       // nSamples - PC buffer size
-									FILE_TXT);
+									FILE_TXT,
+									TRUE);					// imagefile - create image file of data
 				break;
 
 			case 'V':

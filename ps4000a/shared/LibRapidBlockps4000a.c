@@ -77,7 +77,10 @@ void rapidblockDataHandler(
     uint64_t nCaptures,
     PICO_RATIO_MODE ratioMode, // Used by SetDataBuffers()
     uint64_t downSampleRatio,   // Used by SetDataBuffers()
-    FILE_TYPE filetype) {
+    FILE_TYPE filetype,
+    BOOL imagefile
+)
+{
   PICO_STATUS status = 0;
   int16_t i;
 
@@ -258,6 +261,21 @@ void rapidblockDataHandler(
             enabledChannelsScaling, RapidBlockFile,
             noOfPreTriggerSamples, // Triggersample
             overflowArray, NULL);
+    }
+    if (imagefile == TRUE)
+    {
+        printf("\nWriting Capture to image file.\n");
+            WriteArrayToImage(
+            unit,
+            minBuffers,
+            maxBuffers,
+            multiBufferSizes,
+            enabledChannelsScaling,
+            RapidBlockFile,
+            noOfPreTriggerSamples,
+            overflowArray,
+            0,      // plotChannelMask: 0 = all enabled channels
+            NULL);
     }
     printf("\n");
   }

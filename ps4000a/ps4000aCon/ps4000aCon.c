@@ -688,13 +688,13 @@ void StreamDataHandler(UNIT * unit, uint32_t preTrigger)
 	int16_t retry = 0;
 	int16_t autostop = 0;
 	int32_t index = 0;
-	int32_t totalSamples = 0;
+	uint64_t totalSamples = 0;
 
 	uint32_t sampleInterval;
 	uint32_t postTrigger;
 	
 	uint32_t downsampleRatio;
-	uint32_t triggeredAt = 0;
+	uint64_t triggeredAt = 0;
 
 	int32_t i, j;
 	uint32_t sampleCount = 200000; /*  Make sure buffer size is large enough to copy data into on each iteration */
@@ -806,16 +806,16 @@ void StreamDataHandler(UNIT * unit, uint32_t preTrigger)
 		{
 			if (g_trig)
 			{
-				triggeredAt = totalSamples += g_trigAt;		// calculate where the trigger occurred in the total samples collected
+				triggeredAt = totalSamples + g_trigAt;		// calculate where the trigger occurred in the total samples collected
 			}
 
 			totalSamples += g_sampleCount;
 
-			printf("\nCollected %3i samples, index = %6u, Total: %d samples ", g_sampleCount, g_startIndex, totalSamples);
+			printf("\nCollected %3i samples, index = %6u, Total: %llu samples ", g_sampleCount, g_startIndex, totalSamples);
 
 			if (g_trig)
 			{
-				printf("Trig. at index %u", triggeredAt);	// show where trigger occurred
+				printf("Trig. at index %llu", triggeredAt);	// show where trigger occurred
 			}
 
 			for (i = g_startIndex; i < (int32_t)(g_startIndex + g_sampleCount); i++)

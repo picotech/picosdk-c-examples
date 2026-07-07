@@ -92,15 +92,20 @@ void userSetup(GENERICUNIT* unit)
 		BufferSizeFast,			// nSamples - Set the number of samples per capture - Used by SetDataBuffers()
 		PS4000A_RATIO_MODE_NONE,// ratioMode - Used by SetDataBuffers()
 		1,						// downSampleRatio - Used by SetDataBuffers()
-		1,						// autostop - 0: Off or 1: Stop after trigger event
-		FILE_BIN);				// Save data as Binary file	
-
+		0,						// autostop - 0: Off or 1: Stop after trigger event
+		FILE_BIN,				// Save data as Binary file	
+		TRUE); 					// create image file of data if sample rate slow enough (< 1MS/s).
 	// ps4000a API -
 	// NOTE: If downsampled data is requested in streaming mode, the driver will also pull raw data as well.
 
 	// Device stopped, Now get more data
 	// Pull Downsampled max. and min. data from the device
 	printf("\nTemplate Demo - Device stopped, Now get more data\n");
-	GetMoreDataHandler(unit, PS4000A_RATIO_MODE_AGGREGATE, 64, BufferSizeFast, FILE_TXT);
+	GetMoreDataHandler(unit,
+		PS4000A_RATIO_MODE_AGGREGATE,
+		64,
+		BufferSizeFast,
+		FILE_TXT,
+		TRUE); // imagefile - create image file of data
 	// You can ask for more samples (nSamples) if they are available
 }

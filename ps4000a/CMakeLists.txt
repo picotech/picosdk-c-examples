@@ -25,6 +25,9 @@ set(GLOBAL_SHARED_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/PicoBuffers.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/PicoFileFunctions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/PicoScaling.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/pbPlots.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/supportLib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/PicoPlotting.c
 )
 
 # Combine all shared sources

@@ -82,12 +82,13 @@ void streamDataHandler(GENERICUNIT *unit,
     PICO_RATIO_MODE ratioMode, // Used by SetDataBuffers()
     uint64_t downSampleRatio,  // Used by SetDataBuffers()
     int16_t autostop,
-    FILE_TYPE filetype)
+    FILE_TYPE filetype,
+    BOOL imagefile)
 {
   uint16_t Triggered = 0;
   uint64_t triggeredAt = 0;
   int32_t TriggeredBufNo = 0; // to store the buffer number where the trigger occured
-  int32_t totalSamples = 0;
+  uint64_t totalSamples = 0;
 
   int16_t channel = 0;
   uint64_t capture = 0;
@@ -233,10 +234,12 @@ void streamDataHandler(GENERICUNIT *unit,
 
 	// Setup filename for streaming capture -
     // we will append the buffer number as each buffer set is written to file in the streaming loop below
-    char buf[58 + (3 * sizeof(int))] = { '\0' }; // null terminate the string
+    char buf[58 + 20] = { '\0' }; // 20 chars is enough for the largest uint64_t buffer-set number
     size_t buf_size = sizeof(buf) / sizeof(buf[0]);
 
+    uint64_t processedBuffer = 0;
     totalSamples = 0;
+    BOOL processFlag = FALSE;
 	// Loop to wait for data and write to file.
     while (!_kbhit() && !g_autoStop)
     {
@@ -265,13 +268,13 @@ void streamDataHandler(GENERICUNIT *unit,
         {
             if (g_trig)
             {
-                triggeredAt = totalSamples += g_trigAt;		// calculate where the trigger occurred in the total samples collected
+                triggeredAt = totalSamples + g_trigAt;		// calculate where the trigger occurred in the total samples collected
             }
 
             totalSamples += g_sampleCount;
-            printf("\nCollected %3i samples, index = %6u, Total: %d samples ", g_sampleCount, g_startIndex, totalSamples);
-            printf("\t\t Buffer Set: %d", totalSamples / (int32_t)nSamples);
-
+            //printf("\nCollected %3i samples, index = %6u, Total: %llu samples ", g_sampleCount, g_startIndex, totalSamples);
+            //printf("\t\t Buffer Set: %llu", totalSamples / nSamples);
+            printf(".");
             if (g_trig)
             {
                 printf("Trig. at index %llu", triggeredAt);	// show where trigger occurred
@@ -280,26 +283,51 @@ void streamDataHandler(GENERICUNIT *unit,
 		// if buffer filled, process data, write to file etc
         if(g_sampleCount + g_startIndex == nSamples)
 		{
-			if (filetype != FILE_NONE)
+            if (processedBuffer < (totalSamples / nSamples))
             {
-                snprintf(buf, buf_size, "%s%d_ss", startOfFileName, (int)(totalSamples / (int32_t)nSamples));
-                // Only write to binary file if sample interval is < 0.9us (1.1MS/s)
-                if ( ((unit->timeInterval) < 0.9e-06) && (filetype == FILE_BIN))
+                processFlag = TRUE;
+            }
+            //printf("\nDEBUG - processedBuffer =  %llu to BufferSet: %llu", processedBuffer, totalSamples / nSamples);
+            if (processFlag)
+            {
+                processedBuffer++;
+                processFlag = FALSE; 
+                snprintf(buf, buf_size, "%s%llu_ss", startOfFileName, totalSamples / nSamples);
+
+                if (filetype != FILE_NONE)
                 {
-                    WriteArrayToFilesBinary(
-                        unit,
-                        AppminBuffers,
-                        AppmaxBuffers,
-                        multiBufferSizes,
-                        enabledChannelsScaling,
-                        buf,
-                        triggeredAt, // Should be >= noOfPreTriggerSamples,
-                        FileOverflow,
-                        NULL);
+                    // Only write to binary file if sample interval is < 0.9us (1.1MS/s)
+                    if (((unit->timeInterval) < 0.9e-06) && (filetype == FILE_BIN))
+                    {
+                        WriteArrayToFilesBinary(
+                            unit,
+                            AppminBuffers,
+                            AppmaxBuffers,
+                            multiBufferSizes,
+                            enabledChannelsScaling,
+                            buf,
+                            triggeredAt, // Should be >= noOfPreTriggerSamples,
+                            FileOverflow,
+                            NULL);
+                    }
+                    else // For slower sampling rates write to text file (csv) and/or image file, if requested
+                    {
+                        WriteArrayToFilesGeneric(
+                            unit,
+                            AppminBuffers,
+                            AppmaxBuffers,
+                            multiBufferSizes,
+                            enabledChannelsScaling,
+                            buf,
+                            triggeredAt, // Should be >= noOfPreTriggerSamples,
+                            FileOverflow,
+                            NULL);
+                    }
                 }
-                else // For slower sampling rates write to text file (csv), if file writing is requested
+                if (((unit->timeInterval) > 0.9e-06) && (imagefile == TRUE))
                 {
-                    WriteArrayToFilesGeneric(
+                    printf("\nSaved plot to %s", buf);
+                    WriteArrayToImage(
                         unit,
                         AppminBuffers,
                         AppmaxBuffers,
@@ -308,6 +336,7 @@ void streamDataHandler(GENERICUNIT *unit,
                         buf,
                         triggeredAt, // Should be >= noOfPreTriggerSamples,
                         FileOverflow,
+                        0,      // plotChannelMask: 0 = all enabled channels
                         NULL);
                 }
             }

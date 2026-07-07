@@ -130,7 +130,8 @@ static void mainMenu(GENERICUNIT*unit)
 					PS4000A_RATIO_MODE_NONE,	// ratioMode - Used by SetDataBuffers()
 					1,						// downSampleRatio - Used by SetDataBuffers()
 					0,						// autostop
-					FILE_TXT);				// Save data as CSV file
+					FILE_TXT,				// Save data as CSV file
+					TRUE);					// imagefile - create image file of data
 				break;
 
 			case 'T':
@@ -144,7 +145,8 @@ static void mainMenu(GENERICUNIT*unit)
 					PS4000A_RATIO_MODE_NONE,	// ratioMode - Used by SetDataBuffers()
 					1,						// downSampleRatio - Used by SetDataBuffers()
 					1,						// autostop
-					FILE_TXT);				// Save data as CSV file
+					FILE_TXT,				// Save data as CSV file
+					TRUE);					// imagefile - create image file of data
 				break;
 
 			case 'J':
@@ -152,7 +154,8 @@ static void mainMenu(GENERICUNIT*unit)
 					PS4000A_RATIO_MODE_NONE,
 					1,
 					constBufferSize,
-					FILE_TXT);
+					FILE_TXT,
+					TRUE);					// imagefile - create image file of data
 				break;
 
 			case 'V':

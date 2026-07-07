@@ -1255,8 +1255,10 @@ void closeDevice(GENERICUNIT *unit) { ps4000aCloseUnit(unit->handle); }
  ****************************************************************************/
 void GetMoreDataHandler(GENERICUNIT *unit, PICO_RATIO_MODE ratioMode,
                         uint64_t downSampleRatio,
-                        uint64_t nSamples,
-                        FILE_TYPE filetype) // Set the number of raw samples
+                        uint64_t nSamples, // Set the number of raw samples
+                        FILE_TYPE filetype, // Set the number of raw samples
+                        BOOL imagefile
+                        ) 
 {
   int32_t index = 0;
   int16_t channel = 0;
@@ -1382,6 +1384,22 @@ void GetMoreDataHandler(GENERICUNIT *unit, PICO_RATIO_MODE ratioMode,
       0,     // streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
       NULL,  // No overflow flags
       NULL); // Set default full range if NULL
+
+  if (imagefile == TRUE)
+  {
+      printf("\nWriting Capture to image file.\n");
+      WriteArrayToImage(
+          unit,
+          minBuffersStopped,
+          maxBuffersStopped,
+          multiBufferSizes,
+          enabledChannelsScaling,
+          buf,
+		  0, // streamingDataTriggerInfoTemp.triggerAt_, // Triggersample
+		  NULL, // No overflow flags
+          0, // plotChannelMask: 0 = all enabled channels
+		  NULL); // Set default full range if NULL
+  }
 
   // Release Buffer memory from API
   clearDataBuffers(unit);
