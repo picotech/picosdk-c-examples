@@ -32,20 +32,56 @@
       "type": "library",
       "bom-ref": "pkg:github/InductiveComputerScience/pbPlots",
       "name": "pbPlots",
-      "version": "unknown",
+      "version": "v0.1.9.1+9aa1bbb",
       "publisher": "InductiveComputerScience",
-      "description": "Portable C plotting library used for PNG output. Vendored as source: shared/pbPlots.c, shared/pbPlots.h, shared/supportLib.c, shared/supportLib.h.",
+      "description": "Portable C plotting library used for PNG output. Vendored as source and LOCALLY MODIFIED. Files: shared/pbPlots.c (modified), shared/pbPlots.h (unmodified), shared/supportLib.c (unmodified), shared/supportLib.h (unmodified).",
       "scope": "required",
       "licenses": [
         { "license": { "id": "MIT" } }
       ],
-      "purl": "pkg:github/InductiveComputerScience/pbPlots",
+      "purl": "pkg:github/InductiveComputerScience/pbPlots@9aa1bbb1e740081479b392471f3dcf5efdfb15b3",
       "externalReferences": [
+        { "type": "vcs", "url": "https://github.com/InductiveComputerScience/pbPlots" },
         { "type": "website", "url": "https://github.com/InductiveComputerScience/pbPlots" }
       ],
+      "hashes": [
+        { "alg": "SHA-256", "content": "ef4b6f8160dc85fb150c315f7edfe803240e78d15e79fa95c84f84a793491b7b" }
+      ],
+      "pedigree": {
+        "ancestors": [
+          {
+            "type": "library",
+            "name": "pbPlots",
+            "version": "9aa1bbb1e740081479b392471f3dcf5efdfb15b3",
+            "purl": "pkg:github/InductiveComputerScience/pbPlots@9aa1bbb1e740081479b392471f3dcf5efdfb15b3",
+            "description": "Upstream baseline: commit 9aa1bbb 'fixed bug in optimized code' on branch main, dated 2024-04-21 (post-tag v0.1.9.1, untagged). Source taken from the C/ directory of the upstream repository."
+          }
+        ],
+        "patches": [
+          {
+            "type": "unofficial",
+            "resolves": [
+              {
+                "type": "defect",
+                "name": "MSVC C2026 string-literal length limit",
+                "description": "Upstream inlines oversized wide-string font/bitmap literals that exceed the Microsoft Visual C++ maximum string-literal length, preventing compilation under Visual Studio."
+              }
+            ],
+            "diff": { "url": "https://github.com/picotech/picosdk-c-examples/commit/68ab986a42e11516623157c7b741ebb81e5af995" }
+          }
+        ],
+        "notes": "Local modification confined to shared/pbPlots.c: the oversized embedded wide-string font/bitmap literals were split into chunked get_long_string_N() accessor functions built with wcscpy/wcscat, and the arena AllocatorData struct fields (memoryStart, memory, current) are explicitly initialised. shared/pbPlots.h, shared/supportLib.c and shared/supportLib.h are byte-for-byte identical to upstream 9aa1bbb after line-ending normalisation. Change introduced by this repository's commit 68ab986 (2026-06-24)."
+      },
       "properties": [
         { "name": "cdx:vendored", "value": "true" },
-        { "name": "cdx:note", "value": "Upstream does not publish a version string; pin to a specific upstream commit and record it here." }
+        { "name": "cdx:modified", "value": "true" },
+        { "name": "cdx:upstream-commit", "value": "9aa1bbb1e740081479b392471f3dcf5efdfb15b3" },
+        { "name": "cdx:local-commit", "value": "68ab986a42e11516623157c7b741ebb81e5af995" },
+        { "name": "cdx:sha256:shared/pbPlots.c", "value": "ef4b6f8160dc85fb150c315f7edfe803240e78d15e79fa95c84f84a793491b7b" },
+        { "name": "cdx:sha256:shared/pbPlots.h", "value": "86a90caf1c13af32b6e62ac16a8edcf7e0f878562529b0ed1058dc640cc223d7" },
+        { "name": "cdx:sha256:shared/supportLib.c", "value": "f950db0faa6a97bad6fd0621de12d86f42221dc718dc19b5d34ed26c4628d9f0" },
+        { "name": "cdx:sha256:shared/supportLib.h", "value": "60785964057be2dad14b415cd5cacbe6f35412590bdda635ea64e14c4e3780f0" },
+        { "name": "cdx:hash-note", "value": "SHA-256 values are over the repository working-tree files (CRLF line endings on Windows checkout)." }
       ]
     },
     {
