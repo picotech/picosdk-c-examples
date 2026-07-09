@@ -1,0 +1,85 @@
+name: C/C++ static analysis
+
+# Lightweight C/C++ linting that needs no build and no PicoSDK:
+#   - cppcheck: bug/undefined-behaviour/style analysis (fails on 'error' severity)
+#   - flawfinder: heuristic scan for risky C functions; results go to code scanning
+#
+# Vendored third-party sources (pbPlots / supportLib) are excluded so findings
+# stay focused on Pico-authored example code.
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  schedule:
+    - cron: '23 6 * * 1'   # Mondays 06:23 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  cppcheck:
+    name: cppcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+        run: |
+          cppcheck \
+            --enable=warning,style,performance,portability \
+            --std=c11 \
+            --language=c \
+            --inline-suppr \
+            --suppress=missingInclude \
+            --suppress=missingIncludeSystem \
+            --suppress=unmatchedSuppression \
+            -i shared/pbPlots.c \
+            -i shared/pbPlots.h \
+            -i shared/supportLib.c \
+            -i shared/supportLib.h \
+            --xml --output-file=cppcheck-report.xml \
+            --error-exitcode=1 \
+            .
+
+      - name: Upload cppcheck report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppcheck-report
+          path: cppcheck-report.xml
+
+  flawfinder:
+    name: flawfinder
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF to code scanning
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install flawfinder
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install flawfinder
+
+      - name: Run flawfinder (SARIF)
+        run: |
+          flawfinder --sarif \
+            --minlevel=1 \
+            shared ps2000 ps2000a ps3000 ps3000a ps4000 ps4000a \
+            ps5000 ps5000a ps6000a psospa picohrdl pl1000 plcm3 usbdrdaq \
+            > flawfinder.sarif || true
+
+      - name: Upload results to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: flawfinder.sarif

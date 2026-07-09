@@ -1,0 +1,91 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-07T00:00:00Z",
+    "authors": [
+      { "name": "Pico Technology Ltd" }
+    ],
+    "component": {
+      "type": "application",
+      "bom-ref": "pkg:github/picotech/picosdk-c-examples",
+      "name": "picosdk-c-examples",
+      "publisher": "Pico Technology Ltd",
+      "description": "C/C++ example code for PicoScope oscilloscopes and PicoLog data loggers.",
+      "licenses": [
+        { "license": { "id": "ISC", "name": "See LICENSE.md" } }
+      ],
+      "externalReferences": [
+        { "type": "vcs", "url": "https://github.com/picotech/picosdk-c-examples" }
+      ]
+    },
+    "properties": [
+      {
+        "name": "cdx:note",
+        "value": "Hand-authored starter SBOM. Regenerate with a tool (e.g. syft or cdxgen) as part of release, and re-issue serialNumber and timestamp automatically. Component versions marked 'unknown' must be confirmed."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/InductiveComputerScience/pbPlots",
+      "name": "pbPlots",
+      "version": "unknown",
+      "publisher": "InductiveComputerScience",
+      "description": "Portable C plotting library used for PNG output. Vendored as source: shared/pbPlots.c, shared/pbPlots.h, shared/supportLib.c, shared/supportLib.h.",
+      "scope": "required",
+      "licenses": [
+        { "license": { "id": "MIT" } }
+      ],
+      "purl": "pkg:github/InductiveComputerScience/pbPlots",
+      "externalReferences": [
+        { "type": "website", "url": "https://github.com/InductiveComputerScience/pbPlots" }
+      ],
+      "properties": [
+        { "name": "cdx:vendored", "value": "true" },
+        { "name": "cdx:note", "value": "Upstream does not publish a version string; pin to a specific upstream commit and record it here." }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "picosdk-runtime",
+      "name": "PicoSDK",
+      "version": "unknown",
+      "publisher": "Pico Technology Ltd",
+      "description": "Proprietary PicoSDK runtime driver libraries required to build and run the examples (e.g. libpsospa, libps6000a, libps5000a, libps4000a, libps3000a, libps2000a, libps2000, libpicohrdl, libpl1000, libplcm3, libusbdrdaq). Not distributed in this repository; installed separately from picotech.com/downloads.",
+      "scope": "required",
+      "licenses": [
+        { "license": { "name": "Proprietary — Pico Technology Ltd" } }
+      ],
+      "externalReferences": [
+        { "type": "distribution", "url": "https://www.picotech.com/downloads" }
+      ],
+      "properties": [
+        { "name": "cdx:note", "value": "Record the exact PicoSDK release version used for a given build/release." }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "libm",
+      "name": "C standard math library (libm)",
+      "version": "unknown",
+      "description": "System math library linked on Linux/macOS builds.",
+      "scope": "required",
+      "properties": [
+        { "name": "cdx:note", "value": "Provided by the platform C runtime; version tracks the target OS toolchain." }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:github/picotech/picosdk-c-examples",
+      "dependsOn": [
+        "pkg:github/InductiveComputerScience/pbPlots",
+        "picosdk-runtime",
+        "libm"
+      ]
+    }
+  ]
+}

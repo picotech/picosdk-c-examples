@@ -1,0 +1,33 @@
+name: gitleaks
+
+# Scans commits/diffs for accidentally committed secrets (keys, tokens).
+#
+# NOTE: gitleaks-action is free for public repositories and open source. If this
+# repo is ever made private under an organization, a GITLEAKS_LICENSE secret is
+# required. See https://github.com/gitleaks/gitleaks-action#-license.
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  schedule:
+    - cron: '23 5 * * 1'   # Mondays 05:23 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so the whole repo is scanned
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # only if private + org
