@@ -1,0 +1,15 @@
+version: 2
+
+# The examples depend on vendored C source (pbPlots) and the proprietary
+# PicoSDK, neither of which Dependabot can track. The one ecosystem it can keep
+# patched here is the GitHub Actions used by the CI security workflows above.
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"

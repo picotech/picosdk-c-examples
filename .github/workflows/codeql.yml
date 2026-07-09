@@ -1,0 +1,42 @@
+name: CodeQL
+
+# Static analysis of the C/C++ example sources.
+# Uses build-mode: none (buildless) because the examples link against the
+# proprietary PicoSDK driver libraries, which are not installable on a public
+# CI runner. Results appear under the repository's Security > Code scanning tab.
+#
+# NOTE: Code scanning dashboards and scheduled runs only fully activate once
+# this workflow is present on the default branch (master).
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  schedule:
+    - cron: '23 3 * * 1'   # Mondays 03:23 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (C/C++)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # upload results to code scanning
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: c-cpp
+          build-mode: none
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:c-cpp"
