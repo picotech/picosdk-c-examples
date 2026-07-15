@@ -564,11 +564,6 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 			{
 				printf("RapidBlockDataHandler:psospaGetTriggerInfo ------ 0x%08x \n", status);
 			}
-
-			if (status != PICO_OK)
-			{
-				printf("RapidBlockDataHandler:psospaGetTriggerInfo ------ 0x%08x \n", status);
-			}
 			// Print first 3 trigger timestamps
 			uint64_t maxprintCaptures = min(nCaptures, 3);
 			PICO_STATUS rapidStatus;

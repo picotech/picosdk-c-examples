@@ -1220,9 +1220,6 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 		return;
 	}
 	uint64_t nCaptures = unit->CapturesComplete;
-	// Create Overflow Array Buffer(s)
-	int16_t* FileOverflow;
-	FileOverflow = (int16_t*)calloc(nCaptures, sizeof(int16_t));
 	PICO_ACTION action_flag = (PICO_CLEAR_ALL | PICO_ADD);	// bitwise OR flags for first buffer that is set
 
 	//Define acquisition Settings
@@ -1276,6 +1273,8 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 		if (status != PICO_OK)
 		{
 			printf("blockDataHandler:psospaGetValues ------ 0x%08x \n", status);
+			clearDataBuffers(unit);
+			pico_release_multibuffers(unit, &minBuffersStopped, &maxBuffersStopped, &multiBufferSizes);
 			return;
 		}
 	}
@@ -1294,6 +1293,8 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 		if (status != PICO_OK)
 		{
 			printf("blockDataHandler:psosp0aGetValuesBulkAsync ------ 0x%08x \n", status);
+			clearDataBuffers(unit);
+			pico_release_multibuffers(unit, &minBuffersStopped, &maxBuffersStopped, &multiBufferSizes);
 			return;
 		}
 	}
@@ -1476,7 +1477,7 @@ void SetAllDataBuffers(GENERICUNIT* unit,
 				capture = StreamBufToSet; // force "for loop" to only use one buffer set
 			}
 
-			for (capture; capture < nCaptures; capture++)
+			for (; capture < nCaptures; capture++)
 			{
 				if (CaptureMode != (enum enCaptureMode)STREAMING)
 					waveform = capture;
@@ -1514,7 +1515,7 @@ void SetAllDataBuffers(GENERICUNIT* unit,
 				capture = StreamBufToSet; // force "for loop" to only use one buffer set
 			}
 
-			for (capture; capture < nCaptures; capture++)
+			for (; capture < nCaptures; capture++)
 			{ 
 				if (CaptureMode != (enum enCaptureMode)STREAMING)
 					waveform = capture; 

@@ -319,7 +319,7 @@ void streamDataHandler(GENERICUNIT* unit,
 				TriggeredBufNo = counter; // Store buffer number where trigger occured
 			}
 			// If buffers full move to next bufferSet, or continue if autoStop triggered
-			if ((status == PICO_WAITING_FOR_DATA_BUFFERS) | (streamingDataTriggerInfoTemp.autoStop_ == 1))
+			if ((status == PICO_WAITING_FOR_DATA_BUFFERS) || (streamingDataTriggerInfoTemp.autoStop_ == 1))
 			{
 				//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"
 				if (FileOverflow) // Check for dereferencing null pointer
