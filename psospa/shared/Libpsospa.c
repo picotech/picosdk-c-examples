@@ -11,6 +11,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdbool.h>
 
 #include "../../shared/PicoUnit.h"
@@ -167,12 +168,12 @@ void setDefaults(GENERICUNIT* unit)
 				unit->channelSettings[PICO_CHANNEL_A + i].rangeType,
 				unit->channelSettings[PICO_CHANNEL_A + i].analogueOffset,
 				unit->channelSettings[PICO_CHANNEL_A + i].bandwithLimit);
-			printf(status ? "SetDefaults:psospaSetChannelOn------ 0x%08lx \n" : "", status);
+			printf(status ? "SetDefaults:psospaSetChannelOn------ 0x%08x \n" : "", status);
 		}
 		else
 		{
 			status = psospaSetChannelOff(unit->handle, (PICO_CHANNEL)(PICO_CHANNEL_A + i));
-			printf(status ? "SetDefaults:psospaSetChannelOff------ 0x%08lx \n" : "", status);
+			printf(status ? "SetDefaults:psospaSetChannelOff------ 0x%08x \n" : "", status);
 		}
 	}
 	for (i = 0; i < unit->digitalPortCount; i++) // reset channels to most recent settings
@@ -183,12 +184,12 @@ void setDefaults(GENERICUNIT* unit)
 												(PICO_CHANNEL)(PICO_PORT0 + i),
 												unit->digitalChannelSettings[i].threshold[0]);
 			
-			printf(status ? "SetDefaults:psospaSetDigitalPortOn------ 0x%08lx \n" : "", status);
+			printf(status ? "SetDefaults:psospaSetDigitalPortOn------ 0x%08x \n" : "", status);
 		}
 		else
 		{
 			status = psospaSetDigitalPortOff(unit->handle, (PICO_CHANNEL)(PICO_PORT0 + i));
-			printf(status ? "SetDefaults:psospaSetDigitalPortOff------ 0x%08lx \n" : "", status);
+			printf(status ? "SetDefaults:psospaSetDigitalPortOff------ 0x%08x \n" : "", status);
 		}
 	}
 }
@@ -205,7 +206,7 @@ PICO_STATUS clearDataBuffers(GENERICUNIT* unit)
 
 	if ((status = psospaSetDataBuffers(unit->handle, PICO_CHANNEL_A, NULL, NULL, 0, PICO_INT16_T, 0, PICO_RATIO_MODE_RAW, action_flag)) != PICO_OK)
 	{
-		printf("ClearDataBuffers:psospaSetDataBuffers ------ 0x%08lx \n", status);
+		printf("ClearDataBuffers:psospaSetDataBuffers ------ 0x%08x \n", status);
 	}
 	else
 	{
@@ -484,7 +485,6 @@ void setVoltages(GENERICUNIT* unit)
 	int32_t i, ch;
 	int32_t count = 0;
 	int16_t numValidChannels = unit->channelCount; //
-	int16_t retry = FALSE;
 
 	// See what ranges are available... 
 	for (i = unit->firstRange; i <= unit->lastRange; i++)
@@ -492,52 +492,48 @@ void setVoltages(GENERICUNIT* unit)
 		printf("%d -> %d mV\n", i, inputRanges[i]);
 	}
 
-	do
-	{
 		count = 0;
 
-		do
+	do
+	{
+		// Ask the user to select a range
+		printf("Specify voltage range (%d..%d)\n", unit->firstRange, unit->lastRange);
+		printf("99 - switches channel off\n");
+
+		for (ch = 0; ch < numValidChannels; ch++)
 		{
-			// Ask the user to select a range
-			printf("Specify voltage range (%d..%d)\n", unit->firstRange, unit->lastRange);
-			printf("99 - switches channel off\n");
+			printf("\n");
 
-			for (ch = 0; ch < numValidChannels; ch++)
+			do
 			{
-				printf("\n");
+				printf("Channel %c: ", 'A' + ch);
+				fflush(stdin);
+				scanf_s("%d", &(unit->channelSettings[ch].range));
 
-				do
-				{
-					printf("Channel %c: ", 'A' + ch);
-					fflush(stdin);
-					//scanf_s("%hd", &(unit->channelSettings[ch].range));
-					scanf_s("%d", &(unit->channelSettings[ch].range));
+			} while (unit->channelSettings[ch].range != 99 && (unit->channelSettings[ch].range < unit->firstRange || unit->channelSettings[ch].range > unit->lastRange));
 
-				} while (unit->channelSettings[ch].range != 99 && (unit->channelSettings[ch].range < unit->firstRange || unit->channelSettings[ch].range > unit->lastRange));
-
-				if (unit->channelSettings[ch].range != 99)
-				{
-					printf(" - %d mV\n", inputRanges[unit->channelSettings[ch].range]);
-					unit->channelSettings[ch].rangeMax = (int64_t)inputRanges[unit->channelSettings[ch].range] * 1000000;// convert mV to nV
-					unit->channelSettings[ch].rangeMin = (int64_t)inputRanges[unit->channelSettings[ch].range] * -1000000;// convert mV to nV
-					unit->channelSettings[ch].rangeType = PICO_X1_PROBE_NV;//x1 probe
-					unit->channelSettings[ch].enabled = TRUE;
-					count++;
-				}
-				else
-				{
-					printf("Channel Switched off\n");
-					unit->channelSettings[ch].enabled = FALSE;
-					unit->channelSettings[ch].range = PICO_X1_PROBE_20V - 1; //max range x1
-				}
+			if (unit->channelSettings[ch].range != 99)
+			{
+				printf(" - %d mV\n", inputRanges[unit->channelSettings[ch].range]);
+				unit->channelSettings[ch].rangeMax = (int64_t)inputRanges[unit->channelSettings[ch].range] * 1000000;// convert mV to nV
+				unit->channelSettings[ch].rangeMin = (int64_t)inputRanges[unit->channelSettings[ch].range] * -1000000;// convert mV to nV
+				unit->channelSettings[ch].rangeType = PICO_X1_PROBE_NV;//x1 probe
+				unit->channelSettings[ch].enabled = TRUE;
+				count++;
 			}
-			printf(count == 0 ? "\n** At least 1 channel must be enabled **\n\n" : "");
-		} while (count == 0);	// must have at least one channel enabled
+			else
+			{
+				printf("Channel Switched off\n");
+				unit->channelSettings[ch].enabled = FALSE;
+				unit->channelSettings[ch].range = PICO_X1_PROBE_20V - 1; //max range x1
+			}
+		}
+		printf(count == 0 ? "\n** At least 1 channel must be enabled **\n\n" : "");
+	} while (count == 0);	// must have at least one channel enabled
 
-		status = psospaGetDeviceResolution(unit->handle, &resolution);
+	status = psospaGetDeviceResolution(unit->handle, &resolution);
 
-		printf("\n");
-	} while (retry == TRUE);
+	printf("\n");
 
 	setDefaults(unit);	// Put these changes into effect
 }
@@ -552,10 +548,7 @@ void setDigitalPorts(GENERICUNIT* unit)
 	int32_t ch = 0;
 	int32_t count = 0;
 	int16_t numValidChannels = unit->digitalPortCount;
-	int16_t retry = FALSE;
 
-	do
-	{
 		count = 0;
 		//do
 		//{
@@ -598,7 +591,6 @@ void setDigitalPorts(GENERICUNIT* unit)
 		status = psospaGetDeviceResolution(unit->handle, &resolution);
 
 		printf("\n");
-	} while (retry == TRUE);
 
 	setDefaults(unit);	// Put these changes into effect
 }
@@ -638,11 +630,11 @@ void setTimebase(GENERICUNIT* unit)
 
 	if (status != PICO_OK)
 	{
-		printf("setTimebase:psospaGetMinimumTimebaseStateless ------ 0x%08lx \n", status);
+		printf("setTimebase:psospaGetMinimumTimebaseStateless ------ 0x%08x \n", status);
 		return;
 	}
 
-	printf("Shortest timebase index available %d = %le seconds.\n", shortestTimebase, timeIntervalSeconds);
+	printf("Shortest timebase index available %" PRIu32 " = %le seconds.\n", shortestTimebase, timeIntervalSeconds);
 
 	printf("Specify desired timeInterval (in the format Ne-XX, example 1us -> 1e-06): ");
 	fflush(stdin);
@@ -669,7 +661,7 @@ void setTimebase(GENERICUNIT* unit)
 			// Do nothing
 		}
 
-	printf("Timebase used %lu = %le seconds sample interval\n", timebase, timeInterval);
+	printf("Timebase used %" PRIu32 " = %le seconds sample interval\n", timebase, timeInterval);
 	unit->timeInterval = timeInterval;
 }
 
@@ -731,7 +723,7 @@ void setResolution(GENERICUNIT* unit)
 	int16_t i;
 	int16_t numEnabledChannels = 0;
 	int16_t retry;
-	int32_t resolutionInput;
+	int resolutionInput;
 
 	PICO_STATUS status;
 	PICO_DEVICE_RESOLUTION resolution;
@@ -761,7 +753,7 @@ void setResolution(GENERICUNIT* unit)
 	}
 	else
 	{
-		printf("setResolution:psospaGetDeviceResolution ------ 0x%08lx \n", status);
+		printf("setResolution:psospaGetDeviceResolution ------ 0x%08x \n", status);
 		printf("Check the number of channels enabled.\n");
 		printf("Check Max. timebase for Resolution\n");
 		return;
@@ -779,7 +771,7 @@ void setResolution(GENERICUNIT* unit)
 	{
 		printf("Resolution [0...2]: ");
 		fflush(stdin);
-		scanf_s("%lud", &resolutionInput);
+		scanf_s("%d", &resolutionInput);
 
 		switch (resolutionInput)
 		{
@@ -870,7 +862,7 @@ void setResolution(GENERICUNIT* unit)
 	}
 	else
 	{
-		printf("setResolution:psospaSetDeviceResolution ------ 0x%08lx \n", status);
+		printf("setResolution:psospaSetDeviceResolution ------ 0x%08x \n", status);
 		printf("Check the number of channels enabled.\n");
 		printf("Check Max. timebase for Resolution\n");
 	}
@@ -976,10 +968,10 @@ void print_pico_usb_power_delivery(const PICO_USB_POWER_DELIVERY* pd) {
 	}
 	// uint8_t can be printed using %u (it promotes to int) or the PRIu8 macro
 	printf("Valid (= 0):             %u\n", pd->valid_);
-	printf("Bus Voltage (mV):        %lu mV\n", pd->busVoltagemV_);
-	printf("Rp Current Limit (mA):   %lu mA\n", pd->rpCurrentLimitmA_);
-	printf("Partner Connected:       %lu\n", pd->partnerConnected_);
-	printf("CC Polarity:             %lu\n", pd->ccPolarity_);
+	printf("Bus Voltage (mV):        %" PRIu32 " mV\n", pd->busVoltagemV_);
+	printf("Rp Current Limit (mA):   %" PRIu32 " mA\n", pd->rpCurrentLimitmA_);
+	printf("Partner Connected:       %u\n", pd->partnerConnected_);
+	printf("CC Polarity:             %u\n", pd->ccPolarity_);
 	printf("Attached Device Type:    ");
 	switch(pd->attachedDevice_)
 	{
@@ -996,7 +988,7 @@ void print_pico_usb_power_delivery(const PICO_USB_POWER_DELIVERY* pd) {
 		printf("Unknown\n");
 		break;
 	}
-	printf("Contract Exists:         %lu\n", pd->contractExists_);
+	printf("Contract Exists:         %u\n", pd->contractExists_);
 	printf("Current PDO:             0x%08X\n", pd->currentPdo_); // Printed in Hexadecimal format often used for registers/PDOs
 	printf("Current RDO:             0x%08X\n", pd->currentRdo_); // Printed in Hexadecimal format often used for registers/RDOs
 	printf("--------------------------------------\n");
@@ -1256,7 +1248,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 	//unit->timeInterval = (idealTimeInterval * (pow(10, 3 * sampleIntervalTimeUnits) / 1E+15));
 	printf("\nsample Internal: %g seconds\n", unit->timeInterval);
 	//print number of Samples
-	printf("%llu Samples\n", nSamples);
+	printf("%" PRIu64 " Samples\n", nSamples);
 	uint64_t printTriggerSample = 0;
 
 	// SetDataBuffers with API
@@ -1283,7 +1275,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf(status ? "blockDataHandler:psospaGetValues ------ 0x%08lx \n" : "", status);
+			printf("blockDataHandler:psospaGetValues ------ 0x%08x \n", status);
 			return;
 		}
 	}
@@ -1301,7 +1293,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf(status ? "blockDataHandler:psosp0aGetValuesBulkAsync ------ 0x%08lx \n" : "", status);
+			printf("blockDataHandler:psosp0aGetValuesBulkAsync ------ 0x%08x \n", status);
 			return;
 		}
 	}
@@ -1538,7 +1530,7 @@ void SetAllDataBuffers(GENERICUNIT* unit,
 				action_flag = PICO_ADD;//all subsequent calls use ADD!
 				if (status != PICO_OK)
 				{
-					printf(status ? "SetAllDataBuffers:psospaSetDataBuffers(PORT %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
+					printf("SetAllDataBuffers:psospaSetDataBuffers(PORT %d) ------ 0x%08x \n", PICO_PORT0 + channel, status);
 					return;
 				}
 				//if (capture == 0)
