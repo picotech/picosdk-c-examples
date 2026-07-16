@@ -12,6 +12,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <math.h>
 #include "../../shared/PicoScaling.h"
@@ -112,7 +113,7 @@ void streamDataHandler(GENERICUNIT* unit,
 	if (pico_create_multibuffers(unit, bufferSettings, nCaptures, &minBuffers, &maxBuffers, &multiBufferSizes))
 		printf("\nCreated Buffers");
 
-	printf("\nNumber of PreTriggerSamples: %lld", noOfPreTriggerSamples);
+	printf("\nNumber of PreTriggerSamples: %" PRIu64 "", noOfPreTriggerSamples);
 
 	//Get scaling Info for each channel
 	struct tPicoProbeScaling enabledChannelsScaling[PS6000A_MAX_CHANNELS] = { 0 };
@@ -149,7 +150,7 @@ void streamDataHandler(GENERICUNIT* unit,
 	unit->timeInterval = ( idealTimeInterval * (pow(10, 3 * sampleIntervalTimeUnits) / 1E+15) );
 	printf("\nRunStreaming sample Internal: %g seconds\n", unit->timeInterval);
 	//print number of Samples
-	printf("%llu Captures each with %llu ADC Samples\n", nCaptures, nSamples);
+	printf("%" PRIu64 " Captures each with %" PRIu64 " ADC Samples\n", nCaptures, nSamples);
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_RAW)
 		printf("DownSampling Mode is set to: None\n");
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -159,7 +160,7 @@ void streamDataHandler(GENERICUNIT* unit,
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AVERAGE)
 		printf("DownSampling Mode is set to: Average\n");
 	if (bufferSettings.downSampleRatioMode != PICO_RATIO_MODE_RAW)
-		printf("DownSampling Ratio is set to: %llu\n", bufferSettings.downSampleRatio);
+		printf("DownSampling Ratio is set to: %" PRIu64 "\n", bufferSettings.downSampleRatio);
 
 	printf("\nAutostop: %d", autostop);
 	printf("\nPress a key to Abort\n");
@@ -260,7 +261,7 @@ void streamDataHandler(GENERICUNIT* unit,
 
 				if (status != PICO_OK)
 				{
-					printf("\nError from function RunStreaming with status: ------ 0x%08lx", status);
+					printf("\nError from function RunStreaming with status: ------ 0x%08x", status);
 					return;
 				}
 				RunStreamingFlag = FALSE;
@@ -306,7 +307,7 @@ void streamDataHandler(GENERICUNIT* unit,
 			// DEBUG CODE
 			//if(dataStreamInfo[0].noOfSamples_ != 0)
 			//{
-				//printf("\nPolling GetStreamingLatestValues status = 0x%08lx - noOfSamples: %08ld StartIndex: %08ld",
+				//printf("\nPolling GetStreamingLatestValues status = 0x%08x - noOfSamples: %08ld StartIndex: %08ld",
 				//	status, dataStreamInfo[0].noOfSamples_, dataStreamInfo[0].startIndex_);
 			//}
 
@@ -317,14 +318,14 @@ void streamDataHandler(GENERICUNIT* unit,
 				TriggeredBufNo = counter; // Store buffer number where trigger occured
 			}
 			// If buffers full move to next bufferSet, or continue if autoStop triggered
-			if ((status == PICO_WAITING_FOR_DATA_BUFFERS) | (streamingDataTriggerInfoTemp.autoStop_ == 1))
+			if ((status == PICO_WAITING_FOR_DATA_BUFFERS) || (streamingDataTriggerInfoTemp.autoStop_ == 1))
 			{
 				//OFFLOAD DATA HERE FOR PROCESSING - "maxBuffers[i] and minBuffers[i]"
 				if (FileOverflow) // Check for dereferencing null pointer
 				{
 					printf(".");
 					// Setup filename for streaming capture -
-					snprintf(buf, buf_size, "%s%llu_SubSet", startOfFileName, counter);			
+					snprintf(buf, buf_size, "%s%" PRIu64 "_SubSet", startOfFileName, counter);			
 					struct tcaptures_range captures_range = { capture, capture };// Set range to current capture only
 
 					if (((unit->timeInterval) > 0.9e-06) && (imagefile == TRUE))
@@ -361,7 +362,7 @@ void streamDataHandler(GENERICUNIT* unit,
 						}
 						else // For slower sampling rates write to text file (csv), if file writing is requested
 						{
-							printf("\nWriting capture %llu (Buffer Set %llu) of channels to a file.\n", counter, capture);
+							printf("\nWriting capture %" PRIu64 " (Buffer Set %" PRIu64 ") of channels to a file.\n", counter, capture);
 							WriteArrayToFilesGeneric(
 								unit,
 								minBuffers,
@@ -394,13 +395,13 @@ void streamDataHandler(GENERICUNIT* unit,
 			{
 				if (status != PICO_OK)
 				{
-					printf("\nError from function GetStreamingLatestValues with status: ------ 0x%08lx", status);
+					printf("\nError from function GetStreamingLatestValues with status: ------ 0x%08x", status);
 					break;
 				}
 			}
 		}
 		if (Triggered)
-			printf("\nTriggered in Buffer No: %d, At Sample: %lld", TriggeredBufNo, triggeredAt);
+			printf("\nTriggered in Buffer No: %d, At Sample: %" PRIu64 "", TriggeredBufNo, triggeredAt);
 
 		//OR WAIT UNTIL ALL BUFFER SEGMENTS ARE CAPTURED AND PROCESS DATA IN - "maxBuffers and minBuffers"
 		// Write to console
@@ -423,7 +424,7 @@ void streamDataHandler(GENERICUNIT* unit,
 	status = ps6000aStop(unit->handle);
 	if (status != PICO_OK)
 	{
-		printf("\nError from function Stop with status: ------ 0x%08lx", status);
+		printf("\nError from function Stop with status: ------ 0x%08x", status);
 	}
 	else
 		printf("Stopped capture\n");

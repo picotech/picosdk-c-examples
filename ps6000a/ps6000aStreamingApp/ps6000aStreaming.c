@@ -56,7 +56,7 @@ int main(void)
 		while (i<8) {
 			Sleep(10);
 			status = ps6000aGetStreamingLatestValues(handle, &streamData, 1, &streamTrigger);	// Get the latest values
-			printf("Status %d Samples %d StartIndex %d \r", status, streamData.noOfSamples_, streamData.startIndex_);
+			printf("Status 0x%08x Samples %d StartIndex %d \r", status, streamData.noOfSamples_, streamData.startIndex_);
 
 			if (status != PICO_OK) {
 				printf("\nBuffer %d ready to process\n", i);

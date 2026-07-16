@@ -12,6 +12,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "../../shared/PicoScaling.h"
 #include "../../shared/PicoBuffers.h"
 #include "../../shared/PicoFileFunctions.h"
@@ -62,59 +63,59 @@ void SigGenAWG(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
 { 
     PICO_STATUS status = PICO_OK; 
     // SigGenWaveform
-    ps6000aSigGenWaveform(unit->handle,
+    status = ps6000aSigGenWaveform(unit->handle,
                         sigGenSettings->WaveType,       //waveType,
                          sigGenSettings->AWGBuffer,     //buffer is NULL to use default settings
                          sigGenSettings->AWGBufferSize  //bufferLenght
                         );
     if (status != PICO_OK)
     {
-        printf(status ? "SigGenAWG:ps6000aSigGenWaveform ------ 0x%08lx \n" : "", status);
+        printf("SigGenAWG:ps6000aSigGenWaveform ------ 0x%08x \n", status);
     }
     //printf("SigGenWaveform\n");
 
     // SigGenRange
-    ps6000aSigGenRange(unit->handle,
+    status = ps6000aSigGenRange(unit->handle,
          sigGenSettings->PeakVolts,
          sigGenSettings->Offset);
     if (status != PICO_OK)
     {
-        printf(status ? "SigGenAWG:ps6000aSigGenRange ------ 0x%08lx \n" : "", status);
+        printf("SigGenAWG:ps6000aSigGenRange ------ 0x%08x \n", status);
     }
     //printf("SigGenRange\n");
 
     // ps6000aSigGenWaveformDutyCycle
     if (DutyCycle)
     {
-        ps6000aSigGenWaveformDutyCycle(unit->handle,
+        status = ps6000aSigGenWaveformDutyCycle(unit->handle,
              sigGenSettings->dutyCyclePercent);          //double dutyCyclePercent (0.0 to 100.0)
         if (status != PICO_OK)
         {
-            printf(status ? "SigGenAWG:ps6000aSigGenWaveformDutyCycle ------ 0x%08lx \n" : "", status);
+            printf("SigGenAWG:ps6000aSigGenWaveformDutyCycle ------ 0x%08x \n", status);
         }
         //printf("SigGenWaveformDutyCycle\n");
     }
 
     // SigGenFrequency
-    ps6000aSigGenFrequency(unit->handle,
+    status = ps6000aSigGenFrequency(unit->handle,
          sigGenSettings->Frequency);
     if (status != PICO_OK)
     {
-        printf(status ? "SigGenAWG:ps6000aSigGenFrequency ------ 0x%08lx \n" : "", status);
+        printf("SigGenAWG:ps6000aSigGenFrequency ------ 0x%08x \n", status);
     }
     //printf("SigGenFrequency\n");
 
     // ps6000aSigGenFrequencySweep
     if (Sweep)
     {
-        ps6000aSigGenFrequencySweep(unit->handle,
+        status = ps6000aSigGenFrequencySweep(unit->handle,
              sigGenSettings->FrequencyStop,         //double stopFrequencyHz,
              sigGenSettings->FrequencyIncrement,    //double frequencyIncrement (Hz),
              sigGenSettings->DwellTime,             //double dwellTimeSeconds
              sigGenSettings->SweepType);            //sweepType
         if (status != PICO_OK)
         {
-            printf(status ? "SigGenAWG:ps6000aSigGenFrequencySweep ------ 0x%08lx \n" : "", status);
+            printf("SigGenAWG:ps6000aSigGenFrequencySweep ------ 0x%08x \n", status);
         }
         //printf("SigGenFrequencySweep\n");
     }
@@ -122,7 +123,7 @@ void SigGenAWG(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
     if (SigGenTrigger)
     {
         // ps6000aSigGenTrigger
-        ps6000aSigGenTrigger(unit->handle,
+        status = ps6000aSigGenTrigger(unit->handle,
              sigGenSettings->triggerType,        // PICO__TRIG_TYPE triggerType,
              sigGenSettings->triggerSource,      // PICO__TRIG_SOURCE triggerSource,
              sigGenSettings->cycles,
@@ -130,7 +131,7 @@ void SigGenAWG(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
         );
         if (status != PICO_OK)
         {
-            printf(status ? "SigGenAWG:ps6000aSigGenTrigger ------ 0x%08lx \n" : "", status);
+            printf("SigGenAWG:ps6000aSigGenTrigger ------ 0x%08x \n", status);
         }
         //printf("SigGenTrigger\n");
     }
@@ -139,7 +140,7 @@ void SigGenAWG(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
     double tempFrequencyIncrement =  sigGenSettings->FrequencyIncrement;   //double* frequencyIncrement(Hz),
     double tempDwellTime =  sigGenSettings->DwellTime;                        //double* dwellTime (s)
     // SigGenApply
-    ps6000aSigGenApply(unit->handle,
+    status = ps6000aSigGenApply(unit->handle,
          sigGenSettings->Enabled, 			//int16_t sigGenEnabled,
         (int16_t)((Sweep) ? 1 : 0), 		//int16_t sweepEnabled,
         (int16_t)((SigGenTrigger) ? 1 : 0), //int16_t triggerEnabled,
@@ -152,7 +153,7 @@ void SigGenAWG(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
     );
     if (status != PICO_OK)
     {
-        printf(status ? "SigGenAWG:ps6000aSigGenApply ------ 0x%08lx \n" : "", status);
+        printf("SigGenAWG:ps6000aSigGenApply ------ 0x%08x \n", status);
     }
     //printf("SigGenApply\n");
 }
@@ -395,7 +396,7 @@ void printsigGenSettings(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
             break;
 
         default:
-            printf("Unknown enum:%ld", sigGenSettings->WaveType);
+            printf("Unknown enum:%d", (int)sigGenSettings->WaveType);
             //printf("Unknown/Invalid signal type enum: %ld", sigGenSettings->WaveType);
             break;
         }
@@ -427,7 +428,7 @@ void printsigGenSettings(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
             break;
 
         default:
-            printf("Unknown enum:%ld", sigGenSettings->SweepType);
+            printf("Unknown enum:%d", (int)sigGenSettings->SweepType);
             //printf("Unknown/Invalid Sweep enum: %ld", sigGenSettings->SweepType);
             break;
         }
@@ -461,7 +462,7 @@ void printsigGenSettings(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
             break;
 
         default:
-            printf("Unknown enum:%ld", sigGenSettings->triggerSource);
+            printf("Unknown enum:%d", (int)sigGenSettings->triggerSource);
             break;
         }
     }
@@ -469,5 +470,5 @@ void printsigGenSettings(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
         printf("OFF       ");
 
     printf("\t\t| \n");
-    printf("|\t\t\t\t\t|   Cycles per Trigger: %lld\t\t|\n", sigGenSettings->cycles);
+    printf("|\t\t\t\t\t|   Cycles per Trigger: %" PRIu64 "\t\t|\n", sigGenSettings->cycles);
 }
