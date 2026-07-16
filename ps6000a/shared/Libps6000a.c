@@ -11,6 +11,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdbool.h>
 
 #include "../../shared/PicoUnit.h"
@@ -155,12 +156,12 @@ void setDefaults(GENERICUNIT* unit)
 				(PICO_CONNECT_PROBE_RANGE)unit->channelSettings[PICO_CHANNEL_A + i].range,
 				unit->channelSettings[PICO_CHANNEL_A + i].analogueOffset,
 				unit->channelSettings[PICO_CHANNEL_A + i].bandwithLimit);
-			printf(status ? "SetDefaults:ps6000aSetChannelOn------ 0x%08lx \n" : "", status);
+			printf(status ? "SetDefaults:ps6000aSetChannelOn------ 0x%08x \n" : "", status);
 		}
 		else
 		{
 			status = ps6000aSetChannelOff(unit->handle, (PICO_CHANNEL)(PICO_CHANNEL_A + i));
-			printf(status ? "SetDefaults:ps6000aSetChannelOff------ 0x%08lx \n" : "", status);
+			printf(status ? "SetDefaults:ps6000aSetChannelOff------ 0x%08x \n" : "", status);
 		}
 	}
 
@@ -182,12 +183,12 @@ void setDefaults(GENERICUNIT* unit)
 				(sizeof(unit->digitalChannelSettings[i].threshold) / sizeof(unit->digitalChannelSettings[i].threshold[0])),
 				PICO_NORMAL_100MV);
 
-			printf(status ? "SetDefaults:ps6000aSetDigitalPortOn------ 0x%08lx \n" : "", status);
+			printf(status ? "SetDefaults:ps6000aSetDigitalPortOn------ 0x%08x \n" : "", status);
 		}
 		else
 		{
 			status = ps6000aSetDigitalPortOff(unit->handle, (PICO_CHANNEL)(PICO_PORT0 + i));
-			printf(status ? "SetDefaults:ps6000aSetDigitalPortOff------ 0x%08lx \n" : "", status);
+			printf(status ? "SetDefaults:ps6000aSetDigitalPortOff------ 0x%08x \n" : "", status);
 		}
 	}
 }
@@ -204,7 +205,7 @@ PICO_STATUS clearDataBuffers(GENERICUNIT* unit)
 
 	if ((status = ps6000aSetDataBuffers(unit->handle, PICO_CHANNEL_A, NULL, NULL, 0, PICO_INT16_T, 0, PICO_RATIO_MODE_RAW, action_flag)) != PICO_OK)
 	{
-		printf("ClearDataBuffers:ps6000aSetDataBuffers ------ 0x%08lx \n", status);
+		printf("ClearDataBuffers:ps6000aSetDataBuffers ------ 0x%08x \n", status);
 	}
 	else
 	{
@@ -543,9 +544,6 @@ void setDigitalPorts(GENERICUNIT* unit)
 	int32_t ch, i = 0;
 	int32_t count = 0;
 	int16_t numValidChannels = unit->digitalPortCount;
-	int16_t retry = FALSE;
-
-	do
 	{
 		//do
 		//{
@@ -598,7 +596,7 @@ void setDigitalPorts(GENERICUNIT* unit)
 		status = ps6000aGetDeviceResolution(unit->handle, &resolution);
 
 		printf("\n");
-	} while (retry == TRUE);
+	}
 
 	setDefaults(unit);	// Put these changes into effect
 }
@@ -638,13 +636,13 @@ void setTimebase(GENERICUNIT* unit)
 
 	if (status != PICO_OK)
 	{
-		printf("setTimebase:ps6000aGetMinimumTimebaseStateless ------ 0x%08lx \n", status);
+		printf("setTimebase:ps6000aGetMinimumTimebaseStateless ------ 0x%08x \n", status);
 		if(status == 0x0000018c)
 			printf("The channel combination is not valid for the ADC resolution (10/12bit)");
 		return;
 	}
 
-	printf("Shortest timebase index available %d = %le seconds.\n", shortestTimebase, timeIntervalSeconds);
+	printf("Shortest timebase index available %" PRIu32 " = %le seconds.\n", shortestTimebase, timeIntervalSeconds);
 
 	printf("Specify desired timeInterval (in the format Ne-XX, example 1us -> 1e-06): ");
 	fflush(stdin);
@@ -669,7 +667,7 @@ void setTimebase(GENERICUNIT* unit)
 			// Do nothing
 		}
 
-	printf("Timebase used %lu = %le seconds sample interval\n", timebase, timeInterval);
+	printf("Timebase used %" PRIu32 " = %le seconds sample interval\n", timebase, timeInterval);
 	unit->timeInterval = timeInterval;
 }
 
@@ -731,7 +729,7 @@ void setResolution(GENERICUNIT* unit)
 	int16_t i;
 	int16_t numEnabledChannels = 0;
 	int16_t retry;
-	int32_t resolutionInput;
+	int resolutionInput;
 
 	PICO_STATUS status;
 	PICO_DEVICE_RESOLUTION resolution;
@@ -761,7 +759,7 @@ void setResolution(GENERICUNIT* unit)
 	}
 	else
 	{
-		printf("setResolution:ps6000aGetDeviceResolution ------ 0x%08lx \n", status);
+		printf("setResolution:ps6000aGetDeviceResolution ------ 0x%08x \n", status);
 		return;
 	}
 
@@ -778,7 +776,7 @@ void setResolution(GENERICUNIT* unit)
 		printf("Resolution [0...2]: ");
 
 		fflush(stdin);
-		scanf_s("%lud", &resolutionInput);
+		scanf_s("%d", &resolutionInput);
 		if (resolutionInput == 1)
 			resolutionInput = PICO_DR_10BIT;
 		if (resolutionInput == 2)
@@ -822,7 +820,7 @@ void setResolution(GENERICUNIT* unit)
 	}
 	else
 	{
-		printf("setResolution:ps6000aSetDeviceResolution ------ 0x%08lx \n", status);
+		printf("setResolution:ps6000aSetDeviceResolution ------ 0x%08x \n", status);
 	}
 
 }
@@ -1121,7 +1119,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 	//unit->timeInterval = (idealTimeInterval * (pow(10, 3 * sampleIntervalTimeUnits) / 1E+15));
 	printf("\nsample Internal: %g seconds\n", unit->timeInterval);
 	//print number of Samples
-	printf("%llu Samples\n", nSamples);
+	printf("%" PRIu64 " Samples\n", nSamples);
 	uint64_t printTriggerSample = 0;
 
 	// SetDataBuffers with API
@@ -1148,7 +1146,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf(status ? "blockDataHandler:ps6000aGetValuesAsync ------ 0x%08lx \n" : "", status);
+			printf("blockDataHandler:ps6000aGetValuesAsync ------ 0x%08x \n", status);
 			return;
 		}
 	}
@@ -1166,7 +1164,7 @@ void GetMoreDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf(status ? "blockDataHandler:ps6000aGetValuesBulkAsync ------ 0x%08lx \n" : "", status);
+			printf("blockDataHandler:ps6000aGetValuesBulkAsync ------ 0x%08x \n", status);
 			return;
 		}
 	}
@@ -1349,7 +1347,7 @@ void SetAllDataBuffers(GENERICUNIT* unit,
 				capture = StreamBufToSet; // force "for loop" to only use one buffer set
 			}
 
-			for (capture; capture < nCaptures; capture++)
+			for (; capture < nCaptures; capture++)
 			{
 				if (CaptureMode != (enum enCaptureMode)STREAMING)
 					waveform = capture;
@@ -1387,7 +1385,7 @@ void SetAllDataBuffers(GENERICUNIT* unit,
 				capture = StreamBufToSet; // force "for loop" to only use one buffer set
 			}
 
-			for (capture; capture < nCaptures; capture++)
+			for (; capture < nCaptures; capture++)
 			{ 
 				if (CaptureMode != (enum enCaptureMode)STREAMING)
 					waveform = capture; 
@@ -1403,7 +1401,7 @@ void SetAllDataBuffers(GENERICUNIT* unit,
 				action_flag = PICO_ADD;//all subsequent calls use ADD!
 				if (status != PICO_OK)
 				{
-					printf(status ? "SetAllDataBuffers:psospaSetDataBuffers(PORT %d) ------ 0x%08lx \n" : "", PICO_PORT0 + channel, status);
+					printf("SetAllDataBuffers:ps6000aSetDataBuffers(PORT %d) ------ 0x%08x \n", PICO_PORT0 + channel, status);
 					return;
 				}
 				//if (capture == 0)

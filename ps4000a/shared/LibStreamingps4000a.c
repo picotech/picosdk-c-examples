@@ -16,6 +16,7 @@
 #include "../../shared/PicoFileFunctions.h"
 #include "./Libps4000a.h"
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <math.h>
 
@@ -117,7 +118,7 @@ void streamDataHandler(GENERICUNIT *unit,
                                &maxBuffers, &multiBufferSizes))
     printf("\nCreated API Buffers");
 
-  printf("\nNumber of PreTriggerSamples: %lld", noOfPreTriggerSamples);
+  printf("\nNumber of PreTriggerSamples: %" PRIu64 "", noOfPreTriggerSamples);
 
   int16_t*** AppminBuffers;
   int16_t*** AppmaxBuffers;
@@ -142,7 +143,7 @@ void streamDataHandler(GENERICUNIT *unit,
       (idealTimeInterval * (pow(10, 3 * sampleIntervalTimeUnits) / 1E+15));
   printf("\nRunStreaming sample Internal: %g seconds\n", unit->timeInterval);
   // print number of Samples
-  printf("Requested number of Samples: %llu\n", nSamples);
+  printf("Requested number of Samples: %" PRIu64 "\n", nSamples);
   if (bufferSettings.downSampleRatioMode == PS4000A_RATIO_MODE_NONE)
     printf("DownSampling Mode is set to: None\n");
   if (bufferSettings.downSampleRatioMode == PS4000A_RATIO_MODE_AGGREGATE)
@@ -152,7 +153,7 @@ void streamDataHandler(GENERICUNIT *unit,
   if (bufferSettings.downSampleRatioMode == PS4000A_RATIO_MODE_AVERAGE)
     printf("DownSampling Mode is set to: Average\n");
   if (bufferSettings.downSampleRatioMode != PS4000A_RATIO_MODE_NONE)
-    printf("DownSampling Ratio is set to: %llu\n",
+    printf("DownSampling Ratio is set to: %" PRIu64 "\n",
            bufferSettings.downSampleRatio);
 
   printf("\nAutostop: %d", autostop);
@@ -187,11 +188,11 @@ void streamDataHandler(GENERICUNIT *unit,
 
     if (autostop)
     {
-        printf("\nStreaming Data for %llu samples", noOfPostTriggerSamples / downSampleRatio);
+        printf("\nStreaming Data for %" PRIu64 " samples", noOfPostTriggerSamples / downSampleRatio);
 
         if (noOfPreTriggerSamples)							// we pass 0 for preTrigger if we're not setting up a trigger
         {
-            printf(" after the trigger occurs\nNote: %llu Pre Trigger samples before Trigger arms\n\n",
+            printf(" after the trigger occurs\nNote: %" PRIu64 " Pre Trigger samples before Trigger arms\n\n",
                 noOfPreTriggerSamples / downSampleRatio);
         }
         else
@@ -226,7 +227,7 @@ void streamDataHandler(GENERICUNIT *unit,
         multiBufferSizes.maxBufferSize); // overviewBufferSize
     if (status != PICO_OK) {
         printf(
-            "\nError from function RunStreaming with status: ------ 0x%08lx",
+            "\nError from function RunStreaming with status: ------ 0x%08x",
             status);
         return;
     }
@@ -260,7 +261,7 @@ void streamDataHandler(GENERICUNIT *unit,
         status = ps4000aGetStreamingLatestValues(unit->handle, callBackStreaming, &bufferInfo);
         if (status != PICO_OK && status != PICO_BUSY) {
             printf("\nError from function GetStreamingLatestValues with status: "
-                "------ 0x%08lx",
+                "------ 0x%08x",
                 status);
             break;
         }
@@ -292,7 +293,7 @@ void streamDataHandler(GENERICUNIT *unit,
             {
                 processedBuffer++;
                 processFlag = FALSE; 
-                snprintf(buf, buf_size, "%s%llu_ss", startOfFileName, totalSamples / nSamples);
+                snprintf(buf, buf_size, "%s%" PRIu64 "_ss", startOfFileName, totalSamples / nSamples);
 
                 if (filetype != FILE_NONE)
                 {
@@ -346,7 +347,7 @@ void streamDataHandler(GENERICUNIT *unit,
   printf("\nStopping Streaming... ");
   status = ps4000aStop(unit->handle);
   if (status != PICO_OK) {
-    printf("\nError from function Stop with status: ------ 0x%08lx", status);
+    printf("\nError from function Stop with status: ------ 0x%08x", status);
   }
 
     if (!g_autoStop)

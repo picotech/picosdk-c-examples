@@ -12,6 +12,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include "../../shared/PicoScaling.h"
 #include "../../shared/PicoBuffers.h"
@@ -146,8 +147,8 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 			return;
 		}
 
-	printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
-	printf("%llu Captures each with %llu ADC Samples\n", nCaptures, nSamples);
+	printf("\nTimebase: %" PRIu32 "  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
+	printf("%" PRIu64 " Captures each with %" PRIu64 " ADC Samples\n", nCaptures, nSamples);
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_RAW)
 		printf("DownSampling Mode is set to: None\n");
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -157,7 +158,7 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AVERAGE)
 		printf("DownSampling Mode is set to: Average\n");
 	if (bufferSettings.downSampleRatioMode != PICO_RATIO_MODE_RAW)
-		printf("DownSampling Ratio is set to: %llu\n", bufferSettings.downSampleRatio);
+		printf("DownSampling Ratio is set to: %" PRIu64 "\n", bufferSettings.downSampleRatio);
 
 	//Start acquisition
 	status = psospaRunBlock(unit->handle,
@@ -190,7 +191,7 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 	}
 	// Get the number of captures that were completed
 	status = psospaGetNoOfCaptures(unit->handle, &nCompletedCaptures);
-	printf("%llu complete blocks were captured\n", nCompletedCaptures);
+	printf("%" PRIu64 " complete blocks were captured\n", nCompletedCaptures);
 	printf("\nPress any key...\n\n");
 	_getch();
 
@@ -242,7 +243,7 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 			noOfPreTriggerSamples,	// Triggersample
 			overflowArray);
 		// Print each segment capture to a file
-		printf("\nWriting each of: %lld channel buffer sets to a file.\n", multiBufferSizes.numberOfBuffers);
+		printf("\nWriting each of: %" PRIu64 " channel buffer sets to a file.\n", multiBufferSizes.numberOfBuffers);
 
 		if (filetype == FILE_TXT)
 		{
@@ -314,16 +315,16 @@ void rapidblockDataHandler(GENERICUNIT* unit,
 			if (triggerInfo != NULL)
 			{
 				rapidStatus = triggerInfo[capture].status & PICO_DEVICE_TIME_STAMP_RESET;
-				printf("\nCapture/segment: %llu, Trigger Timestamp: %llu", capture, triggerInfo[capture].timeStampCounter);
+				printf("\nCapture/segment: %" PRIu64 ", Trigger Timestamp: %" PRIu64 "", capture, triggerInfo[capture].timeStampCounter);
 				if(  (rapidStatus * (uint32_t)(capture != 0)) == 0   ) // Ignore Seg #0 PICO_STATUS
 				{
-					printf(" Delta Samples: %llu, ", triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter);
+					printf(" Delta Samples: %" PRIu64 ", ", triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter);
 					printf("Delta (seconds): %3.3e", (triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter)* unit->timeInterval);
 				}
 				else
 				{
 					//NOTE: PICO_DEVICE_TIME_STAMP_RESET/counter wrap around is NOT accounted for. (counter is a unsigned 2^56 bits)
-					printf("PICO_DEVICE_TIME_STAMP_RESET--- 0x%08x, Capture %llu", triggerInfo[capture].status, capture);
+					printf("PICO_DEVICE_TIME_STAMP_RESET--- 0x%08x, Capture %" PRIu64 "", triggerInfo[capture].status, capture);
 				}
 			}
 		}
@@ -437,8 +438,8 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 		return;
 	}
 
-	printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
-	printf("%llu Captures each with %llu ADC Samples\n", nCaptures, nSamples);
+	printf("\nTimebase: %" PRIu32 "  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
+	printf("%" PRIu64 " Captures each with %" PRIu64 " ADC Samples\n", nCaptures, nSamples);
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_RAW)
 		printf("DownSampling Mode is set to: None\n");
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -448,7 +449,7 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 	if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AVERAGE)
 		printf("DownSampling Mode is set to: Average\n");
 	if (bufferSettings.downSampleRatioMode != PICO_RATIO_MODE_RAW)
-		printf("DownSampling Ratio is set to: %llu\n", bufferSettings.downSampleRatio);
+		printf("DownSampling Ratio is set to: %" PRIu64 "\n", bufferSettings.downSampleRatio);
 	printf("\n");
 
 	// Setup deferred request for data
@@ -462,11 +463,11 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 		overflowArray);
 
 	/////////////////////// Loop for overlapped captures ////////////////////
-	uint16_t NumOverlapped = 4;
-	for (uint16_t OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped; OverlappedtestNo++)
+	unsigned int NumOverlapped = 4;
+	for (unsigned int OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped; OverlappedtestNo++)
 	{
 		g_ready = FALSE; 
-		printf("Loop: #%d of %d Rapid Block Overlapped captures\n", OverlappedtestNo +1, NumOverlapped);
+		printf("Loop: #%u of %u Rapid Block Overlapped captures\n", OverlappedtestNo +1, NumOverlapped);
 
 		// Start acquisition
 		status = psospaRunBlock(unit->handle,
@@ -498,7 +499,7 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 		}
 		// Get the number of captures that were completed
 		status = psospaGetNoOfCaptures(unit->handle, &nCompletedCaptures);
-		printf("%llu complete blocks were captured\n", nCompletedCaptures);
+		printf("%" PRIu64 " complete blocks were captured\n", nCompletedCaptures);
 
 		if (nCompletedCaptures == 0)
 		{
@@ -533,12 +534,12 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 			}
 
 			// Print each segment capture to a file
-			printf("Writing each of: %lld channel buffer sets to a file.\n", multiBufferSizes.numberOfBuffers);
+			printf("Writing each of: %" PRIu64 " channel buffer sets to a file.\n", multiBufferSizes.numberOfBuffers);
 			//Create file name string
 			char buf[58 + (3 * sizeof(int))];
 			size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-			snprintf(buf, buf_size, "%s%d_Segment", RapidBlockOverlappedFile, OverlappedtestNo);
-			printf("\nWriting capture %ld of channels to a file.\n", OverlappedtestNo);
+			snprintf(buf, buf_size, "%s%u_Segment", RapidBlockOverlappedFile, OverlappedtestNo);
+			printf("\nWriting capture %u of channels to a file.\n", OverlappedtestNo);
 			WriteArrayToFilesGeneric(
 				unit,
 				minBuffers,
@@ -563,11 +564,6 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 			{
 				printf("RapidBlockDataHandler:psospaGetTriggerInfo ------ 0x%08x \n", status);
 			}
-
-			if (status != PICO_OK)
-			{
-				printf("RapidBlockDataHandler:psospaGetTriggerInfo ------ 0x%08x \n", status);
-			}
 			// Print first 3 trigger timestamps
 			uint64_t maxprintCaptures = min(nCaptures, 3);
 			PICO_STATUS rapidStatus;
@@ -575,19 +571,19 @@ void rapidblockOverlappedDataHandler(GENERICUNIT* unit,
 			{
 				if (triggerInfo != NULL)
 				{
-					printf("\nDEBUG STATUS, Capture No.--- 0x%08x, Capture %llu", triggerInfo[capture].status, capture);
+					printf("\nDEBUG STATUS, Capture No.--- 0x%08x, Capture %" PRIu64 "", triggerInfo[capture].status, capture);
 					rapidStatus = triggerInfo[capture].status & PICO_DEVICE_TIME_STAMP_RESET;
-					printf("\nDEBUG STATUS, Capture No.--- 0x%08x, Capture %llu", rapidStatus, capture);
-					printf("\nCapture/segment: %llu, Trigger Timestamp: %llu", capture, triggerInfo[capture].timeStampCounter);
+					printf("\nDEBUG STATUS, Capture No.--- 0x%08x, Capture %" PRIu64 "", rapidStatus, capture);
+					printf("\nCapture/segment: %" PRIu64 ", Trigger Timestamp: %" PRIu64 "", capture, triggerInfo[capture].timeStampCounter);
 					if ((rapidStatus * (uint32_t)(capture != 0)) == 0) // Ignore Seg #0 PICO_STATUS
 					{
-						printf(" Delta Samples: %llu, ", triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter);
+						printf(" Delta Samples: %" PRIu64 ", ", triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter);
 						printf("Delta (seconds): %3.3e", (triggerInfo[capture].timeStampCounter - triggerInfo[capture - 1].timeStampCounter) * unit->timeInterval);
 					}
 					else
 					{
 						//NOTE: PICO_DEVICE_TIME_STAMP_RESET/counter wrap around is NOT accounted for. (counter is a unsigned 2^56 bits)
-						printf("PICO_DEVICE_TIME_STAMP_RESET--- 0x%08x, Capture %llu", triggerInfo[capture].status, capture);
+						printf("PICO_DEVICE_TIME_STAMP_RESET--- 0x%08x, Capture %" PRIu64 "", triggerInfo[capture].status, capture);
 					}
 				}
 			}

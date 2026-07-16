@@ -16,6 +16,7 @@
 #include "../../shared/PicoScaling.h"
 #include "./Libps4000a.h"
 #include <stdio.h>
+#include <inttypes.h>
 
 
 /* Headers for Windows */
@@ -129,10 +130,10 @@ void blockDataHandler(GENERICUNIT *unit,
         return;
     }
 
-  printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase,
+  printf("\nTimebase: %" PRIu32 "  SampleInterval: %le seconds\n", timebase,
          unit->timeInterval);
 
-  printf("Number of Capture Samples: %llu\n", nSamples);
+  printf("Number of Capture Samples: %" PRIu64 "\n", nSamples);
   if (ratioMode == PICO_RATIO_MODE_RAW)
     printf("DownSampling Mode is set to: None\n");
   if (ratioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -142,7 +143,7 @@ void blockDataHandler(GENERICUNIT *unit,
   if (ratioMode == PICO_RATIO_MODE_AVERAGE)
     printf("DownSampling Mode is set to: Average\n");
   if (ratioMode != PICO_RATIO_MODE_RAW)
-    printf("\nDownSampling Ratio is set to: %llu\n", downSampleRatio);
+    printf("\nDownSampling Ratio is set to: %" PRIu64 "\n", downSampleRatio);
 
   /* Start it collecting, then wait for completion*/
   g_ready = FALSE;
@@ -156,7 +157,7 @@ void blockDataHandler(GENERICUNIT *unit,
 
     if (status != PICO_OK)
     {
-      printf("BlockDataHandler:ps4000aRunBlock ------ 0x%08lx \n", status);
+      printf("BlockDataHandler:ps4000aRunBlock ------ 0x%08x \n", status);
       return;
     }
   } while (retry);
@@ -188,7 +189,7 @@ void blockDataHandler(GENERICUNIT *unit,
                               downSampleRatio, ratioMode, 0, &overflow);
     if (status != PICO_OK)
     {
-      printf("blockDataHandler:ps4000aGetValues ------ 0x%08lx \n", status);
+      printf("blockDataHandler:ps4000aGetValues ------ 0x%08x \n", status);
     }
     else
     {
@@ -362,10 +363,10 @@ void blockOverlappedDataHandler(
     return;
   }
 
-  printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase,
+  printf("\nTimebase: %" PRIu32 "  SampleInterval: %le seconds\n", timebase,
          unit->timeInterval);
 
-  printf("Number of Capture Samples: %llu\n", nSamples);
+  printf("Number of Capture Samples: %" PRIu64 "\n", nSamples);
   if (ratioMode == PICO_RATIO_MODE_RAW)
     printf("DownSampling Mode is set to: None\n");
   if (ratioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -375,7 +376,7 @@ void blockOverlappedDataHandler(
   if (ratioMode == PICO_RATIO_MODE_AVERAGE)
     printf("DownSampling Mode is set to: Average\n");
   if (ratioMode != PICO_RATIO_MODE_RAW)
-    printf("\nDownSampling Ratio is set to: %llu\n", downSampleRatio);
+    printf("\nDownSampling Ratio is set to: %" PRIu64 "\n", downSampleRatio);
 
   int16_t overflow = 0;
   // Setup deferred request for data
@@ -386,16 +387,16 @@ void blockOverlappedDataHandler(
   // Start capture
   g_ready = FALSE;
   /////////////////////// Loop for overlapped captures ////////////////////
-  uint16_t NumOverlapped = 3;
-  printf("NumOverlapped captures: %d \n", NumOverlapped);
-  for (uint16_t OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped;
+  unsigned int NumOverlapped = 3;
+  printf("NumOverlapped captures: %u \n", NumOverlapped);
+  for (unsigned int OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped;
        OverlappedtestNo++) {
     status = ps4000aRunBlock(unit->handle, noOfPreTriggerSamples,
                              noOfPostTriggerSamples, timebase, &timeIndisposed,
                              0, callBackBlockReady, NULL);
 
     if (status != PICO_OK) {
-      printf("BlockDataHandler:ps4000aRunBlock ------ 0x%08lx \n", status);
+      printf("BlockDataHandler:ps4000aRunBlock ------ 0x%08x \n", status);
       return;
     }
 
@@ -424,8 +425,8 @@ void blockOverlappedDataHandler(
         // Create file name string
         char buf[58 + (3 * sizeof(int))];
         size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-        snprintf(buf, buf_size, "%s%d_Segment", BlockFile, OverlappedtestNo);
-        printf("\nWriting capture %ld of channels to a file.\n",
+        snprintf(buf, buf_size, "%s%u_Segment", BlockFile, OverlappedtestNo);
+        printf("\nWriting capture %u of channels to a file.\n",
                OverlappedtestNo);
         // Write one segment to a file as captured
         printf("\nWriting Capture of enabled channels to file.\n");

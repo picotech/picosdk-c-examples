@@ -12,6 +12,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "../../shared/PicoScaling.h"
 #include "../../shared/PicoBuffers.h"
 #include "../../shared/PicoFileFunctions.h"
@@ -73,11 +74,9 @@ void blockDataHandler(GENERICUNIT* unit,
                       	BOOL imagefile)             // Used to determine to create image file
 {
 	int16_t retry;
-	int16_t triggerEnabled = 0;
-	int16_t pwqEnabled = 0;
 
 	int32_t i;
-	double timeIndisposed;
+	double timeIndisposed = 0;
 
 	PICO_STATUS status;
 	//--------------------------------------------------------------------------//
@@ -129,9 +128,9 @@ void blockDataHandler(GENERICUNIT* unit,
 		return;
 	}
 
-	printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
+	printf("\nTimebase: %" PRIu32 "  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
 
-	printf("Number of Capture Samples: %llu\n", nSamples);
+	printf("Number of Capture Samples: %" PRIu64 "\n", nSamples);
 	if(ratioMode == PICO_RATIO_MODE_RAW)
 		printf("DownSampling Mode is set to: None\n");
 	if (ratioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -141,7 +140,7 @@ void blockDataHandler(GENERICUNIT* unit,
 	if (ratioMode == PICO_RATIO_MODE_AVERAGE)
 		printf("DownSampling Mode is set to: Average\n");
 	if (ratioMode != PICO_RATIO_MODE_RAW)
-		printf("\nDownSampling Ratio is set to: %llu\n", downSampleRatio);
+		printf("\nDownSampling Ratio is set to: %" PRIu64 "\n", downSampleRatio);
 
 	/* Start it collecting, then wait for completion*/
 	g_ready = FALSE;
@@ -161,21 +160,12 @@ void blockDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf("BlockDataHandler:ps5000aRunBlock ------ 0x%08lx \n", status);
+			printf("BlockDataHandler:ps5000aRunBlock ------ 0x%08x \n", status);
 			return;
 		}
 	} while (retry);
 
-	//status = ps6000aIsTriggerOrPulseWidthQualifierEnabled(unit->handle, &triggerEnabled, &pwqEnabled);
-
-	if (triggerEnabled || pwqEnabled)
-	{
-		printf("Waiting for trigger... Press any key to abort\n");
-	}
-	else
-	{
-		printf("Press any key to abort\n");
-	}
+	printf("Press any key to abort\n");
 
 	//wait for capture to complete or for user to abort
 	while (!g_ready && !_kbhit())
@@ -192,7 +182,7 @@ void blockDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf("blockDataHandler:ps6000aGetValues ------ 0x%08lx \n", status);
+			printf("blockDataHandler:ps6000aGetValues ------ 0x%08x \n", status);
 		}
 		else
 		{
@@ -310,11 +300,9 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 	uint64_t downSampleRatio			// Used by SetDataBuffers()
 )
 {
-	int16_t triggerEnabled = 0;
-	int16_t pwqEnabled = 0;
 
 	int32_t i;
-	double timeIndisposed;
+	double timeIndisposed = 0;
 
 	PICO_STATUS status;
 	//--------------------------------------------------------------------------//
@@ -366,9 +354,9 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 		return;
 	}
 
-	printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
+	printf("\nTimebase: %" PRIu32 "  SampleInterval: %le seconds\n", timebase, unit->timeInterval);
 
-	printf("Number of Capture Samples: %llu\n", nSamples);
+	printf("Number of Capture Samples: %" PRIu64 "\n", nSamples);
 	if (ratioMode == PICO_RATIO_MODE_RAW)
 		printf("DownSampling Mode is set to: None\n");
 	if (ratioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -378,7 +366,7 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 	if (ratioMode == PICO_RATIO_MODE_AVERAGE)
 		printf("DownSampling Mode is set to: Average\n");
 	if (ratioMode != PICO_RATIO_MODE_RAW)
-		printf("\nDownSampling Ratio is set to: %llu\n", downSampleRatio);
+		printf("\nDownSampling Ratio is set to: %" PRIu64 "\n", downSampleRatio);
 
 
 	int16_t overflow = 0;
@@ -395,9 +383,9 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 	// Start capture
 	g_ready = FALSE;
 	/////////////////////// Loop for overlapped captures ////////////////////
-	uint16_t NumOverlapped = 3;
-	printf("NumOverlapped captures: %d \n", NumOverlapped);
-	for (uint16_t OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped; OverlappedtestNo++)
+	unsigned int NumOverlapped = 3;
+	printf("NumOverlapped captures: %u \n", NumOverlapped);
+	for (unsigned int OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped; OverlappedtestNo++)
 	{
 		status = ps6000aRunBlock(unit->handle,
 			noOfPreTriggerSamples,
@@ -410,7 +398,7 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 
 		if (status != PICO_OK)
 		{
-			printf("BlockDataHandler:ps6000aRunBlock ------ 0x%08lx \n", status);
+			printf("BlockDataHandler:ps6000aRunBlock ------ 0x%08x \n", status);
 			return;
 		}
 
@@ -442,8 +430,8 @@ void blockOverlappedDataHandler(GENERICUNIT* unit,
 				//Create file name string
 				char buf[58 + (3 * sizeof(int))];
 				size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-				snprintf(buf, buf_size, "%s%d_Segment", BlockFile, OverlappedtestNo);
-				printf("\nWriting capture %ld of channels to a file.\n", OverlappedtestNo);
+				snprintf(buf, buf_size, "%s%u_Segment", BlockFile, OverlappedtestNo);
+				printf("\nWriting capture %u of channels to a file.\n", OverlappedtestNo);
 				//Write one segment to a file as captured
 				printf("\nWriting Capture of enabled channels to file.\n");
 				WriteArrayToFilesGeneric(
