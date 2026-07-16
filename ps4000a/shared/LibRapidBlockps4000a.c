@@ -16,6 +16,7 @@
 #include "../../shared/PicoScaling.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 
 #include "./Libps4000a.h"
@@ -145,9 +146,9 @@ void rapidblockDataHandler(
         return;
     }
 
-  printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase,
+  printf("\nTimebase: %" PRIu32 "  SampleInterval: %le seconds\n", timebase,
          unit->timeInterval);
-  printf("%llu Captures each with %llu ADC Samples\n", nCaptures, nSamples);
+  printf("%" PRIu64 " Captures each with %" PRIu64 " ADC Samples\n", nCaptures, nSamples);
   if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_RAW)
     printf("DownSampling Mode is set to: None\n");
   if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -157,7 +158,7 @@ void rapidblockDataHandler(
   if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AVERAGE)
     printf("DownSampling Mode is set to: Average\n");
   if (bufferSettings.downSampleRatioMode != PICO_RATIO_MODE_RAW)
-    printf("DownSampling Ratio is set to: %llu\n",
+    printf("DownSampling Ratio is set to: %" PRIu64 "\n",
            bufferSettings.downSampleRatio);
 
   // Start acquisition
@@ -184,7 +185,7 @@ void rapidblockDataHandler(
   }
   // Get the number of captures that were completed
   status = ps4000aGetNoOfCaptures(unit->handle, &nCompletedCaptures);
-  printf("%llu complete blocks were captured\n", nCompletedCaptures);
+  printf("%u complete blocks were captured\n", nCompletedCaptures);
   printf("\nPress any key...\n\n");
   _getch();
 
@@ -242,7 +243,7 @@ void rapidblockDataHandler(
                               noOfPreTriggerSamples, // Triggersample
                               overflowArray);
     // Print each segment capture to a file
-    printf("\nWriting each of: %lld channel buffer sets to a file.\n",
+    printf("\nWriting each of: %" PRIu64 " channel buffer sets to a file.\n",
            multiBufferSizes.numberOfBuffers);
     if (filetype == FILE_TXT)
     {
@@ -384,9 +385,9 @@ void rapidblockOverlappedDataHandler(
     return;
   }
 
-  printf("\nTimebase: %lu  SampleInterval: %le seconds\n", timebase,
+  printf("\nTimebase: %" PRIu32 "  SampleInterval: %le seconds\n", timebase,
          unit->timeInterval);
-  printf("%llu Captures each with %llu ADC Samples\n", nCaptures, nSamples);
+  printf("%" PRIu64 " Captures each with %" PRIu64 " ADC Samples\n", nCaptures, nSamples);
   if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_RAW)
     printf("DownSampling Mode is set to: None\n");
   if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AGGREGATE)
@@ -396,7 +397,7 @@ void rapidblockOverlappedDataHandler(
   if (bufferSettings.downSampleRatioMode == PICO_RATIO_MODE_AVERAGE)
     printf("DownSampling Mode is set to: Average\n");
   if (bufferSettings.downSampleRatioMode != PICO_RATIO_MODE_RAW)
-    printf("DownSampling Ratio is set to: %llu\n",
+    printf("DownSampling Ratio is set to: %" PRIu64 "\n",
            bufferSettings.downSampleRatio);
   printf("\n");
 
@@ -412,11 +413,11 @@ void rapidblockOverlappedDataHandler(
       overflowArray);
 
   /////////////////////// Loop for overlapped captures ////////////////////
-  uint16_t NumOverlapped = 4;
-  for (uint16_t OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped;
+  unsigned int NumOverlapped = 4;
+  for (unsigned int OverlappedtestNo = 0; OverlappedtestNo < NumOverlapped;
        OverlappedtestNo++) {
     g_ready = FALSE;
-    printf("Loop: #%d of %d Rapid Block Overlapped captures\n",
+    printf("Loop: #%u of %u Rapid Block Overlapped captures\n",
            OverlappedtestNo + 1, NumOverlapped);
 
     // Start acquisition
@@ -442,7 +443,7 @@ void rapidblockOverlappedDataHandler(
     }
     // Get the number of captures that were completed
     status = ps4000aGetNoOfCaptures(unit->handle, &nCompletedCaptures);
-    printf("%llu complete blocks were captured\n", nCompletedCaptures);
+    printf("%u complete blocks were captured\n", nCompletedCaptures);
 
     if (nCompletedCaptures == 0) {
       return; // Exit if no captures were made
@@ -476,14 +477,14 @@ void rapidblockOverlappedDataHandler(
       }
 
       // Print each segment capture to a file
-      printf("Writing each of: %lld channel buffer sets to a file.\n",
+      printf("Writing each of: %" PRIu64 " channel buffer sets to a file.\n",
              multiBufferSizes.numberOfBuffers);
       // Create file name string
       char buf[58 + (3 * sizeof(int))];
       size_t buf_size = sizeof(buf) / sizeof(buf[0]);
-      snprintf(buf, buf_size, "%s%d_Segment", RapidBlockOverlappedFile,
+      snprintf(buf, buf_size, "%s%u_Segment", RapidBlockOverlappedFile,
                OverlappedtestNo);
-      printf("\nWriting capture %ld of channels to a file.\n",
+      printf("\nWriting capture %u of channels to a file.\n",
              OverlappedtestNo);
       WriteArrayToFilesGeneric(unit, minBuffers, maxBuffers, multiBufferSizes,
                                enabledChannelsScaling, buf,

@@ -203,12 +203,12 @@ static void mainMenu(GENERICUNIT *unit)
 * main
 *
 ***************************************************************************/
-int32_t main(void)
+int main(void)
 {
-	int8_t ch;
-	uint16_t devCount = 0, listIter = 0,	openIter = 0;
+	int ch;
+	unsigned int devCount = 0, listIter = 0,	openIter = 0;
 	//device indexer -  64 chars - 64 is maximum number of picoscope devices handled by driver
-	int8_t devChars[] =
+	char devChars[] =
 			"1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#";
 	PICO_STATUS status = PICO_OK;
 	GENERICUNIT* allUnits = (GENERICUNIT*)calloc(MAX_PICO_DEVICES, sizeof(GENERICUNIT));
@@ -226,7 +226,7 @@ int32_t main(void)
 
 	if (status == PICO_OK)
 	{
-		printf("Found %d devices - serial numbers: %s\n", count, serials);
+		printf("Found %u devices - serial numbers: %s\n", count, serials);
 	}
 
 	do
@@ -278,7 +278,7 @@ int32_t main(void)
 	else
 	{
 		// More than one unit
-		printf("Found %d devices, initializing...\n\n", devCount);
+		printf("Found %u devices, initializing...\n\n", devCount);
 
 		for (listIter = 0; listIter < devCount; listIter++)
 		{
@@ -325,7 +325,7 @@ int32_t main(void)
 		free(allUnits);
 		return 0;
 	}
-	printf("Found %d devices, pick one to open from the list:\n", devCount);
+	printf("Found %u devices, pick one to open from the list:\n", devCount);
 
 	for (listIter = 0; listIter < devCount; listIter++)
 	{
@@ -367,7 +367,7 @@ int32_t main(void)
 
 				mainMenu(&allUnits[listIter]);
 
-				printf("Found %d devices, pick one to open from the list:\n",devCount);
+				printf("Found %u devices, pick one to open from the list:\n",devCount);
 				
 				for (listIter = 0; listIter < devCount; listIter++)
 				{

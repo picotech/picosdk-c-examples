@@ -12,6 +12,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "../../shared/PicoBuffers.h"
 #include "../../shared/PicoFileFunctions.h"
@@ -225,7 +226,7 @@ void setDefaults(GENERICUNIT* unit) {
         //{   //Print Probe name and its current range
         printf("\tCh Enabled : %d\n", (int16_t)unit->channelSettings[PS4000A_CHANNEL_A + ch].enabled);
         //printf("\tProbe connected : %d\n", userProbeInfo.userProbeInteractions[ch].probeName_);
-        printf("\tSet Range : %ld\n", (uint32_t)unit->channelSettings[PS4000A_CHANNEL_A + ch].range);
+        printf("\tSet Range : %" PRIu32 "\n", (uint32_t)unit->channelSettings[PS4000A_CHANNEL_A + ch].range);
     } */
     /*******************************   DEBUG   ************************************/
 
@@ -237,7 +238,7 @@ void setDefaults(GENERICUNIT* unit) {
             (PS4000A_COUPLING)unit->channelSettings[PS4000A_CHANNEL_A + i].DCcoupled,
             (PICO_CONNECT_PROBE_RANGE)unit->channelSettings[PS4000A_CHANNEL_A + i].range,
             (float)unit->channelSettings[PS4000A_CHANNEL_A + i].analogueOffset);
-        printf(status ? "SetDefaults:ps4000aSetChannel------ 0x%08lx \n" : "",
+        printf(status ? "SetDefaults:ps4000aSetChannel------ 0x%08x \n" : "",
             status);
 		// Set bandwidth limiters to most recent settings (if 4444, or if channel enabled and supports bandwidth limit setting)
         if ((unit->channelSettings[PS4000A_CHANNEL_A + i].enabled) == TRUE && (unit->model == MODEL_4444)) {
@@ -247,7 +248,7 @@ void setDefaults(GENERICUNIT* unit) {
                     (PS4000A_BANDWIDTH_LIMITER)unit->channelSettings[PS4000A_CHANNEL_A + i]
                     .bandwithLimit);
             }
-            printf(status ? "SetDefaults:ps4000aSetBandwidthFilter------ 0x%08lx \n" : "",
+            printf(status ? "SetDefaults:ps4000aSetBandwidthFilter------ 0x%08x \n" : "",
                 status);
         }
     }
@@ -318,7 +319,7 @@ PICO_STATUS clearDataBuffers(GENERICUNIT *unit)
     {
         if ((status = ps4000aSetDataBuffers(unit->handle, PS4000A_CHANNEL_A, NULL, NULL, 0, 0, PS4000A_RATIO_MODE_NONE)) != PICO_OK)
         {
-            printf("ClearDataBuffers:ps4000aSetDataBuffers ------ 0x%08lx \n", status);
+            printf("ClearDataBuffers:ps4000aSetDataBuffers ------ 0x%08x \n", status);
         }
     }
 	if (status == PICO_OK)
@@ -617,7 +618,7 @@ void setVoltages(GENERICUNIT *unit) {
 
                 // Keyboard input to range value
                 fflush(stdin);
-                scanf_s("%d", &rangeinput);
+                scanf_s("%u", &rangeinput);
                 if (rangeinput == 99) //value to turn channel off
                 {
                     range = (PICO_CONNECT_PROBE_RANGE)PICO_CONNECT_PROBE_OFF;
@@ -732,7 +733,7 @@ void setTimebase(GENERICUNIT *unit) {
       unit->handle, enabledChannelOrPortFlags, &shortestTimebase,
       &timeIntervalSeconds, unit->resolution);
   if (status != PICO_OK) {
-    printf("setTimebase:ps4000aGetMinimumTimebaseStateless ------ 0x%08lx \n",
+    printf("setTimebase:ps4000aGetMinimumTimebaseStateless ------ 0x%08x \n",
            status);
     if (status == 0x0000018c)
       printf("The channel combination is not valid for the ADC resolution "
@@ -748,7 +749,7 @@ void setTimebase(GENERICUNIT *unit) {
   }
   timeIntervalSeconds = (double)(testtimeInterval / 1e9); // Convert to seconds
 
-  printf("Shortest timebase index available %d = %le seconds.\n",
+  printf("Shortest timebase index available %" PRIu32 " = %le seconds.\n",
          shortestTimebase, timeIntervalSeconds);
 
   printf("Specify desired timeInterval (in the format Ne-XX, example 1us -> "
@@ -769,7 +770,7 @@ void setTimebase(GENERICUNIT *unit) {
           break;
   }
   if (status != PICO_OK)
-      printf("setTimebase:ps4000aGetTimebase2 ------ 0x%08lx \n",   status);
+      printf("setTimebase:ps4000aGetTimebase2 ------ 0x%08x \n",   status);
   timeInterval = (double)testtimeInterval;
   timeInterval = timeInterval / 1e9; // Convert to seconds
 
@@ -798,7 +799,7 @@ void setTimebase(GENERICUNIT *unit) {
   }
   */
 
-  printf("Timebase used %lu = %le seconds sample interval\n", timebase,
+  printf("Timebase used %" PRIu32 " = %le seconds sample interval\n", timebase,
          timeInterval);
   unit->timeInterval = timeInterval;
 }
@@ -883,7 +884,7 @@ void setResolution(GENERICUNIT *unit) {
   }
   else
   {
-    printf("setResolution:ps4000aGetDeviceResolution ------ 0x%08lx \n", status);
+    printf("setResolution:ps4000aGetDeviceResolution ------ 0x%08x \n", status);
     return;
   }
 
@@ -927,7 +928,7 @@ void setResolution(GENERICUNIT *unit) {
   status = ps4000aSetDeviceResolution(unit->handle, (PS4000A_DEVICE_RESOLUTION)newResolution);
   if (status != PICO_OK)
   {
-      printf("setResolution:ps4000aSetDeviceResolution ------ 0x%08lx \n", status);
+      printf("setResolution:ps4000aSetDeviceResolution ------ 0x%08x \n", status);
   }
   else
   {
@@ -942,7 +943,7 @@ void setResolution(GENERICUNIT *unit) {
   }
   if (status != PICO_OK)
   {
-    printf("setResolution:ps4000aMaximumValue ------ 0x%08lx \n", status);
+    printf("setResolution:ps4000aMaximumValue ------ 0x%08x \n", status);
   }
 }
 
@@ -1295,7 +1296,7 @@ void GetMoreDataHandler(GENERICUNIT *unit, PICO_RATIO_MODE ratioMode,
   // sampleIntervalTimeUnits) / 1E+15));
   printf("\nsample Internal: %g seconds\n", unit->timeInterval);
   // print number of Samples
-  printf("%llu Samples\n", nSamples);
+  printf("%" PRIu64 " Samples\n", nSamples);
   uint64_t printTriggerSample = 0;
 
   // SetDataBuffers with API
@@ -1323,8 +1324,7 @@ void GetMoreDataHandler(GENERICUNIT *unit, PICO_RATIO_MODE ratioMode,
         NULL);             // pParameter
 
     if (status != PICO_OK) {
-      printf(status ? "blockDataHandler:ps4000aGetValuesAsync ------ 0x%08lx \n"
-                    : "",
+      printf("blockDataHandler:ps4000aGetValuesAsync ------ 0x%08x \n",
              status);
       return;
     }
@@ -1342,10 +1342,7 @@ void GetMoreDataHandler(GENERICUNIT *unit, PICO_RATIO_MODE ratioMode,
     g_ready = TRUE;
 
     if (status != PICO_OK) {
-      printf(
-          status
-              ? "blockDataHandler:ps4000aGetValuesBulkAsync ------ 0x%08lx \n"
-              : "",
+      printf("blockDataHandler:ps4000aGetValuesBulkAsync ------ 0x%08x \n",
           status);
       return;
     }
@@ -1514,7 +1511,7 @@ void SetAllDataBuffers(GENERICUNIT *unit,
         capture = StreamBufToSet; // force "for loop" to only use one buffer set
       }
 
-      for (capture; capture < nCaptures; capture++) {
+      for (; capture < nCaptures; capture++) {
         if (CaptureMode != (enum enCaptureMode)STREAMING)
           waveform = capture;
         status = ps4000aSetDataBuffers(

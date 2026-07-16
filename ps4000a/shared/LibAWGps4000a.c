@@ -12,6 +12,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "../../shared/PicoScaling.h"
 #include "../../shared/PicoBuffers.h"
 #include "../../shared/PicoFileFunctions.h"
@@ -145,7 +146,7 @@ void SigGenAWG(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
 
     if (status != PICO_OK)
     {
-        printf(status ? "SigGenAWG:ps4000aSigGenWaveform ------ 0x%08lx \n" : "", status);
+        printf("SigGenAWG:ps4000aSigGenWaveform ------ 0x%08x \n", status);
     }
     
 }
@@ -394,7 +395,7 @@ void printsigGenSettings(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
             if(sigGenSettings->isArbitrary)
                 printf("AWG          ");
             else
-                printf("Unknown enum:%ld", sigGenSettings->WaveType);
+                printf("Unknown enum:%d", (int)sigGenSettings->WaveType);
             break;
         }
     }
@@ -425,7 +426,7 @@ void printsigGenSettings(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
             break;
 
         default:
-            printf("Unknown enum:%ld", sigGenSettings->SweepType);
+            printf("Unknown enum:%d", (int)sigGenSettings->SweepType);
             //printf("Unknown/Invalid Sweep enum: %ld", sigGenSettings->SweepType);
             break;
         }
@@ -459,7 +460,7 @@ void printsigGenSettings(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
             break;
 
         default:
-            printf("Unknown enum:%ld", sigGenSettings->triggerSource);
+            printf("Unknown enum:%d", (int)sigGenSettings->triggerSource);
             break;
         }
     }
@@ -467,7 +468,7 @@ void printsigGenSettings(GENERICUNIT* unit, SIG_GEN_SETTINGS* sigGenSettings)
         printf("OFF       ");
 
     printf("\t\t| \n");
-    printf("|\t\t\t\t\t|   Cycles per Trigger: %lld\t\t|\n", sigGenSettings->cycles);
+    printf("|\t\t\t\t\t|   Cycles per Trigger: %" PRIu64 "\t\t|\n", sigGenSettings->cycles);
 }
 
 
