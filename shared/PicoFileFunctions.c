@@ -9,6 +9,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <time.h>
 #include "./PicoUnit.h"
 #include "./PicoFileFunctions.h"
@@ -59,9 +60,6 @@
 * Write a text file to disk of current path
 ****************************************************************************/
 
-#include <stdio.h>
-#include <time.h>
-
 void WriteMetaDataToFile(struct tGenericUnit* unit,
     struct tmultiBufferSizes multiBufferSizes,
     struct tPicoProbeScaling* enabledChannelsScaling,
@@ -111,12 +109,12 @@ void WriteMetaDataToFile(struct tGenericUnit* unit,
         // Write header lines
         if (multiBufferSizes.numberOfBuffers != 1)
         {
-            fprintf(fp, "Number of Segments:%s%lld\n", separator, multiBufferSizes.numberOfBuffers);
-            fprintf(fp, "From Seg:%s%lld%sto Seg:%s%lld\n",
+            fprintf(fp, "Number of Segments:%s%" PRIu64 "\n", separator, multiBufferSizes.numberOfBuffers);
+            fprintf(fp, "From Seg:%s%" PRIu64 "%sto Seg:%s%" PRIu64 "\n",
                 separator, captures_range.from, separator, separator, captures_range.to);
         }
 
-        fprintf(fp, "SampleRate%s%3.3e%sSamplesPerBlock%s%lld%sTrigger@Sample%s%lld\n",
+        fprintf(fp, "SampleRate%s%3.3e%sSamplesPerBlock%s%" PRIu64 "%sTrigger@Sample%s%" PRIu64 "\n",
             separator, unit->timeInterval, separator, separator, multiBufferSizes.maxBufferSize, separator, separator, Triggersample);
 
         // Write channel headings - Aggregated Data
@@ -255,10 +253,10 @@ void WriteArrayToFilesGeneric(struct tGenericUnit* unit,
         {
             //Write 2 header lines (one for Info, one for Channels)
             if (multiBufferSizes.numberOfBuffers != 1)
-                fprintf(fp, "Segment:%s% lld%sof%s%lld%sSegment(s)\n",
+                fprintf(fp, "Segment:%s %" PRIu64 "%sof%s%" PRIu64 "%sSegment(s)\n",
                     separator, capture, separator, separator, multiBufferSizes.numberOfBuffers, separator);
 
-            fprintf(fp, "SampleRate%s%3.3e%sSamplesPerBlock%s%lld%sTrigger@Sample%s%lld\n",
+            fprintf(fp, "SampleRate%s%3.3e%sSamplesPerBlock%s%" PRIu64 "%sTrigger@Sample%s%" PRIu64 "\n",
                 separator, unit->timeInterval, separator, separator, multiBufferSizes.maxBufferSize, separator, separator, Triggersample);
 
             //overrange flags
@@ -484,16 +482,16 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
         for (capture = 0; capture < numberOfBuffers; capture++)
         {    
             //Write header lines
-            printf("Outputting the first: %lld samples...\n",
+            printf("Outputting the first: %" PRIu64 " samples...\n",
                 numberOfSamples);
             if (CaptureMode != (enum enCaptureMode)BLOCK)
             {
-                printf("Capture: %lld of %lld Captures\n",
+                printf("Capture: %" PRIu64 " of %" PRIu64 " Captures\n",
                     capture, multiBufferSizes.numberOfBuffers);
                 printf("Outputting the first: %d Captures\n",
                     numberOfBuffers);
             }
-            printf("SampleRate %3.3e SamplesPerBlock %lld Trigger@Sample %lld \n",
+            printf("SampleRate %3.3e SamplesPerBlock %" PRIu64 " Trigger@Sample %" PRIu64 " \n",
                 unit->timeInterval, multiBufferSizes.maxBufferSize, Triggersample);
             //overrange flags
             printf("OverRange flags: ");
@@ -508,7 +506,7 @@ void WriteArrayToStdoutGeneric(struct tGenericUnit* unit,
 
             for (i = 0; i < unit->channelCount; i++)
             {
-                printf("Ch:%C Max %s\t", 'A' + (uint16_t)i, (enabledChannelsScaling[i].Unit_text));
+                printf("Ch:%c Max %s\t", 'A' + (int)i, (enabledChannelsScaling[i].Unit_text));
             }
             printf("\n");
             // Write time and channel data

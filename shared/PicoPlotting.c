@@ -56,7 +56,7 @@ int PlotDataToImage(double* xData, double* yData, size_t dataLength, const char*
         FreeByteArray(pngData);
         DeleteImage(canvasReference->image);
     } else {
-        wprintf(L"Error drawing scatter plot: %s\n", errorMessage->string);
+        wprintf(L"Error drawing scatter plot: %ls\n", errorMessage->string);
     }
 
     FreeAllocations(); // supportLib utility to free its internal allocations
@@ -162,7 +162,7 @@ int PlotMultiDataToImage(double* xData, double** yDataArray, const int* channelI
         FreeByteArray(pngData);
         DeleteImage(canvasReference->image);
     } else {
-        wprintf(L"Error drawing scatter plot: %s\n", errorMessage->string);
+        wprintf(L"Error drawing scatter plot: %ls\n", errorMessage->string);
     }
 
     FreeAllocations(); // supportLib utility to free its internal allocations
