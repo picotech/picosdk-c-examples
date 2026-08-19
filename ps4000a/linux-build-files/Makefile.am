@@ -1,4 +1,0 @@
-ACLOCAL_AMFLAGS = -I m4
-
-bin_PROGRAMS = ps4000aCon
-ps4000aCon_SOURCES = ps4000aCon.c
