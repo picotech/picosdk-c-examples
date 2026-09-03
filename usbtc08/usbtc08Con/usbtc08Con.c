@@ -139,7 +139,8 @@ int main(void)
 	float temp[NUM_TC08_CHANNELS] = {0.0f};				/* Buffer to store single temperature readings from the TC-08 */
 	float * temp_buffer[NUM_TC08_CHANNELS] = {NULL};	/* 2D array to be used for streaming data capture */
 	int32_t times_buffer[BUFFER_SIZE] = {0};			/* Array to hold the time of the conversion of the first channel for each set of readings in streaming mode captures */
-	int16_t overflows[NUM_TC08_CHANNELS] = {0};			/* Array to hold overflow flags for each channel */
+	int16_t overflows[NUM_TC08_CHANNELS] = {0};			/* Per-channel overflow flag; usb_tc08_get_temp writes one per call */
+	int16_t singleOverflowFlags = 0;					/* usb_tc08_get_single writes ONE bit field here, one bit per channel */
 
 	int channel = 0; 									/* Loop counter for channels */
 	int reading = 0;									/* Loop counter for readings */
@@ -272,10 +273,12 @@ int main(void)
 				printf("Getting single reading for each channel...");
 				fflush(stdout);
 
-				/* Request the reading. The overflow array is passed rather than
-				 * NULL so the driver always has somewhere to record over-range
-				 * channels. */
-				retVal = usb_tc08_get_single(handle, temp, overflows, USBTC08_UNITS_CENTIGRADE);
+				/* Request the reading. A real variable is passed rather than NULL
+				 * so the driver always has somewhere to record over-range
+				 * channels. Note the argument is named overflow_flags in
+				 * usbtc08.h, plural: it is a single bit field covering all the
+				 * channels, unlike usb_tc08_get_temp's per-channel overflow. */
+				retVal = usb_tc08_get_single(handle, temp, &singleOverflowFlags, USBTC08_UNITS_CENTIGRADE);
 
 				if (!retVal)
 				{
@@ -283,12 +286,14 @@ int main(void)
 					break;
 				}
 
-				printf(" done!\n\nCJC      : %3.2f C\n", temp[USBTC08_CHANNEL_CJC]);
+				/* Bit 0 of the field is the cold junction. */
+				printf(" done!\n\nCJC      : %3.2f C%s\n", temp[USBTC08_CHANNEL_CJC],
+					(singleOverflowFlags & (1 << USBTC08_CHANNEL_CJC)) ? "  (over range)" : "");
 
 				for (channel = USBTC08_CHANNEL_1; channel < NUM_TC08_CHANNELS; channel++)
 				{
 					printf("Channel %d: %3.2f C%s\n", channel, temp[channel],
-						overflows[channel] ? "  (over range)" : "");
+						(singleOverflowFlags & (1 << channel)) ? "  (over range)" : "");
 				}
 
 				break;
