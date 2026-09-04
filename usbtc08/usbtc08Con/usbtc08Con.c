@@ -277,7 +277,9 @@ int main(void)
 				 * so the driver always has somewhere to record over-range
 				 * channels. Note the argument is named overflow_flags in
 				 * usbtc08.h, plural: it is a single bit field covering all the
-				 * channels, unlike usb_tc08_get_temp's per-channel overflow. */
+				 * thermocouple channels - bit 0 is channel 1 and the cold
+				 * junction has no bit - unlike usb_tc08_get_temp's singular
+				 * per-channel overflow. */
 				retVal = usb_tc08_get_single(handle, temp, &singleOverflowFlags, USBTC08_UNITS_CENTIGRADE);
 
 				if (!retVal)
@@ -286,14 +288,15 @@ int main(void)
 					break;
 				}
 
-				/* Bit 0 of the field is the cold junction. */
-				printf(" done!\n\nCJC      : %3.2f C%s\n", temp[USBTC08_CHANNEL_CJC],
-					(singleOverflowFlags & (1 << USBTC08_CHANNEL_CJC)) ? "  (over range)" : "");
+				/* The cold junction cannot go over range and has no bit in the
+				 * field, so no marker is shown for it. */
+				printf(" done!\n\nCJC      : %3.2f C\n", temp[USBTC08_CHANNEL_CJC]);
 
 				for (channel = USBTC08_CHANNEL_1; channel < NUM_TC08_CHANNELS; channel++)
 				{
+					/* Bit 0 of the field is channel 1, so channel N is bit N-1. */
 					printf("Channel %d: %3.2f C%s\n", channel, temp[channel],
-						(singleOverflowFlags & (1 << channel)) ? "  (over range)" : "");
+						(singleOverflowFlags & (1 << (channel - USBTC08_CHANNEL_1))) ? "  (over range)" : "");
 				}
 
 				break;
