@@ -631,8 +631,9 @@ void collect_windowed_blocks (void)
 	}
 
 	printf ("Collect windowed block...\n");
-	printf ("First block appears after 10 seconds,\n");
-	printf ("then 10 second blocks are collected every second\n");
+	printf ("Data is returned from every second, starting one second\n");
+	printf ("after the capture starts. Each read returns the samples\n");
+	printf ("collected so far, up to the full 10 second window.\n");
 	printf ("Press a key to start\n");
 	_getch();
 
@@ -684,23 +685,10 @@ void collect_windowed_blocks (void)
 		return;
 	}
 
-	// Wait until unit is ready
-	printf ("Waiting for first block...\n");
-	isReady = 0;
-
-	while (isReady == 0)
-	{
-		status = pl1000Ready(g_handle, &isReady);
-
-		if (!checkStatus("pl1000Ready", status))
-		{
-			pl1000Stop(g_handle);
-			fclose(fp);
-			free(samples);
-			return;
-		}
-	}
-
+	// There is no wait for readiness here. In windowed block mode the unit
+	// streams continuously and pl1000Ready does not report ready, so polling it
+	// would never return. pl1000GetValues is simply called once a second and
+	// returns whatever has been collected so far.
 	printf("Press any key to stop\n");
 
 	while (!_kbhit())
@@ -741,7 +729,7 @@ void collect_windowed_blocks (void)
 			fprintf(fp, "\n");
 		}
 
-		Sleep(1000);		// Wait 1 second before collecting next 10 second block.
+		Sleep(1000);		// Wait 1 second before reading the window again.
 	}
 
 	fclose(fp);
